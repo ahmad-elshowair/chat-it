@@ -3,8 +3,8 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 export default {
-    port: process.env.PORT,
-    pg_port: process.env.PG_PORT,
+    port: Number(process.env.PORT),
+    pg_port: Number(process.env.PG_PORT),
     pg_host: process.env.PG_HOST,
     pg_user: process.env.PG_USER,
     pg_password: process.env.PG_PASSWORD,
