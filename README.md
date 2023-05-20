@@ -3,9 +3,9 @@
 a social media app that simulate some feature of facebook
 
 ## environment variables
-```
+
 - PORT
-- PG_USER 
+- PG_USER
 - PG_HOST
 - PG_PASSWORD
 - PG_DATABASE
@@ -13,4 +13,3 @@ a social media app that simulate some feature of facebook
 - SALT_ROUNDS
 - JWT_SECRET
 - PEPPER
-
