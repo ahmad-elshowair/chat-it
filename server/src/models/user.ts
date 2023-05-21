@@ -20,11 +20,7 @@ class UserModel {
 				};
 			}
 			// return the users
-			return {
-				error: false,
-				message: "Users found",
-				users: getUsers.rows,
-			};
+			return getUsers.rows;
 		} catch (error) {
 			console.error(`cannot get all users due to ${(error as Error).message}`);
 		} finally {
@@ -39,39 +35,34 @@ class UserModel {
 	}
 
 	//a method to create a new user
-	async create(user: User) {
+	async create(user: User): Promise<User> {
 		// connect to the database
 		const connection = await db.connect();
 		try {
 			// check ig the user exist
-			const checkUserQuery = "SELECT * FROM users WHERE user_email=$1";
-			const checkUser: QueryResult<User> = await db.query(checkUserQuery, [
-				user.user_email,
-			]);
-			if (checkUser.rowCount > 0) {
-				return {
-					error: true,
-					message: "User already exist",
-				};
+			const checkUser: QueryResult<User> = await db.query(
+				"SELECT * FROM users WHERE user_email=$1",
+				[user.user_email],
+			);
+
+			if (checkUser.rows.length > 0) {
+				throw new Error(`this ${user.user_email} is already exist ! `);
 			}
 
 			// insert the new user
-			const insertUserQuery =
-				"INSERT INTO users (user_name, user_email, user_password,) VALUES ($1, $2, $3) RETURNING *";
-			const insertUser = await db.query(insertUserQuery, [
-				user.user_name,
-				user.user_email,
-				this.hashPassword(user.user_password),
-			]);
+			const insertUser = await db.query(
+				"INSERT INTO users (user_name, user_email, user_password) VALUES ($1, $2, $3) RETURNING *",
+				[
+					user.user_name,
+					user.user_email,
+					this.hashPassword(user.user_password),
+				],
+			);
 			// return the inserted user
-			return {
-				error: false,
-				message: "User created",
-				user: insertUser.rows[0],
-			};
+			return insertUser.rows[0];
 		} catch (error) {
-			console.error(
-				`cannot create a new user due to ${(error as Error).message}`,
+			throw new Error(
+				`something wrong with create method ${(error as Error).message}`,
 			);
 		} finally {
 			// release the connection

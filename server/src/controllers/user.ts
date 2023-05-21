@@ -23,4 +23,5 @@ const createUser = async (req: Request, res: Response) => {
 
 export default {
 	getUsers,
+	createUser,
 };
