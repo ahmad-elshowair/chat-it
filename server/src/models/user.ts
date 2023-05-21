@@ -29,6 +29,12 @@ class UserModel {
 		}
 	}
 
+	// check if the password is correct
+	private checkPassword(userPassword: string, dbPassword: string): boolean {
+		// return the result
+		return bcrypt.compareSync(userPassword + config.pepper, dbPassword);
+	}
+
 	// a method to hash the inputting password
 	hashPassword(password: string) {
 		return bcrypt.hashSync(password + config.pepper, config.salt);
@@ -63,6 +69,28 @@ class UserModel {
 		} catch (error) {
 			throw new Error(
 				`something wrong with create method ${(error as Error).message}`,
+			);
+		} finally {
+			// release the connection
+			connection.release();
+		}
+	}
+
+	// login user
+	async login(email: string, password: string): Promise<User> {
+		// connect to the database
+		const connection = await db.connect();
+		try {
+			//select a user form the database
+			const checkUser: QueryResult<User> = await db.query(
+				"SELECT * FROM users WHERE user_email=$1",
+				[email],
+			);
+			// return the user
+			return checkUser.rows[0];
+		} catch (error) {
+			throw new Error(
+				`something wrong with login method ${(error as Error).message}`,
 			);
 		} finally {
 			// release the connection

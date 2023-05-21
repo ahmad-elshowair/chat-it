@@ -9,8 +9,9 @@ export const validationMiddleware = (
 	const errors = validationResult(req);
 	if (!errors.isEmpty()) {
 		return res.status(400).json({
-			error: errors.array(),
+			message: "validation error",
+			errors: errors.array(),
 		});
 	}
-	return next();
+	next();
 };
