@@ -3,6 +3,7 @@ import express, { Application, Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import config from "./configs/config";
+import routes from "./routes";
 
 // create an instance of app
 const app: Application = express();
@@ -23,6 +24,9 @@ app.use(cors());
 app.get("/", (_req: Request, res: Response) => {
 	res.send("Hello World!");
 });
+
+// user all routes
+app.use("/api", routes);
 
 // add listen to the app
 app.listen(port, () => {

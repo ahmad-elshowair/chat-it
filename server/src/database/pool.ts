@@ -11,7 +11,7 @@ const pool = new Pool({
 });
 
 // add listener when there is error with the connection
-pool.on("error", (error) => {
+pool.on("error", (error: Error) => {
 	console.log("Unexpected error on idle client", error.message);
 	process.exit(-1);
 });
