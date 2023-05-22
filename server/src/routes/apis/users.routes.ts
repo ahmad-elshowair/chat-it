@@ -1,22 +1,23 @@
 import { Router } from "express";
-import control from "../../controllers/user";
+import authController from "../../controllers/auth";
+import userController from "../../controllers/user";
 import { validationMiddleware } from "../../middlewares/validation";
 import userValidation from "../../middlewares/validations/user";
 
 const userRoute: Router = Router();
 
-userRoute.get("/", control.getUsers);
+userRoute.get("/", userController.getUsers);
 userRoute.post(
 	"/register",
 	userValidation.register,
 	validationMiddleware,
-	control.createUser,
+	authController.createUser,
 );
 userRoute.post(
 	"/login",
 	userValidation.login,
 	validationMiddleware,
-	control.loginUser,
+	authController.loginUser,
 );
 
 export default userRoute;
