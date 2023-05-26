@@ -8,12 +8,16 @@ CREATE TABLE
     users (
         user_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
         user_name VARCHAR(20) NOT NULL,
-        user_email VARCHAR(20) NOT NULL UNIQUE,
-        user_password VARCHAR NOT NULL,
-        user_picture VARCHAR DEFAULT '',
-        user_cover VARCHAR DEFAULT '',
-        user_followers INTEGER [] DEFAULT '{ }',
-        user_following INTEGER [] DEFAULT '{ }',
+        email VARCHAR(20) NOT NULL UNIQUE,
+        password VARCHAR NOT NULL,
+        picture VARCHAR DEFAULT '',
+        cover VARCHAR DEFAULT '',
+        followers INTEGER [] DEFAULT '{ }',
+        following INTEGER [] DEFAULT '{ }',
         is_admin BOOLEAN DEFAULT FALSE,
-        user_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        description VARCHAR,
+        city VARCHAR(50),
+        home_town VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
