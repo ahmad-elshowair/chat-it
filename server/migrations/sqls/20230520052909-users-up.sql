@@ -15,9 +15,9 @@ CREATE TABLE
         followers INTEGER [] DEFAULT '{ }',
         following INTEGER [] DEFAULT '{ }',
         is_admin BOOLEAN DEFAULT FALSE,
-        description VARCHAR,
-        city VARCHAR(50),
-        home_town VARCHAR(50),
+        description VARCHAR DEFAULT '',
+        city VARCHAR(50) DEFAULT '',
+        home_town VARCHAR(50) DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
