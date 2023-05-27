@@ -6,7 +6,7 @@ import userValidation from "../../middlewares/validations/user";
 
 const userRoute: Router = Router();
 
-userRoute.get("/", userController.getUsers);
+userRoute.get("/", userController.index);
 userRoute.post(
 	"/register",
 	userValidation.register,
@@ -19,5 +19,6 @@ userRoute.post(
 	validationMiddleware,
 	authController.loginUser,
 );
+userRoute.put("/update/:id", userController.update);
 
 export default userRoute;

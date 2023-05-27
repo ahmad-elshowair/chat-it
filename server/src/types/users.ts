@@ -1,14 +1,18 @@
 type User = {
 	user_id?: string;
 	user_name: string;
-	user_email: string;
-	user_password: string;
-	user_picture?: string;
-	user_cover?: string;
-	user_followers?: number[];
-	user_following?: number[];
+	email: string;
+	password: string;
+	picture?: string;
+	cover?: string;
+	followers?: number[];
+	following?: number[];
 	is_admin?: boolean;
-	user_created_at?: Date;
+	description?: string;
+	city?: string;
+	home_town?: string;
+	created_at?: Date;
+	updated_at?: Date;
 };
 
 export default User;

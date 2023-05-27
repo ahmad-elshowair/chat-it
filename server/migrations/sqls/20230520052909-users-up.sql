@@ -7,8 +7,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE
     users (
         user_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-        user_name VARCHAR(20) NOT NULL,
-        email VARCHAR(20) NOT NULL UNIQUE,
+        user_name VARCHAR NOT NULL,
+        email VARCHAR NOT NULL UNIQUE,
         password VARCHAR NOT NULL,
         picture VARCHAR DEFAULT '',
         cover VARCHAR DEFAULT '',

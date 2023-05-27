@@ -1,21 +1,9 @@
-import bcrypt from "bcrypt";
 import { QueryResult } from "pg";
-import config from "../configs/config";
 import db from "../database/pool";
 import User from "../types/users";
+import passwords from "../utilities/passwords";
 
 class AuthModel {
-	// check if the password is correct
-	private checkPassword(userPassword: string, dbPassword: string): boolean {
-		// return the result
-		return bcrypt.compareSync(userPassword + config.pepper, dbPassword);
-	}
-
-	// a method to hash the inputting password
-	hashPassword(password: string) {
-		return bcrypt.hashSync(password + config.pepper, config.salt);
-	}
-
 	//a method to create a new user
 	async create(user: User): Promise<User> {
 		// connect to the database
@@ -23,22 +11,18 @@ class AuthModel {
 		try {
 			// check ig the user exist
 			const checkUser: QueryResult<User> = await db.query(
-				"SELECT * FROM users WHERE user_email=$1",
-				[user.user_email],
+				"SELECT * FROM users WHERE email=$1",
+				[user.email],
 			);
 
 			if (checkUser.rows.length > 0) {
-				throw new Error(`this ${user.user_email} is already exist ! `);
+				throw new Error(`this ${user.email} is already exist ! `);
 			}
 
 			// insert the new user
 			const insertUser = await db.query(
-				"INSERT INTO users (user_name, user_email, user_password) VALUES ($1, $2, $3) RETURNING *",
-				[
-					user.user_name,
-					user.user_email,
-					this.hashPassword(user.user_password),
-				],
+				"INSERT INTO users (user_name, email, password) VALUES ($1, $2, $3) RETURNING *",
+				[user.user_name, user.email, passwords.hashPassword(user.password)],
 			);
 			// return the inserted user
 			return insertUser.rows[0];
@@ -59,7 +43,7 @@ class AuthModel {
 		try {
 			//select a user form the database
 			const checkUser: QueryResult<User> = await db.query(
-				"SELECT * FROM users WHERE user_email=$1",
+				"SELECT * FROM users WHERE email=$1",
 				[email],
 			);
 			// return the user

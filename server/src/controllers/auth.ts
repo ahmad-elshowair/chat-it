@@ -18,16 +18,16 @@ const loginUser = async (
 	res: Response,
 	next: NextFunction,
 ): Promise<void> => {
-	const { user_email, user_password } = req.body;
+	const { email, password } = req.body;
 	try {
-		const user = await user_model.login(user_email, user_password);
+		const user = await user_model.login(email, password);
 		//check the user
 		if (!user) {
 			res.status(401).json({ error: "Invalid email or password" });
 		}
 		res.status(200).json({
 			name: user.user_name,
-			email: user.user_email,
+			email: user.email,
 			admin: user.is_admin,
 		});
 	} catch (error) {
