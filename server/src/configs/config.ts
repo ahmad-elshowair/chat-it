@@ -9,7 +9,7 @@ export default {
 	pg_user: process.env.PG_USER,
 	pg_password: process.env.PG_PASSWORD,
 	pg_database: process.env.PG_DATABASE,
-	jwt_secret: process.env.JWT_SECRET,
+	jwt_secret: String(process.env.JWT_SECRET),
 	salt: Number(process.env.SALT_ROUNDS),
 	pepper: process.env.PEPPER,
 };

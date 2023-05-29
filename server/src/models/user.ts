@@ -5,7 +5,7 @@ import passwords from "../utilities/passwords";
 
 class UserModel {
 	// get all users
-	async getAll(): Promise<User[] | undefined> {
+	async getAll(): Promise<User[]> {
 		try {
 			// connect to the database
 			const connection = await db.connect();
@@ -24,8 +24,29 @@ class UserModel {
 		}
 	}
 
+	// get a user by id
+	async getUserById(id: string): Promise<User> {
+		try {
+			// connect to the database
+			const connection = await db.connect();
+			// get the user by id
+			const getUserByIdQuery = "SELECT * FROM users WHERE user_id = $1";
+			const getUserById: QueryResult<User> = await db.query(getUserByIdQuery, [
+				id,
+			]);
+			// if there is not user return a message
+			if (getUserById.rowCount < 1) {
+				throw new Error("NO USER FOUND!");
+			}
+			// return the user
+			return getUserById.rows[0];
+		} catch (error) {
+			throw new Error(`model: ${(error as Error).message}`);
+		}
+	}
+
 	// update the user
-	async update(id: string, body: User): Promise<User | undefined> {
+	async update(id: string, user: User): Promise<User> {
 		// connect to the database
 		const connection = await db.connect();
 		try {
@@ -40,18 +61,18 @@ class UserModel {
 			const updateUserQuery =
 				"UPDATE users SET user_name = $1, email = $2, password = $3, picture =$4, cover = $5, followers= $6, following = $7, is_admin = $8, description = $9, city = $10, home_town = $11, updated_at = $12 WHERE user_id = $13 RETURNING *";
 			const updateUser: QueryResult<User> = await db.query(updateUserQuery, [
-				body.user_name,
-				body.email,
-				passwords.hashPassword(body.password),
-				body.picture,
-				body.cover,
-				body.followers,
-				body.following,
-				body.is_admin,
-				body.description,
-				body.city,
-				body.home_town,
-				body.updated_at,
+				user.user_name,
+				user.email,
+				passwords.hashPassword(user.password),
+				user.picture,
+				user.cover,
+				user.followers,
+				user.following,
+				user.is_admin,
+				user.description,
+				user.city,
+				user.home_town,
+				user.updated_at,
 				id,
 			]);
 
