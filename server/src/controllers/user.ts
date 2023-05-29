@@ -29,7 +29,7 @@ const update = async (req: CustomRequest, res: Response) => {
 		console.log(req.user);
 
 		// check of the user has the same id or it is admin
-		if (req.user.user_id === id || req.user.is_admin) {
+		if (req.user.id === id || req.user.is_admin) {
 			const updated_user = await user_model.update(id, req.body);
 			res.status(200).json(updated_user);
 		} else {

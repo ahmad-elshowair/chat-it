@@ -29,3 +29,4 @@ const authorize_user = (
 		handleAnAuthorized(next);
 	}
 };
+export default authorize_user;
