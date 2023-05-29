@@ -22,4 +22,5 @@ userRoute.post(
 );
 userRoute.put("/update/:id", authorize_user, userController.update);
 
+userRoute.delete("/delete/:id", authorize_user, userController.deleteUser);
 export default userRoute;

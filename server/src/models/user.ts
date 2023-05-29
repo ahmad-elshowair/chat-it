@@ -87,5 +87,31 @@ class UserModel {
 	}
 
 	// delete the user
+	async delete(id: string): Promise<User> {
+		// connect to the database
+		const connection = await db.connect();
+		try {
+			// get the user
+			const getUserQuery = "SELECT * FROM users WHERE user_id = $1";
+			const getUser: QueryResult<User> = await db.query(getUserQuery, [id]);
+			// if the user is not found return a message
+			if (getUser.rowCount === 0) {
+				throw new Error("THIS USER IS NOT EXIST !");
+			}
+			// delete the user
+			const deleteUserQuery =
+				"DELETE FROM users WHERE user_id = $1 RETURNING *";
+			const deleteUser: QueryResult<User> = await db.query(deleteUserQuery, [
+				id,
+			]);
+			// return the user
+			return deleteUser.rows[0];
+		} catch (error) {
+			throw new Error(`cannot delete ${id} due to ${(error as Error).message}`);
+		} finally {
+			// release the connection
+			connection.release();
+		}
+	}
 }
 export default UserModel;
