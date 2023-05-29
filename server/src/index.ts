@@ -3,6 +3,7 @@ import express, { Application, Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import config from "./configs/config";
+import errorMiddleware from "./middlewares/error";
 import routes from "./routes";
 
 // create an instance of app
@@ -27,6 +28,13 @@ app.get("/", (_req: Request, res: Response) => {
 
 // user all routes
 app.use("/api", routes);
+
+// use middleware of error
+app.use(errorMiddleware);
+
+app.use((_req: Request, res: Response) => {
+	res.status(404).json("YOU HAVE GOT LOST !");
+});
 
 // add listen to the app
 app.listen(port, () => {
