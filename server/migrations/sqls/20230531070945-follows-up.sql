@@ -3,7 +3,7 @@
 --
 
 CREATE TABLE
-    IF NOT EXISTS `follows` (
+    IF NOT EXISTS follows (
         follow_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
         follower_id uuid,
         followed_id uuid,

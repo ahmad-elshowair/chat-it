@@ -1,5 +1,6 @@
 import { Router } from "express";
 import authController from "../../controllers/auth";
+import followController from "../../controllers/follow";
 import userController from "../../controllers/user";
 import authorize_user from "../../middlewares/auth";
 import { validationMiddleware } from "../../middlewares/validation";
@@ -23,4 +24,6 @@ userRoute.post(
 userRoute.put("/update/:id", authorize_user, userController.update);
 
 userRoute.delete("/delete/:id", authorize_user, userController.deleteUser);
+userRoute.post("/follow/:id", followController.followUser);
+userRoute.delete("/unfollow/:id", followController.deleteFollow);
 export default userRoute;
