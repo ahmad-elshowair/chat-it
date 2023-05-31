@@ -12,8 +12,6 @@ CREATE TABLE
         password VARCHAR NOT NULL,
         picture VARCHAR DEFAULT '',
         cover VARCHAR DEFAULT '',
-        followers INTEGER [] DEFAULT '{ }',
-        following INTEGER [] DEFAULT '{ }',
         is_admin BOOLEAN DEFAULT FALSE,
         description VARCHAR DEFAULT '',
         city VARCHAR(50) DEFAULT '',
