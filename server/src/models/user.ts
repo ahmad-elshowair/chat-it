@@ -25,12 +25,12 @@ class UserModel {
 	}
 
 	// get a user by id
-	async getUserById(id: string): Promise<User> {
+	async findById(id: string): Promise<User> {
 		try {
 			// connect to the database
 			const connection = await db.connect();
 			// get the user by id
-			const getUserByIdQuery = "SELECT * FROM users WHERE user_id = $1";
+			const getUserByIdQuery = "SELECT user_id FROM users WHERE user_id = $1";
 			const getUserById: QueryResult<User> = await db.query(getUserByIdQuery, [
 				id,
 			]);

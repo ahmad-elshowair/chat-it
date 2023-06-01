@@ -5,8 +5,7 @@ const followService = new FollowService();
 
 // follow a user function
 const followUser = async (req: Request, res: Response) => {
-	const follower_id = req.params.id;
-	const followed_id = req.body.followed_id;
+	const { follower_id, followed_id } = req.body;
 	if (follower_id !== followed_id) {
 		try {
 			const followAUser = await followService.addFollow(
@@ -29,8 +28,7 @@ const followUser = async (req: Request, res: Response) => {
 
 // delete follow function
 const deleteFollow = async (req: Request, res: Response) => {
-	const follower_id = req.params.id;
-	const followed_id = req.body.followed_id;
+	const { follower_id, followed_id } = req.body;
 	if (follower_id !== followed_id) {
 		try {
 			const deleteFollow = await followService.deleteFollow(
