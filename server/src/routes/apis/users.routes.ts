@@ -26,12 +26,14 @@ userRoute.put("/update/:id", authorize_user, userController.update);
 userRoute.delete("/delete/:id", authorize_user, userController.deleteUser);
 userRoute.post(
 	"/follow",
+	authorize_user,
 	followValidation.checkFollow,
 	validationMiddleware,
 	followController.followUser,
 );
 userRoute.delete(
 	"/unfollow",
+	authorize_user,
 	followValidation.checkFollow,
 	validationMiddleware,
 	followController.deleteFollow,
