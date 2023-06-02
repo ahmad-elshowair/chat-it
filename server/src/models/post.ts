@@ -30,8 +30,38 @@ class PostModel {
 
 	// get a post by id
 
-	// update a post
+	// update a post method
+	async update(id: string, post: Post): Promise<Post> {
+		// connect to the database
+		const connection = await pool.connect();
+		try {
+			// check if the post exist
+			const postExist: QueryResult<Post> = await connection.query(
+				"SELECT * FROM posts WHERE post_id = $1",
+				[id],
+			);
+			if (postExist.rowCount === 0) {
+				throw new Error("Post not found");
+			}
 
+			// update post query
+			const sql =
+				"UPDATE posts SET description = $1, updated_at = $2 WHERE post_id = $3 RETURNING *";
+			// update the post
+			const updatePost: QueryResult<Post> = await connection.query(sql, [
+				post.description,
+				post.updated_at,
+				id,
+			]);
+			// return post
+			return updatePost.rows[0];
+		} catch (error) {
+			throw new Error(`update model: ${(error as Error).message}`);
+		} finally {
+			// release the the database
+			connection.release();
+		}
+	}
 	// delete a post
 }
 
