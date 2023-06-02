@@ -16,6 +16,6 @@ CREATE TABLE
         description VARCHAR DEFAULT '',
         city VARCHAR(50) DEFAULT '',
         home_town VARCHAR(50) DEFAULT '',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
     );
