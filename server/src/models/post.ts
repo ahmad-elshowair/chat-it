@@ -1,9 +1,10 @@
+import { QueryResult } from "pg";
 import pool from "../database/pool";
 import Post from "../types/post";
 
 class PostModel {
 	// create a post method
-	async create(post: Post) {
+	async create(post: Post): Promise<Post> {
 		// connect to the database
 		const connection = await pool.connect();
 		try {
@@ -11,7 +12,7 @@ class PostModel {
 			const sql =
 				"INSERT INTO posts (user_id, description) VALUES($1, $2) RETURNING *";
 			// insert post data
-			const insertPost = await connection.query(sql, [
+			const insertPost: QueryResult<Post> = await connection.query(sql, [
 				post.user_id,
 				post.description,
 			]);
