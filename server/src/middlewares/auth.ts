@@ -2,7 +2,6 @@ import { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
 import config from "../configs/config";
 import { CustomRequest } from "../interfaces/CustomRequest";
-import handleAnAuthorized from "../utilities/handleAnAuthorized";
 
 const authorize_user = (
 	req: CustomRequest,
@@ -19,14 +18,20 @@ const authorize_user = (
 				next();
 			} else {
 				// invalid token
-				handleAnAuthorized(next);
+				res.status(401).json({
+					error: "Invalid Token",
+				});
+				next();
 			}
 		} else {
 			// no token provided
-			handleAnAuthorized(next);
+			res.status(401).json({
+				error: "No Token Provided",
+			});
+			next();
 		}
 	} catch (error) {
-		handleAnAuthorized(next);
+		throw new Error(`authorization error: ${(error as Error).message}`);
 	}
 };
 export default authorize_user;
