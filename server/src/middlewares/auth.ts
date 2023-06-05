@@ -1,5 +1,5 @@
 import { NextFunction, Response } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../configs/config";
 import { CustomRequest } from "../interfaces/CustomRequest";
 
@@ -12,20 +12,30 @@ const authorize_user = (
 		const headerAuth = req.headers["authorization"];
 		if (headerAuth) {
 			const token = headerAuth.split(" ")[1];
-			if (token) {
-				const decoded = jwt.verify(token, config.jwt_secret);
-				req.user = decoded;
-				next();
+			const bearer = headerAuth.split(" ")[0].toLowerCase();
+			if (token && bearer === "bearer") {
+				const decoded: string | JwtPayload = jwt.verify(
+					token,
+					config.jwt_secret,
+				);
+				if (decoded) {
+					req.user = decoded;
+					next();
+				} else {
+					return res.status(401).json({
+						error: "Invalid Token",
+					});
+				}
 			} else {
 				// invalid token
-				res.status(401).json({
+				return res.status(401).json({
 					error: "Invalid Token",
 				});
 				next();
 			}
 		} else {
 			// no token provided
-			res.status(401).json({
+			return res.status(401).json({
 				error: "No Token Provided",
 			});
 			next();

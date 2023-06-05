@@ -1,18 +1,12 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { CustomRequest } from "../interfaces/CustomRequest";
 import FollowService from "../models/follow";
 
 const followService = new FollowService();
 
 // follow a user function
-const followUser = async (req: CustomRequest, res: Response) => {
+const followUser = async (req: Request, res: Response) => {
 	const { follower_id, followed_id } = req.body;
-	// check if the user logged in
-	if (!req.user) {
-		return res.status(401).json({
-			message: "You must be logged in to follow a user.",
-		});
-	}
 	// check if the user is following the user
 	if (follower_id !== followed_id) {
 		try {
