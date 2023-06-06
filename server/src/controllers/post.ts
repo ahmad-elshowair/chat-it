@@ -1,7 +1,6 @@
 import { Response } from "express";
 import { CustomRequest } from "../interfaces/CustomRequest";
 import PostModel from "../models/post";
-import Like from "../types/like";
 const postService = new PostModel();
 
 const create = async (req: CustomRequest, res: Response) => {
@@ -40,22 +39,7 @@ const update = async (req: CustomRequest, res: Response) => {
 	}
 };
 
-// like post arrow function
-const like = async (req: CustomRequest, res: Response) => {
-	try {
-		const like: Like = {
-			user_id: req.user.id,
-			post_id: req.params.id,
-		};
-		const addLike = await postService.addLike(like);
-		res.status(200).json(addLike);
-	} catch (error) {
-		res.status(400).json({ error: (error as Error).message });
-	}
-};
-
 export default {
 	create,
 	update,
-	like,
 };
