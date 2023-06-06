@@ -5,5 +5,6 @@ const postRoute: Router = Router();
 
 postRoute.post("/create", authorize_user, postController.create);
 postRoute.put("/update/:id", authorize_user, postController.update);
+postRoute.post("/like", authorize_user, postController.like);
 
 export default postRoute;
