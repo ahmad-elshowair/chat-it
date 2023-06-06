@@ -1,7 +1,7 @@
 import { NextFunction, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../configs/config";
-import { CustomRequest } from "../interfaces/CustomRequest";
+import { CustomRequest } from "../interfaces/ICustomRequest";
 
 const authorize_user = (
 	req: CustomRequest,

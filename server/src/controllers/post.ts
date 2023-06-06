@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { CustomRequest } from "../interfaces/CustomRequest";
+import { CustomRequest } from "../interfaces/ICustomRequest";
 import PostModel from "../models/post";
 const postService = new PostModel();
 

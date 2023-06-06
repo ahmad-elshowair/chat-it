@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CustomRequest } from "../interfaces/CustomRequest";
+import { CustomRequest } from "../interfaces/ICustomRequest";
 import UserModel from "../models/user";
 
 const user_model = new UserModel();

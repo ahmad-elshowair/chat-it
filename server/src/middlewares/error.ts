@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { Error } from "../interfaces/error";
+import { Error } from "../interfaces/IError";
 const errorMiddleware = (
 	error: Error,
 	_req: Request,

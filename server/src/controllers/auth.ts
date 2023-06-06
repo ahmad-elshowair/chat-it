@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import config from "../configs/config";
-import { UserPayload } from "../interfaces/UserPayload";
+import { UserPayload } from "../interfaces/IUserPayload";
 import AuthModel from "../models/auth";
 import { generateToken } from "../utilities/generateToken";
 
