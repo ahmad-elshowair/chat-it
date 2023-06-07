@@ -102,6 +102,34 @@ class PostModel {
 			connection.release();
 		}
 	}
+
+	// delete a post
+	async delete(id: string): Promise<{ message: string }> {
+		// connect to the database
+		const connection = await pool.connect();
+		try {
+			// check if the post exist
+			const postExist: QueryResult<Post> = await connection.query(
+				"SELECT * FROM posts WHERE post_id = $1",
+				[id],
+			);
+			if (postExist.rowCount === 0) {
+				throw new Error("Post not found");
+			}
+			// delete the post
+			const deletePost: QueryResult<Post> = await connection.query(
+				"DELETE FROM posts WHERE post_id = $1",
+				[id],
+			);
+			// return a message
+			return { message: `POST: ${id} HAS BEEN DELETED !` };
+		} catch (error) {
+			throw new Error(`delete model: ${(error as Error).message}`);
+		} finally {
+			// release the the database
+			connection.release();
+		}
+	}
 }
 
 export default PostModel;
