@@ -29,6 +29,30 @@ class PostModel {
 	// get all posts
 
 	// get a post by id
+	async getById(id: string): Promise<Post> {
+		// connect to the database
+		const connection = await pool.connect();
+		try {
+			// get post data
+			const post: QueryResult<Post> = await connection.query(
+				"SELECT * FROM posts WHERE post_id = $1",
+				[id],
+			);
+			// check if the post exist
+			if (post.rowCount === 0) {
+				throw new Error("Post not found");
+			}
+			// return post
+			return post.rows[0];
+		} catch (error) {
+			throw new Error(`getById model: ${(error as Error).message}`);
+		} finally {
+			// release the the database
+			connection.release();
+		}
+	}
+
+	// get all posts by user id
 
 	// update a post method
 	async update(id: string, post: Post): Promise<Post> {

@@ -14,7 +14,7 @@ const handleLike = async (req: CustomRequest, res: Response) => {
 			post_id: req.params.id,
 		};
 		const isLiked = await likeService.like(like);
-		res.status(200).json(isLiked.message);
+		res.status(200).json(isLiked);
 	} catch (error) {
 		res.status(400).json({ error: (error as Error).message });
 	}

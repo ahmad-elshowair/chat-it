@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { CustomRequest } from "../interfaces/ICustomRequest";
 import PostModel from "../models/post";
 const postService = new PostModel();
@@ -39,7 +39,20 @@ const update = async (req: CustomRequest, res: Response) => {
 	}
 };
 
+// get post by id arrow function
+const getPostById = async (req: Request, res: Response) => {
+	try {
+		const post = await postService.getById(req.params.id);
+		res.status(200).json(post);
+	} catch (error) {
+		res.status(400).json({ error: (error as Error).message });
+	}
+};
+
+// get all posts
+
 export default {
 	create,
 	update,
+	getPostById,
 };
