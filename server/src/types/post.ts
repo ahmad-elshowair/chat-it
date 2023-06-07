@@ -3,8 +3,8 @@ type Post = {
 	user_id: string;
 	description: string;
 	image?: string;
-	created_at: Date;
-	updated_at: Date;
+	created_at?: Date;
+	updated_at?: Date;
 };
 
 export default Post;

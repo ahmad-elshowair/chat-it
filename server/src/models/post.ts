@@ -10,11 +10,12 @@ class PostModel {
 		try {
 			// create post query
 			const sql =
-				"INSERT INTO posts (user_id, description) VALUES($1, $2) RETURNING *";
+				"INSERT INTO posts (user_id, description, image) VALUES($1, $2, $3) RETURNING *";
 			// insert post data
 			const insertPost: QueryResult<Post> = await connection.query(sql, [
 				post.user_id,
 				post.description,
+				post.image,
 			]);
 			// return post
 			return insertPost.rows[0];
@@ -25,8 +26,6 @@ class PostModel {
 			connection.release();
 		}
 	}
-
-	// get all posts
 
 	// get a post by id
 	async getById(id: string): Promise<Post> {
@@ -52,7 +51,24 @@ class PostModel {
 		}
 	}
 
-	// get all posts by user id
+	// get all posts
+	async getAll(): Promise<Post[]> {
+		// connect to the database
+		const connection = await pool.connect();
+		try {
+			// get all posts
+			const posts: QueryResult<Post> = await connection.query(
+				"SELECT * FROM posts ORDER BY post_id DESC",
+			);
+			// return posts
+			return posts.rows;
+		} catch (error) {
+			throw new Error(`getAll model: ${(error as Error).message}`);
+		} finally {
+			// release the the database
+			connection.release();
+		}
+	}
 
 	// update a post method
 	async update(id: string, post: Post): Promise<Post> {
@@ -86,7 +102,6 @@ class PostModel {
 			connection.release();
 		}
 	}
-	// delete a post
 }
 
 export default PostModel;

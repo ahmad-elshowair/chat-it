@@ -1,19 +1,18 @@
 import { Request, Response } from "express";
 import { CustomRequest } from "../interfaces/ICustomRequest";
 import PostModel from "../models/post";
+import Post from "../types/post";
 const postService = new PostModel();
 
 const create = async (req: CustomRequest, res: Response) => {
 	try {
-		// check if the user logged in
-		if (req.user) {
-			const post = await postService.create(req.body);
-			res.status(201).json(post);
-		} else {
-			res
-				.status(401)
-				.json({ message: "You are not authorized to create post" });
-		}
+		const post: Post = {
+			user_id: req.user.id,
+			description: req.body.description,
+			image: req.body.image,
+		};
+		const createPost = await postService.create(post);
+		res.status(201).json(createPost);
 	} catch (error) {
 		res.status(400).json({ error: (error as Error).message });
 	}
@@ -50,9 +49,18 @@ const getPostById = async (req: Request, res: Response) => {
 };
 
 // get all posts
+const getAllPosts = async (req: Request, res: Response) => {
+	try {
+		const posts = await postService.getAll();
+		res.status(200).json(posts);
+	} catch (error) {
+		res.status(400).json({ error: (error as Error).message });
+	}
+};
 
 export default {
 	create,
 	update,
 	getPostById,
+	getAllPosts,
 };
