@@ -1,7 +1,7 @@
 import { check } from "express-validator";
 import db from "../../database/pool";
 
-const checkUser = check("follower_id").custom(async (user_id: string) => {
+const checkUser = check("followed_id").custom(async (user_id: string) => {
 	// connect to the database
 	const connection = await db.connect();
 	try {
