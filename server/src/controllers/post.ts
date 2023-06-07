@@ -93,6 +93,25 @@ const getAllByUserId = async (req: CustomRequest, res: Response) => {
 	}
 };
 
+// GET ALL POSTS OF A USER AND HIS FOLLOWINGS
+const getAllByUserIdAndFollowings = async (
+	req: CustomRequest,
+	res: Response,
+) => {
+	try {
+		// get only the posts for logged in user
+		if (req.params.id !== req.user.id) {
+			res.status(401).json({ message: "YOU ARE NOT LOGGED IN !" });
+		}
+		const posts: Post[] = await postService.getAllByUserIdAndFollowing(
+			req.params.id,
+		);
+		res.status(200).json(posts);
+	} catch (error) {
+		res.status(400).json({ error: (error as Error).message });
+	}
+};
+
 export default {
 	create,
 	update,
@@ -100,4 +119,5 @@ export default {
 	getAllPosts,
 	deletePost,
 	getAllByUserId,
+	getAllByUserIdAndFollowings,
 };

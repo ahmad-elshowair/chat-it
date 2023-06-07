@@ -141,6 +141,36 @@ class PostModel {
 			connection.release();
 		}
 	}
+
+	// get all the posts of a user and who is he following
+	async getAllByUserIdAndFollowing(userId: string): Promise<Post[]> {
+		// connect to the database
+		const connection = await pool.connect();
+		try {
+			// get all posts
+			const posts: QueryResult<Post> = await connection.query(
+				`SELECT 
+					p.*
+				FROM posts AS p 
+				WHERE p.user_id = $1 OR p.user_id
+				IN (
+						SELECT
+							f.followed_id
+						FROM follows AS f 
+						WHERE f.follower_id = $2 
+					) 
+					ORDER BY p.created_at DESC`,
+				[userId, userId],
+			);
+			// return posts
+			return posts.rows;
+		} catch (error) {
+			throw new Error(`getAllByUserId model: ${(error as Error).message}`);
+		} finally {
+			// release the the database
+			connection.release();
+		}
+	}
 }
 
 export default PostModel;
