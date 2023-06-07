@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { CustomRequest } from "../interfaces/ICustomRequest";
 import PostModel from "../models/post";
 import Post from "../types/post";
+
+// create an instance of user model
 const postService = new PostModel();
 
 const create = async (req: CustomRequest, res: Response) => {
@@ -77,6 +79,19 @@ const deletePost = async (req: CustomRequest, res: Response) => {
 		res.status(400).json({ error: (error as Error).message });
 	}
 };
+// GET ALL POSTS BY USER ID
+const getAllByUserId = async (req: CustomRequest, res: Response) => {
+	try {
+		// get only the posts for logged in user
+		if (req.params.id !== req.user.id) {
+			res.status(401).json({ message: "YOU ARE NOT LOGGED IN !" });
+		}
+		const posts: Post[] = await postService.getAllByUserId(req.params.id);
+		res.status(200).json(posts);
+	} catch (error) {
+		res.status(400).json({ error: (error as Error).message });
+	}
+};
 
 export default {
 	create,
@@ -84,4 +99,5 @@ export default {
 	getPostById,
 	getAllPosts,
 	deletePost,
+	getAllByUserId,
 };

@@ -11,4 +11,5 @@ postRoute.post("/like/:id", authorize_user, likeController.handleLike);
 postRoute.get("/find", postController.getAllPosts);
 postRoute.get("/find/:id", postController.getPostById);
 postRoute.delete("/delete/:id", authorize_user, postController.deletePost);
+postRoute.get("/user/:id", authorize_user, postController.getAllByUserId);
 export default postRoute;
