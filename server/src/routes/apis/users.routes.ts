@@ -29,13 +29,7 @@ userRoute.post(
 	authorize_user,
 	followValidation.checkFollow,
 	validationMiddleware,
-	followController.followUser,
+	followController.follow,
 );
-userRoute.delete(
-	"/unfollow",
-	authorize_user,
-	followValidation.checkFollow,
-	validationMiddleware,
-	followController.deleteFollow,
-);
+
 export default userRoute;

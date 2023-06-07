@@ -1,65 +1,29 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { CustomRequest } from "../interfaces/ICustomRequest";
 import FollowService from "../models/follow";
 
 const followService = new FollowService();
 
-// follow a user function
-const followUser = async (req: Request, res: Response) => {
-	const { follower_id, followed_id } = req.body;
-	// check if the user is following the user
-	if (follower_id !== followed_id) {
-		try {
-			const followAUser = await followService.addFollow(
-				follower_id,
-				followed_id,
-			);
-			res.status(201).json({
-				message: "User Followed Successfully",
-				followAUser,
-			});
-		} catch (error) {
-			res.status(500).json({
-				error: (error as Error).message,
-			});
+// follow function
+const follow = async (req: CustomRequest, res: Response) => {
+	const follower_id: string = req.user.id;
+	const followed_id: string = req.body.followed_id;
+
+	try {
+		// check if the user different
+		if (follower_id !== followed_id) {
+			const followAUser = await followService.follow(follower_id, followed_id);
+			res.status(201).json(followAUser);
+		} else {
+			res.status(403).json("YOU CANNOT FOLLOW YOURSELF !");
 		}
-	} else {
-		res.status(403).json("YOU CANNOT FOLLOW YOURSELF !");
-	}
-};
-
-// delete follow function
-const deleteFollow = async (req: CustomRequest, res: Response) => {
-	const { follower_id, followed_id } = req.body;
-
-	// check if the user logged in
-	if (!req.user) {
-		return res.status(401).json({
-			message: "You must be logged in to unfollow a user.",
+	} catch (error) {
+		res.status(500).json({
+			error: (error as Error).message,
 		});
-	}
-	// check if the user is following the user
-	if (follower_id !== followed_id) {
-		try {
-			const deleteFollow = await followService.deleteFollow(
-				follower_id,
-				followed_id,
-			);
-			res.status(201).json({
-				message: "User Deleted Successfully",
-				deleteFollow,
-			});
-		} catch (error) {
-			res.status(500).json({
-				error: (error as Error).message,
-			});
-		}
-	} else {
-		res.status(403).json("YOU CANNOT UNFOLLOW YOURSELF !");
 	}
 };
 
 export default {
-	followUser,
-	deleteFollow,
+	follow,
 };

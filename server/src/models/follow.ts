@@ -1,10 +1,12 @@
 import { QueryResult } from "pg";
 import db from "../database/pool";
-import Follow from "../types/follow";
 
 export default class FollowService {
 	// add follow method
-	async addFollow(follower_id: string, followed_id: string): Promise<Follow> {
+	async follow(
+		follower_id: string,
+		followed_id: string,
+	): Promise<{ message: string }> {
 		const connection = await db.connect();
 		try {
 			// check if the follower follows the followed
@@ -15,52 +17,25 @@ export default class FollowService {
 				[follower_id, followed_id],
 			);
 			if (checkFollow.rowCount > 0) {
-				throw new Error("You are already following this user");
+				// un follow the user
+				await connection.query(
+					"DELETE FROM follows WHERE follower_id = $1 AND followed_id = $2 RETURNING *",
+					[follower_id, followed_id],
+				);
+				return { message: `${followed_id} has been un followed` };
+			} else {
+				// add the follow
+				await connection.query(
+					`INSERT INTO follows (follower_id, followed_id) VALUES ($1, $2) RETURNING *`,
+					[follower_id, followed_id],
+				);
+				return { message: `${followed_id} has been followed !` };
 			}
-
-			// add the follow
-			const sql = `INSERT INTO follows (follower_id, followed_id) VALUES ($1, $2) RETURNING *`;
-			const result: QueryResult<Follow> = await connection.query(sql, [
-				follower_id,
-				followed_id,
-			]);
-			return result.rows[0];
 		} catch (error) {
-			throw new Error(`addFollow model error: ${(error as Error).message}`);
+			throw new Error(`Follow model error: ${(error as Error).message}`);
 		} finally {
 			// release the connection
 			connection.release();
-		}
-	}
-	// delete follow method
-	async deleteFollow(
-		follower_id: string,
-		followed_id: string,
-	): Promise<Follow> {
-		// connect to the database
-		const connection = await db.connect();
-		try {
-			// check if the follow exist
-			const queryCheckFollow =
-				"SELECT * FROM follows WHERE follower_id = $1 AND followed_id = $2";
-			const checkFollow: QueryResult = await connection.query(
-				queryCheckFollow,
-				[follower_id, followed_id],
-			);
-			if (checkFollow.rowCount < 1) {
-				throw new Error("You are not following this user");
-			}
-
-			// delete the follow
-			const sql = `DELETE FROM follows WHERE follower_id = $1 AND followed_id = $2 RETURNING *`;
-
-			const result: QueryResult<Follow> = await connection.query(sql, [
-				follower_id,
-				followed_id,
-			]);
-			return result.rows[0];
-		} catch (error) {
-			throw new Error(`deleteFollow model error: ${(error as Error).message}`);
 		}
 	}
 }
