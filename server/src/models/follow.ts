@@ -2,7 +2,7 @@ import { QueryResult } from "pg";
 import db from "../database/pool";
 
 export default class FollowService {
-	// add follow method
+	// follow
 	async follow(
 		follower_id: string,
 		followed_id: string,
@@ -33,6 +33,26 @@ export default class FollowService {
 			}
 		} catch (error) {
 			throw new Error(`Follow model error: ${(error as Error).message}`);
+		} finally {
+			// release the connection
+			connection.release();
+		}
+	}
+
+	// get number followings for a user
+	async getFollowings(follower_id: string) {
+		const connection = await db.connect();
+		try {
+			// get the followings
+			const followings: QueryResult = await connection.query(
+				`SELECT COUNT(f.followed_id) AS followings FROM follows AS f WHERE f.follower_id = $1`,
+				[follower_id],
+			);
+			return followings.rows;
+		} catch (error) {
+			throw new Error(
+				`get followings model error: ${(error as Error).message}`,
+			);
 		} finally {
 			// release the connection
 			connection.release();

@@ -24,6 +24,20 @@ const follow = async (req: CustomRequest, res: Response) => {
 	}
 };
 
+// get followings of a user
+const getFollowings = async (req: CustomRequest, res: Response) => {
+	const follower_id: string = req.user.id;
+	try {
+		const followings = await followService.getFollowings(follower_id);
+		res.status(200).json(followings);
+	} catch (error) {
+		res.status(500).json({
+			error: (error as Error).message,
+		});
+	}
+};
+
 export default {
 	follow,
+	getFollowings,
 };

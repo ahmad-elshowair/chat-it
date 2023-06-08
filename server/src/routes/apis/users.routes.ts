@@ -31,5 +31,6 @@ userRoute.post(
 	validationMiddleware,
 	followController.follow,
 );
+userRoute.get("/followings", authorize_user, followController.getFollowings);
 
 export default userRoute;
