@@ -32,5 +32,6 @@ userRoute.post(
 	followController.follow,
 );
 userRoute.get("/followings", authorize_user, followController.getFollowings);
+userRoute.get("/followers", authorize_user, followController.getFollowers);
 
 export default userRoute;

@@ -58,4 +58,22 @@ export default class FollowService {
 			connection.release();
 		}
 	}
+
+	// get number followers for a user
+	async getFollowers(followed_id: string) {
+		const connection = await db.connect();
+		try {
+			// get the followers
+			const followings: QueryResult = await connection.query(
+				`SELECT COUNT(*) AS followers FROM follows AS f WHERE f.followed_id = $1`,
+				[followed_id],
+			);
+			return followings.rows;
+		} catch (error) {
+			throw new Error(`get followers model error: ${(error as Error).message}`);
+		} finally {
+			// release the connection
+			connection.release();
+		}
+	}
 }
