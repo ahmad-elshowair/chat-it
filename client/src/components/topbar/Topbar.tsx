@@ -21,16 +21,19 @@ export const Topbar = () => {
             <a className="nav-link active" aria-current="page" href="#home">
               <FaHome />
             </a>
+            <span className="icon-badge">1</span>
           </li>
           <li className="nav-item">
             <a className="nav-link" href="#notifications">
               <FaBell />
             </a>
+            <span className="icon-badge">1</span>
           </li>
           <li className="nav-item">
             <a className="nav-link" href="#messages">
               <FaComment />
             </a>
+            <span className="icon-badge">1</span>
           </li>
         </ul>
         <article className="avatar">

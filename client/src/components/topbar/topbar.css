@@ -53,3 +53,22 @@
 .avatar img {
   object-fit: cover;
 }
+
+.navbar-nav .nav-item {
+  position: relative;
+}
+.icon-badge {
+  font-size: 12px;
+  position: absolute;
+  top: 0;
+  left: 10px;
+  background-color: #ff0000;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  text-align: center;
+}
+
+.navbar-nav .nav-item svg {
+  font-size: 25px;
+}
