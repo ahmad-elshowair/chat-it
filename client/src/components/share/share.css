@@ -1,0 +1,50 @@
+.share-post {
+  width: 100%;
+  box-shadow: 0 0 4px #906b6b;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.share-post img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  padding: 1px;
+  border: 1px solid var(--main-color);
+}
+
+.input-bar {
+  display: flex;
+  justify-content: space-between;
+}
+.input-bar figure {
+  margin: 0;
+}
+.input-bar .btn {
+  background-color: var(--bs-gray-200);
+  border-radius: 30px;
+  width: 100%;
+  margin-left: 20px;
+  height: 40px;
+  text-align: left;
+  color: var(--bs-code-color);
+}
+
+.buttons-bar {
+  display: flex;
+  justify-content: space-around;
+}
+
+.buttons-bar .icon {
+  color: var(--main-color);
+  font-size: 20px;
+  margin-right: 10px;
+}
+
+.buttons-bar .btn {
+  color: var(--bs-code-color);
+}
+
+.buttons-bar .btn:hover {
+  background-color: var(--bs-gray-200);
+}

@@ -7,7 +7,7 @@ export const Home = () => {
   return (
     <>
       <Topbar />
-      <section className="home-container mt-2">
+      <section className="home-container mt-3">
         <Sidebar />
         <Feed />
         <RightBar />

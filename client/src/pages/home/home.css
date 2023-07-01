@@ -5,5 +5,5 @@
 .sidebar,
 .right-bar,
 .feed {
-  height: calc(100vh - 76px);
+  height: calc(100vh - 81px);
 }
