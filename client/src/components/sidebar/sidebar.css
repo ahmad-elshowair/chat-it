@@ -1,0 +1,37 @@
+.sidebar {
+  flex: 2.5;
+  height: calc(100vh - 68px);
+}
+
+.sidebar-content {
+  padding-left: 12px;
+}
+
+.list-group-item {
+  border: none;
+  border-radius: 10px;
+  background-color: transparent;
+}
+
+.list-group-item:hover {
+  background-color: var(--bs-gray-200);
+}
+
+.list-group-item img {
+  padding: 1px;
+  border: 1px solid var(--main-color);
+}
+
+.list-item-icon {
+  font-size: 32px;
+  color: var(--main-color);
+  margin-right: 10px;
+}
+svg.gradient {
+  background-image: linear-gradient(to right, #ff0000, #00ff00);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.list-item-text {
+  font-size: 14px;
+}

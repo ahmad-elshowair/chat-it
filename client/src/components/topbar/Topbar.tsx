@@ -3,9 +3,9 @@ import "./topbar.css";
 export const Topbar = () => {
   return (
     <nav className="navbar">
-      <section className="container">
+      <section className="container-fluid">
         <a className="navbar-brand" href="#home">
-          Chat it
+          <img src="/assets/chat-it.png" alt="lgo chat it" height={55} />
         </a>
         <form role="search" className="nav-search">
           <FaSearch className="ms-3" />
@@ -36,7 +36,7 @@ export const Topbar = () => {
             <span className="icon-badge">1</span>
           </li>
         </ul>
-        <article className="avatar">
+        <figure className="avatar">
           <img
             height={36}
             width={36}
@@ -44,7 +44,7 @@ export const Topbar = () => {
             src="/assets/avatars/1.jpeg"
             className="rounded-circle"
           />
-        </article>
+        </figure>
       </section>
     </nav>
   );

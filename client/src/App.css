@@ -1,0 +1,20 @@
+:root {
+  --gray-color-1: #f8f9fa;
+  --gray-color-2: #e9ecef;
+  --main-color: #b5bd3d;
+  --bg-color: rgba(233, 224, 233, 0.2);
+}
+body {
+  background-color: var(--bg-color);
+}
+
+::--webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--gray-color-1);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--main-color);
+  border-radius: 10px;
+}

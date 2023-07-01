@@ -1,12 +1,6 @@
-:root {
-  --light-yellow: #fbf4b5;
-  --light-cream: #fff9d5;
-  --tan: #c1a87d;
-  --yellowish-green: #b5bd3d;
-}
 .navbar {
-  background-color: var(--yellowish-green);
-  align-items: center;
+  padding: 0;
+  box-shadow: 0 0 2px var(--main-color);
 }
 .navbar-brand,
 .navbar-nav .nav-item,
@@ -16,14 +10,16 @@
 
 .navbar-brand {
   flex: 3;
+  color: var(--main-color);
 }
+
 .nav-search {
   border-radius: 30px;
   flex: 5;
   display: flex;
   align-items: center;
   padding: 5px;
-  background: #fff;
+  background-color: var(--gray-color-2);
 }
 
 .nav-search svg {
@@ -54,9 +50,12 @@
   flex: 2;
   display: flex;
   justify-content: flex-end;
+  margin: 0;
 }
 
 .avatar img {
+  border: 1px solid var(--main-color);
+  padding: 1px;
   object-fit: cover;
 }
 
@@ -68,7 +67,7 @@
   position: absolute;
   top: 0;
   left: 10px;
-  background-color: var(--light-cream);
+  background-color: var(--main-color);
   border-radius: 50%;
   width: 15px;
   height: 15px;
