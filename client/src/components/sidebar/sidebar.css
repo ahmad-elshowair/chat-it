@@ -1,6 +1,5 @@
 .sidebar {
   flex: 2.5;
-  height: calc(100vh - 68px);
 }
 
 .sidebar-content {
