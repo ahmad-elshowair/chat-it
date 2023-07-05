@@ -18,7 +18,7 @@
   justify-content: space-between;
 }
 
-.input-bar .btn {
+.input-bar .btn-outline {
   background-color: var(--bs-gray-200);
   border-radius: 30px;
   width: 100%;
@@ -45,4 +45,17 @@
 
 .buttons-bar .btn:hover {
   background-color: var(--bs-gray-200);
+}
+
+.share-post textarea {
+  border: none;
+}
+
+.share-post textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.share-post .modal-header {
+  border: none;
 }
