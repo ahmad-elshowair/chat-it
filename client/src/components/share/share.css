@@ -17,9 +17,7 @@
   display: flex;
   justify-content: space-between;
 }
-.input-bar figure {
-  margin: 0;
-}
+
 .input-bar .btn {
   background-color: var(--bs-gray-200);
   border-radius: 30px;
