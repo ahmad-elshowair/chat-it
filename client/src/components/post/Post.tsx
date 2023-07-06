@@ -1,6 +1,13 @@
 import "./post.css";
 
-import { FaEllipsisH, FaGlobeEurope, FaTimes } from "react-icons/fa";
+import {
+  FaComment,
+  FaEllipsisH,
+  FaGlobeEurope,
+  FaHeart,
+  FaShareAlt,
+  FaTimes,
+} from "react-icons/fa";
 export const Post = () => {
   const date: Date = new Date();
   const dateFormate = date.toLocaleString("en-GB", {
@@ -42,6 +49,21 @@ export const Post = () => {
           <div className="post-option-bars">
             <FaEllipsisH className="post-option-bars-icon" />
             <FaTimes className="post-option-bars-icon" />
+          </div>
+        </article>
+        <article className="post-body">
+          <p className="post-body-description">
+            Lorem ipsum dolor sit amet consectetur, adipisicing elit. Veniam
+            voluptatem repudiandae ipsam eveniet ducimus iusto. Aperiam ullam
+            nesciunt sequi fugit asperiores.
+          </p>
+        </article>
+        <hr />
+        <article className="post-footer">
+          <div className="post-footer-icons">
+            <FaHeart className="post-footer-icons-icon like" />
+            <FaComment className="post-footer-icons-icon comment" />
+            <FaShareAlt className="post-footer-icons-icon share" />
           </div>
         </article>
       </div>

@@ -67,3 +67,19 @@
 .post-option-bars-icon:hover {
   background-color: var(--bs-gray-200);
 }
+
+.post-footer-icons {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.post-footer-icons-icon {
+  width: 50px;
+  height: 30px;
+  border-radius: 50%;
+  padding: 6px;
+}
+
+.post-footer-icons-icon:hover {
+  background-color: var(--bs-gray-200);
+}
