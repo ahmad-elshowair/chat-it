@@ -1,11 +1,11 @@
 import "./post.css";
 
+import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
 import {
-  FaComment,
+  FaComments,
   FaEllipsisH,
   FaGlobeEurope,
-  FaHeart,
-  FaShareAlt,
+  FaRegComment,
   FaTimes,
 } from "react-icons/fa";
 export const Post = () => {
@@ -46,9 +46,9 @@ export const Post = () => {
               <FaGlobeEurope className="post-header-info-links-icon" />
             </div>
           </div>
-          <div className="post-option-bars">
-            <FaEllipsisH className="post-option-bars-icon" />
-            <FaTimes className="post-option-bars-icon" />
+          <div className="post-header-option-bars">
+            <FaEllipsisH className="post-header-option-bars-icon" />
+            <FaTimes className="post-header-option-bars-icon" />
           </div>
         </article>
         <article className="post-body">
@@ -58,12 +58,28 @@ export const Post = () => {
             nesciunt sequi fugit asperiores.
           </p>
         </article>
+        <article className="post-statistics">
+          <span className="post-statistics-icon">
+            <BiSolidLike className="likes me-2" />
+            <span className="post-statistics-number">2</span>
+          </span>
+          <span className="post-statistics-icon">
+            <span className="post-statistics-number">2</span>
+            <FaComments className="comments ms-2" />
+          </span>
+        </article>
         <hr />
         <article className="post-footer">
           <div className="post-footer-icons">
-            <FaHeart className="post-footer-icons-icon like" />
-            <FaComment className="post-footer-icons-icon comment" />
-            <FaShareAlt className="post-footer-icons-icon share" />
+            <button className="btn">
+              <BiLike className="like" />
+            </button>
+            <button className="btn">
+              <FaRegComment className="comment" />
+            </button>
+            <button className="btn">
+              <BiShare className="share" />
+            </button>
           </div>
         </article>
       </div>

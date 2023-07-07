@@ -48,14 +48,14 @@
   grid-column: 2/2;
 }
 
-.post-option-bars {
+.post-header-option-bars {
   justify-self: end;
   align-self: center;
   display: flex;
   gap: 30px;
 }
 
-.post-option-bars-icon {
+.post-header-option-bars-icon {
   padding: 6px;
   cursor: pointer;
   color: #000;
@@ -63,23 +63,52 @@
   width: 30px;
   height: 30px;
 }
-
-.post-option-bars-icon:hover {
+.post-header-option-bars-icon:hover {
   background-color: var(--bs-gray-200);
 }
-
+.post-body-description {
+  font-size: var(--font-text);
+}
 .post-footer-icons {
   display: flex;
   justify-content: space-evenly;
 }
 
-.post-footer-icons-icon {
-  width: 50px;
-  height: 30px;
-  border-radius: 50%;
-  padding: 6px;
+.post-footer-icons .btn {
+  width: 25%;
+  font-size: 20px;
 }
 
-.post-footer-icons-icon:hover {
+.post-footer-icons .btn:hover {
   background-color: var(--bs-gray-200);
+}
+.post-footer-icons .btn:hover .like {
+  color: #ff0000;
+}
+.post-statistics-icon .comments .post-footer-icons .btn:hover .comment {
+  color: #808080;
+}
+
+.post-statistics-icon .likes,
+.post-footer-icons .btn:hover .share {
+  color: #0000ff;
+}
+
+.post-statistics {
+  display: flex;
+  justify-content: space-between;
+}
+.post-statistics-icon {
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.post-statistics-number {
+  color: #65676b;
+  font-size: var(--font-sub-text);
+  cursor: pointer;
+}
+
+.post-statistics-number:hover {
+  text-decoration: underline;
 }
