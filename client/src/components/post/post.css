@@ -85,8 +85,9 @@
 }
 
 .post-footer-icons .btn {
-  width: 25%;
-  font-size: 20px;
+  width: 100px;
+  height: 30px;
+  line-height: 1;
 }
 
 .post-footer-icons .btn:hover {
