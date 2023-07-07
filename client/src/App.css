@@ -3,6 +3,8 @@
   --gray-color-2: #e9ecef;
   --main-color: #b5bd3d;
   --bg-color: rgba(233, 224, 233, 0.2);
+  --font-text: 15px;
+  --font-sub-text: 12px;
 }
 body {
   background-color: var(--bg-color);
