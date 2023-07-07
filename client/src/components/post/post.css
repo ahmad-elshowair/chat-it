@@ -69,6 +69,16 @@
 .post-body-description {
   font-size: var(--font-text);
 }
+
+.post-body-images {
+  width: 100%;
+}
+
+.post-body-images-image {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
 .post-footer-icons {
   display: flex;
   justify-content: space-evenly;

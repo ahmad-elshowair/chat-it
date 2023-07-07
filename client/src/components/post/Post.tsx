@@ -57,6 +57,13 @@ export const Post = () => {
             voluptatem repudiandae ipsam eveniet ducimus iusto. Aperiam ullam
             nesciunt sequi fugit asperiores.
           </p>
+          <figure className="post-body-images">
+            <img
+              className="post-body-images-image"
+              src="/assets/posts/1.jpeg"
+              alt="post"
+            />
+          </figure>
         </article>
         <article className="post-statistics">
           <span className="post-statistics-icon">
@@ -71,13 +78,13 @@ export const Post = () => {
         <hr />
         <article className="post-footer">
           <div className="post-footer-icons">
-            <button className="btn">
+            <button type="button" className="btn">
               <BiLike className="like" />
             </button>
-            <button className="btn">
+            <button type="button" className="btn">
               <FaRegComment className="comment" />
             </button>
-            <button className="btn">
+            <button type="button" className="btn">
               <BiShare className="share" />
             </button>
           </div>
