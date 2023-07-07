@@ -7,6 +7,9 @@ export const Feed = () => {
     <section className="feed">
       <Share />
       <Post />
+      <Post />
+      <Post />
+      <Post />
     </section>
   );
 };

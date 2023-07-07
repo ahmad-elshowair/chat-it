@@ -18,7 +18,7 @@ export const Post = () => {
     hour12: false,
   });
   return (
-    <section className="post card mt-3">
+    <section className="post card mt-2 mb-3">
       <div className="card-body">
         <article className="post-header">
           <div className="post-header-info">
