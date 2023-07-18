@@ -9,29 +9,34 @@ import userValidation from "../../middlewares/validations/user";
 const userRoute: Router = Router();
 
 userRoute.get("/", userController.index);
+userRoute.get("/:id", userController.getUser);
 userRoute.post(
-	"/register",
-	userValidation.register,
-	validationMiddleware,
-	authController.createUser,
+  "/register",
+  userValidation.register,
+  validationMiddleware,
+  authController.createUser
 );
 userRoute.post(
-	"/login",
-	userValidation.login,
-	validationMiddleware,
-	authController.loginUser,
+  "/login",
+  userValidation.login,
+  validationMiddleware,
+  authController.loginUser
 );
 userRoute.put("/update/:id", authorize_user, userController.update);
 
 userRoute.delete("/delete/:id", authorize_user, userController.deleteUser);
 userRoute.post(
-	"/follow",
-	authorize_user,
-	followValidation.checkFollow,
-	validationMiddleware,
-	followController.follow,
+  "/follow",
+  authorize_user,
+  followValidation.checkFollow,
+  validationMiddleware,
+  followController.follow
 );
-userRoute.get("/followings", authorize_user, followController.getFollowings);
-userRoute.get("/followers", authorize_user, followController.getFollowers);
+userRoute.get(
+  "/num_followings",
+  authorize_user,
+  followController.getFollowings
+);
+userRoute.get("/num_followers", authorize_user, followController.getFollowers);
 
 export default userRoute;
