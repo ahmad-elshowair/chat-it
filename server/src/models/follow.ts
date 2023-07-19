@@ -40,28 +40,25 @@ export default class FollowService {
   }
 
   // get number followings for a user
-  async getFollowings(user_id_following: string) {
+  async getFollowings(user_id_following: string): Promise<number> {
     const connection: PoolClient = await db.connect();
     try {
       // get followings query
       const getFollowingsQuery = `
           SELECT
-            COUNT(*) AS num_followings
+            COUNT(*)
           FROM
             follows
           WHERE
-            user_id_followed = ($1)
+            user_id_following = ($1);
       `;
 
-      console.log(getFollowingsQuery);
-
       // get the followings
-      const fetchFollowings: QueryResult = await connection.query(
-        getFollowingsQuery,
-        [user_id_following]
-      );
-      const followings = Number(fetchFollowings.rows[0]);
-      return followings;
+      const followings = await connection.query(getFollowingsQuery, [
+        user_id_following,
+      ]);
+      const numOfFollowings: number = followings.rows[0].count;
+      return numOfFollowings;
     } catch (error) {
       throw new Error(
         `get followings model error: ${(error as Error).message}`
@@ -73,26 +70,23 @@ export default class FollowService {
   }
 
   // get number followers for a user
-  async getFollowers(user_id_followed: string) {
+  async getFollowers(user_id_followed: string): Promise<number> {
     const connection: PoolClient = await db.connect();
     try {
       // get the followers
-      const followers: QueryResult = await connection.query(
+      const followers = await connection.query(
         `
           SELECT
-            user_id_followed AS following,
-            COUNT(f.user_id_followed) AS followers
+            COUNT(*)
           FROM
             follows AS f
           WHERE
-            f.user_id_following = ($1)
-          GROUP BY
-            f.user_id_followed
+            f.user_id_followed = ($1)
         `,
         [user_id_followed]
       );
-
-      return followers.rows;
+      const numOfFollowers: number = followers.rows[0].count;
+      return numOfFollowers;
     } catch (error) {
       throw new Error(`get followers model error: ${(error as Error).message}`);
     } finally {
