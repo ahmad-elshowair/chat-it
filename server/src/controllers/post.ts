@@ -6,6 +6,7 @@ import Post from "../types/post";
 // create an instance of user model
 const postService = new PostModel();
 
+// create a post
 const create = async (req: CustomRequest, res: Response) => {
   try {
     const post: Post = {
@@ -19,21 +20,16 @@ const create = async (req: CustomRequest, res: Response) => {
     res.status(400).json({ error: (error as Error).message });
   }
 };
-
+// update a post
 const update = async (req: CustomRequest, res: Response) => {
   try {
-    // check if the user logged in
-    if (req.user) {
-      // check if the user is the owner of this post
-      const post = req.body;
-      if (req.user.id === post.user_id) {
-        const updatedPost = await postService.update(req.params.id, post);
-        res.status(200).json(updatedPost);
-      } else {
-        res.status(401).json({ message: "THAT IS NOT YOUR POST !" });
-      }
+    // check if the user is the owner of this post
+    const post = req.body;
+    if (req.user.id === post.user_id) {
+      const updatedPost = await postService.update(req.params.id, post);
+      res.status(200).json(updatedPost);
     } else {
-      res.status(401).json({ message: "YOU ARE NOT LOGGED IN !" });
+      res.status(401).json({ message: "THAT IS NOT YOUR POST !" });
     }
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
@@ -63,17 +59,12 @@ const getAllPosts = async (req: Request, res: Response) => {
 // delete post
 const deletePost = async (req: CustomRequest, res: Response) => {
   try {
-    // check if the post belong to logged in user
-    if (req.user) {
-      const post = await postService.getById(req.params.id);
-      if (post.user_id === req.user.id) {
-        const deletePost = await postService.delete(req.params.id);
-        res.status(200).json(deletePost);
-      } else {
-        res.status(401).json({ message: "THAT IS NOT YOUR POST !" });
-      }
+    const post = await postService.getById(req.params.id);
+    if (post.user_id === req.user.id) {
+      const deletePost = await postService.delete(req.params.id);
+      res.status(200).json(deletePost);
     } else {
-      res.status(401).json({ message: "YOU ARE NOT LOGGED IN !" });
+      res.status(401).json({ message: "THAT IS NOT YOUR POST !" });
     }
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
