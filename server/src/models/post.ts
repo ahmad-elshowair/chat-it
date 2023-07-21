@@ -129,21 +129,22 @@ class PostModel {
     try {
       // query of all post for a user
       const userPostsQuery = `
-		SELECT 
-			u.user_name, p.description, p.image, p.created_at
-		FROM
-			users AS U
-		LEFT JOIN 
-			posts AS p	
-		ON
-			u.user_id= p.user_id
-		WHERE 
-			u.user_id = ($1)
-		ORDER BY 
-			p.updated_at DESC
-	  `;
+        SELECT 
+          u.user_name, p.description, p.image, p.updated_at
+        FROM
+          users AS u
+        LEFT JOIN 
+          posts AS p	
+        ON
+          u.user_id= p.user_id
+        WHERE 
+          u.user_id = ($1)
+        ORDER BY 
+          p.updated_at DESC
+	    `;
       // get all posts of a user
       const posts = await connection.query(userPostsQuery, [userId]);
+
       // return posts
       return posts.rows;
     } catch (error) {
