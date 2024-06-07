@@ -10,23 +10,25 @@ class AuthModel {
 		const connection = await db.connect();
 		try {
 			// check ig the user exist
-			const checkUser: QueryResult<User> = await db.query(
+			const checkUser: QueryResult<User> = await connection.query(
 				"SELECT * FROM users WHERE email=$1",
 				[user.email],
 			);
 
 			if (checkUser.rows.length > 0) {
-				throw new Error(`this ${user.email} is already exist ! `);
+				throw new Error(`User with email ${user.email} is already exist ! `);
 			}
 
 			// insert the new user
-			const insertUser = await db.query(
+			const insertUser = await connection.query(
 				"INSERT INTO users (user_name, email, password) VALUES ($1, $2, $3) RETURNING *",
 				[user.user_name, user.email, passwords.hashPassword(user.password)],
 			);
 			// return the inserted user
 			return insertUser.rows[0];
 		} catch (error) {
+			console.error(`Error in create method: ${(error as Error).message}`);
+
 			throw new Error(
 				`something wrong with create method ${(error as Error).message}`,
 			);
