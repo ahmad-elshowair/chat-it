@@ -26,7 +26,7 @@ app.get("/", (_req: Request, res: Response) => {
 	res.send("Hello World!");
 });
 
-// user all routes
+// use all routes
 app.use("/api", routes);
 
 // use middleware of error
