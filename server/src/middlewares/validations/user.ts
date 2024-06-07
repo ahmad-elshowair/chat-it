@@ -7,7 +7,7 @@ const checkEmail: ValidationChain = check("email")
 	.withMessage("it is not an email !");
 const checkPassword: ValidationChain = check("password")
 	.isLength({ min: 6 })
-	.withMessage("password is too short");
+	.withMessage("Password Minium Length is 6 characters");
 const checkName: ValidationChain = check("user_name")
 	.isLength({ min: 3 })
 	.withMessage("name is too short");
