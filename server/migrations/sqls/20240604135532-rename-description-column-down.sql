@@ -1,0 +1,1 @@
+ALTER TABLE users RENAME bio TO description;
