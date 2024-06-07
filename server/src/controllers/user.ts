@@ -3,7 +3,7 @@ import { CustomRequest } from "../interfaces/ICustomRequest";
 import UserModel from "../models/user";
 
 const user_model = new UserModel();
-const index = async (req: Request, res: Response) => {
+const index = async (_req: Request, res: Response) => {
   try {
     const users = await user_model.getAll();
     res.status(200).json(users);
