@@ -4,8 +4,8 @@ import passwords from "./passwords";
 export const buildUpdateQuery = (
 	id: string,
 	updates: Partial<User>,
-): (string | (string | boolean | Date)[])[] => {
-	const fields = [];
+): [string, (string | boolean | Date)[]] => {
+	const fields: string[] = [];
 	const values: (string | boolean | Date)[] = [];
 	let index = 1;
 
@@ -15,7 +15,7 @@ export const buildUpdateQuery = (
 			values.push(passwords.hashPassword(value as string));
 		} else {
 			fields.push(`${key} = $${index}`);
-			values.push(value);
+			values.push(value as string | boolean | Date);
 		}
 		index++;
 	}

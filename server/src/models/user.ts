@@ -1,7 +1,7 @@
 import { QueryResult } from "pg";
 import db from "../database/pool";
 import User from "../types/users";
-import passwords from "../utilities/passwords";
+import { buildUpdateQuery } from "../utilities/build-update-query";
 
 class UserModel {
 	// get all users
@@ -67,27 +67,18 @@ class UserModel {
 				throw new Error("THIS USER IS NOT EXIST !");
 			}
 			// update the user
-			const updateUserQuery =
-				"UPDATE users SET user_name = ($1), email = ($2), password = ($3), picture =($4), cover = ($5), is_admin = ($6), description = ($7), city = ($8), home_town = ($9), updated_at = ($10) WHERE user_id = ($11) RETURNING *";
-			const updateUser: QueryResult<User> = await connection.query(
+
+			// Build the dynamic update query.
+			const [updateUserQuery, values] = buildUpdateQuery(id, user);
+			// const updateUserQuery =
+			// 	"UPDATE users SET user_name = ($1), email = ($2), password = ($3), picture =($4), cover = ($5), is_admin = ($6), description = ($7), city = ($8), home_town = ($9), updated_at = ($10) WHERE user_id = ($11) RETURNING *";
+			const UpdateUser: QueryResult<User> = await connection.query(
 				updateUserQuery,
-				[
-					user.user_name,
-					user.email,
-					passwords.hashPassword(user.password),
-					user.picture,
-					user.cover,
-					user.is_admin,
-					user.description,
-					user.city,
-					user.home_town,
-					user.updated_at,
-					id,
-				],
+				values,
 			);
 
 			// return the user
-			return updateUser.rows[0];
+			return UpdateUser.rows[0];
 		} catch (error) {
 			throw new Error(
 				`cannot update ${user.user_name} due to ${(error as Error).message}`,
