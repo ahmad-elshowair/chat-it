@@ -13,12 +13,11 @@ export const Post = ({
 	id,
 	description,
 	photo,
-	userId,
 	numberOfComments,
 	numberOfLikes,
 	createdAt,
 }: TPost) => {
-	const date: Date = new Date(createdAt);
+	const date: Date = new Date();
 	const dateFormate = date.toLocaleString("en-GB", {
 		day: "numeric",
 		month: "long",
@@ -49,7 +48,7 @@ export const Post = ({
 								user
 							</a>
 							<a href="#profile" className="post-header-info-links-date">
-								{dateFormate}
+								{createdAt}
 							</a>
 							<FaGlobeEurope className="post-header-info-links-icon" />
 						</div>

@@ -8,7 +8,7 @@ export const Feed = () => {
 		<section className="feed">
 			<Share />
 			{Posts.map((post) => (
-				<Post {...post} />
+				<Post key={post.id} {...post} />
 			))}
 		</section>
 	);
