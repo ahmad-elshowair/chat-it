@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { AiFillLike } from "react-icons/ai";
 import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
 import { FaComments, FaEllipsisH, FaRegComment, FaTimes } from "react-icons/fa";
 import { Users } from "../../dummyData";
@@ -25,6 +27,14 @@ export const Post = ({
 
 	// GET THE USER FOR THE POST
 	const users: User[] = Users.filter((u) => u.userId === userId);
+
+	const [likes, setLikes] = useState(numberOfLikes);
+	const [isLiked, setIsLiked] = useState(false);
+
+	const likeHandler = () => {
+		setLikes(isLiked ? likes - 1 : likes + 1);
+		setIsLiked(!isLiked);
+	};
 
 	return (
 		<section className="post card mt-2 mb-3">
@@ -68,7 +78,7 @@ export const Post = ({
 					<span className="post-statistics-icon">
 						<BiSolidLike className="likes me-2" />
 						<span className="post-statistics-number">
-							{numberOfLikes} people like it{" "}
+							{likes} people like it{" "}
 						</span>
 					</span>
 					<span className="post-statistics-icon">
@@ -79,8 +89,12 @@ export const Post = ({
 				<hr />
 				<article className="post-footer">
 					<div className="post-footer-icons">
-						<button type="button" className="btn">
-							<BiLike className="like" />
+						<button type="button" className="btn" onClick={likeHandler}>
+							{isLiked ? (
+								<AiFillLike className="like" />
+							) : (
+								<BiLike className="like" />
+							)}
 						</button>
 						<button type="button" className="btn">
 							<FaRegComment className="comment" />
