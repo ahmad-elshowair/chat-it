@@ -1,0 +1,50 @@
+.profile-container {
+	display: flex;
+	margin-top: 68px;
+}
+
+.profile-container figure {
+	margin: 0;
+}
+
+.profile-right {
+	flex: 9;
+}
+.profile-info {
+	padding-inline-start: 90px;
+	padding-inline-end: 30px;
+	display: grid;
+	grid-template-columns: 150px 200px 1fr 100px;
+	align-items: center;
+}
+
+.profile-image-container {
+	position: relative;
+	top: -40px;
+}
+.profile-image {
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid silver;
+}
+
+.profile-info button {
+	justify-self: end;
+	height: 50px;
+	width: 100px;
+}
+
+.profile-info-friend-image {
+	width: 60px;
+	height: 60px;
+	border-radius: 50px;
+	border: 1px solid silver;
+	cursor: pointer;
+	transition: all ease-in-out 0.5s;
+}
+
+.profile-info-friend-image:hover {
+	border: 3px solid var(--main-color);
+}
