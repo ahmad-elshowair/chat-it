@@ -1,30 +1,31 @@
+import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
+import { FaComments, FaEllipsisH, FaRegComment, FaTimes } from "react-icons/fa";
+import { Users } from "../../dummyData";
+import { TPost } from "../../types/post";
+import { User } from "../../types/user";
 import "./post.css";
 
-import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
-import {
-	FaComments,
-	FaEllipsisH,
-	FaGlobeEurope,
-	FaRegComment,
-	FaTimes,
-} from "react-icons/fa";
-import { TPost } from "../../types/post";
 export const Post = ({
-	id,
+	userId,
 	description,
 	photo,
 	numberOfComments,
 	numberOfLikes,
 	createdAt,
 }: TPost) => {
-	const date: Date = new Date();
-	const dateFormate = date.toLocaleString("en-GB", {
-		day: "numeric",
-		month: "long",
-		hour: "numeric",
-		minute: "numeric",
-		hour12: false,
-	});
+	// FORMATE THE DATE
+	// const date: Date = new Date();
+	// const dateFormate = date.toLocaleString("en-GB", {
+	// 	day: "numeric",
+	// 	month: "long",
+	// 	hour: "numeric",
+	// 	minute: "numeric",
+	// 	hour12: false,
+	// });
+
+	// GET THE USER FOR THE POST
+	const users: User[] = Users.filter((u) => u.userId === userId);
+
 	return (
 		<section className="post card mt-2 mb-3">
 			<div className="card-body">
@@ -34,7 +35,7 @@ export const Post = ({
 							<a href="#profile">
 								<img
 									className="post-header-img-user"
-									src="/assets/avatars/1.jpeg"
+									src={users[0].profilePicture}
 									alt="profile"
 								/>
 							</a>
@@ -45,12 +46,11 @@ export const Post = ({
 								href="#profile"
 								target="_blank"
 								rel="noopener noreferrer">
-								user
+								{users[0].userName}
 							</a>
 							<a href="#profile" className="post-header-info-links-date">
 								{createdAt}
 							</a>
-							<FaGlobeEurope className="post-header-info-links-icon" />
 						</div>
 					</div>
 					<div className="post-header-option-bars">
@@ -67,7 +67,9 @@ export const Post = ({
 				<article className="post-statistics">
 					<span className="post-statistics-icon">
 						<BiSolidLike className="likes me-2" />
-						<span className="post-statistics-number">{numberOfLikes}</span>
+						<span className="post-statistics-number">
+							{numberOfLikes} people like it{" "}
+						</span>
 					</span>
 					<span className="post-statistics-icon">
 						<span className="post-statistics-number">{numberOfComments}</span>
