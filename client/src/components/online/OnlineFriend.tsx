@@ -1,5 +1,5 @@
-import "./friend.css";
-export const Friend = ({
+import "./onlineFriend.css";
+export const OnlineFriend = ({
 	name,
 	picture,
 }: {
@@ -7,7 +7,7 @@ export const Friend = ({
 	picture: string;
 }) => {
 	return (
-		<li className="my-3 friend">
+		<li className="my-3 online-friend">
 			<a
 				className="right-bar-friends-list-friend"
 				href="#profile"

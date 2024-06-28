@@ -1,6 +1,6 @@
 import { Feed } from "../../components/feed/Feed";
+import { LeftBar } from "../../components/leftBar/leftBar";
 import { RightBar } from "../../components/rightBar/RightBar";
-import { Sidebar } from "../../components/sidebar/Sidebar";
 import { Topbar } from "../../components/topbar/Topbar";
 import "./home.css";
 export const Home = () => {
@@ -8,7 +8,7 @@ export const Home = () => {
 		<>
 			<Topbar />
 			<section className="home-container">
-				<Sidebar />
+				<LeftBar />
 				<Feed />
 				<RightBar />
 			</section>

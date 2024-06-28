@@ -1,0 +1,35 @@
+.right-bar-friends-list-friend {
+	display: flex;
+	gap: 20px;
+	text-decoration: none;
+	color: var(--bs-dark);
+	align-items: center;
+}
+.right-bar-friends-list-friend:hover {
+	text-decoration: underline;
+}
+.right-bar-friends-list-img {
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	border-radius: 50%;
+}
+.right-bar-friends-list-text {
+	margin: 0;
+}
+
+.online-friend {
+	position: relative;
+}
+
+.online-friend::after {
+	position: absolute;
+	display: inline-block;
+	content: " ";
+	width: 15px;
+	height: 15px;
+	background-color: var(--main-color);
+	top: -5px;
+	border-radius: 50%;
+	left: 30px;
+}

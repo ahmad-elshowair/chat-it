@@ -59,7 +59,7 @@ export const Post = ({
 					</div>
 				</article>
 				<article className="post-body">
-					<p className="post-body-description">{description}</p>
+					<p className="post-body-description p-3">{description}</p>
 					<figure className="post-body-images">
 						<img className="post-body-images-image" src={photo} alt="post" />
 					</figure>

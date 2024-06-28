@@ -5,8 +5,10 @@ import {
 	FaUserFriends,
 	FaUsers,
 } from "react-icons/fa";
-import "./sidebar.css";
-export const Sidebar = () => {
+import { Users } from "../../dummyData";
+import { Friend } from "../friend/Friend";
+import "./leftBar.css";
+export const LeftBar = () => {
 	return (
 		<aside className="sidebar">
 			<section className="sidebar-content">
@@ -44,6 +46,19 @@ export const Sidebar = () => {
 						<span className="list-item-text">Events</span>
 					</a>
 				</div>
+				<section className="ps-3 mt-4">
+					<h3 className="">Friends</h3>
+					<hr />
+					<ul className="right-bar-friends-list">
+						{Users.map((user) => (
+							<Friend
+								key={user.userId}
+								name={user.userName}
+								picture={user.profilePicture}
+							/>
+						))}
+					</ul>
+				</section>
 			</section>
 		</aside>
 	);
