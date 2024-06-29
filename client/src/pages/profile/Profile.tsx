@@ -1,6 +1,6 @@
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
-import { RightBar } from "../../components/rightBar/RightBar";
+import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
 import "./profile.css";
 
@@ -67,7 +67,7 @@ export const Profile = () => {
 					</section>
 					<section className="profile-right-bottom d-flex">
 						<Feed />
-						<RightBar />
+						<ProfileRightBar />
 					</section>
 				</section>
 			</section>

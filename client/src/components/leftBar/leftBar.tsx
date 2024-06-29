@@ -46,7 +46,7 @@ export const LeftBar = () => {
 						<span className="list-item-text">Events</span>
 					</a>
 				</div>
-				<section className="ps-3 mt-4">
+				<section className="ps-3 mt-4 pb-3">
 					<h3 className="">Friends</h3>
 					<hr />
 					<ul className="right-bar-friends-list">

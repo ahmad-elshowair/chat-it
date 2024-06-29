@@ -1,11 +1,12 @@
-import { Users } from "../../dummyData";
-import { User } from "../../types/user";
-import { OnlineFriend } from "../online/OnlineFriend";
-import "./rightBar.css";
-export const RightBar = () => {
+import { Users } from "../../../dummyData";
+import { User } from "../../../types/user";
+import { OnlineFriend } from "../../online/OnlineFriend";
+import "./homeRightBar.css";
+
+export const HomeRightBar = () => {
 	const users: User[] = Users.filter((user) => user.isOnline);
 	return (
-		<aside className="right-bar pe-4">
+		<aside className="home-right-bar pe-4">
 			<article className="right-bar-events">
 				<img
 					src="/assets/gift.png"
