@@ -2,10 +2,11 @@ import "./login.css";
 export const Login = () => {
 	return (
 		<section className="login-page">
+			<header className="login-form-header">
+				<img src="/assets/chat-it.png" alt="logo" />
+				<h1>chat it with concern !</h1>
+			</header>
 			<form action="" className="login-form">
-				<header className="login-form-header">
-					<img src="/assets/chat-it.png" alt="logo" />
-				</header>
 				<div className="login-form-body">
 					<div className="login-form-body-input">
 						<label className="form-label" htmlFor="email">
@@ -36,6 +37,9 @@ export const Login = () => {
 					<button className="btn btn-chat" type="submit">
 						Login
 					</button>
+					<a href="/register" className="btn btn-new">
+						I'm new Here!
+					</a>
 				</div>
 			</form>
 		</section>
