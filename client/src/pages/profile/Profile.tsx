@@ -2,9 +2,11 @@ import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
+import { Users } from "../../dummyData";
 import "./profile.css";
 
 export const Profile = () => {
+	const currentUserId = 1;
 	return (
 		<>
 			<Topbar />
@@ -35,31 +37,15 @@ export const Profile = () => {
 							<div className="d-flex flex-column">
 								<h6> 10 friends</h6>
 								<figure className="d-flex">
-									<img
-										src="/assets/avatars/1.jpeg"
-										alt="friend"
-										className="profile-info-friend-image"
-									/>
-									<img
-										src="/assets/avatars/5.jpeg"
-										alt="friend"
-										className="profile-info-friend-image"
-									/>
-									<img
-										src="/assets/avatars/2.jpeg"
-										alt="friend"
-										className="profile-info-friend-image"
-									/>
-									<img
-										src="/assets/avatars/3.jpeg"
-										alt="friend"
-										className="profile-info-friend-image"
-									/>
-									<img
-										src="/assets/avatars/4.jpeg"
-										alt="friend"
-										className="profile-info-friend-image"
-									/>
+									{Users.slice(0, 6)
+										.filter((u) => u.userId !== currentUserId)
+										.map((user) => (
+											<img
+												className="profile-info-friend-image"
+												src={user.profilePicture}
+												alt="profile"
+											/>
+										))}
 								</figure>
 							</div>
 							<button className="btn btn-primary">Follow</button>
