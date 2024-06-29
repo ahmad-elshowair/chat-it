@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AiFillLike } from "react-icons/ai";
 import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
 import { FaComments, FaEllipsisH, FaRegComment, FaTimes } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import { Users } from "../../dummyData";
 import { TPost } from "../../types/post";
 import { User } from "../../types/user";
@@ -42,22 +43,22 @@ export const Post = ({
 				<article className="post-header">
 					<div className="post-header-info">
 						<figure>
-							<a href="#profile">
+							<Link to="/profile">
 								<img
 									className="post-header-img-user"
 									src={users[0].profilePicture}
 									alt="profile"
 								/>
-							</a>
+							</Link>
 						</figure>
 						<div className="post-header-info-links">
-							<a
+							<Link
 								className="post-header-info-links-user"
-								href="#profile"
+								to="/profile"
 								target="_blank"
 								rel="noopener noreferrer">
 								{users[0].userName}
-							</a>
+							</Link>
 							<a href="#profile" className="post-header-info-links-date">
 								{createdAt}
 							</a>

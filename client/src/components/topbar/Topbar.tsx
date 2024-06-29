@@ -4,7 +4,7 @@ export const Topbar = () => {
 	return (
 		<nav className="navbar fixed-top">
 			<section className="container-fluid">
-				<a className="navbar-brand" href="#home">
+				<a className="navbar-brand" href="/">
 					<img src="/assets/chat-it.png" alt="lgo chat it" height={55} />
 				</a>
 				<form role="search" className="nav-search">
@@ -18,7 +18,7 @@ export const Topbar = () => {
 				</form>
 				<ul className="navbar-nav">
 					<li className="nav-item">
-						<a className="nav-link active" aria-current="page" href="#home">
+						<a className="nav-link active" aria-current="page" href="/">
 							<FaHome />
 						</a>
 						<span className="icon-badge">1</span>
@@ -37,13 +37,15 @@ export const Topbar = () => {
 					</li>
 				</ul>
 				<figure className="avatar">
-					<img
-						height={36}
-						width={36}
-						alt="avatar"
-						src="/assets/avatars/1.jpeg"
-						className="rounded-circle"
-					/>
+					<a href="/profile">
+						<img
+							height={36}
+							width={36}
+							alt="avatar"
+							src="/assets/avatars/1.jpeg"
+							className="rounded-circle"
+						/>
+					</a>
 				</figure>
 			</section>
 		</nav>

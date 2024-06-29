@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import "./register.css";
 export const Register = () => {
 	return (
@@ -51,9 +52,9 @@ export const Register = () => {
 					<button className="btn btn-chat" type="submit">
 						register
 					</button>
-					<a href="/login" className="btn btn-homie">
+					<Link to="/login" className="btn btn-homie">
 						I'm homie
-					</a>
+					</Link>
 				</div>
 			</form>
 		</section>

@@ -48,7 +48,7 @@ export const Profile = () => {
 										))}
 								</figure>
 							</div>
-							<button className="btn btn-primary">Follow</button>
+							<button className="btn btn-chat">Follow</button>
 						</div>
 					</section>
 					<section className="profile-right-bottom d-flex">
