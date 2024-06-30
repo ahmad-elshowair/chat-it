@@ -166,7 +166,7 @@ class PostModel {
 			const posts: QueryResult<Post> = await connection.query(
 				`
 			SELECT 
-				p.post_id, p.description, p.image, u.user_id, u.user_name, p.updated_at, u.picture
+				p.post_id, p.description, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, p.updated_at, u.picture
 			FROM 
 				posts p
 			JOIN 

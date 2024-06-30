@@ -5,6 +5,6 @@ export type TPost = {
 	image?: string;
 	created_at?: string;
 	updated_at?: Date;
-	numberOfLikes: number;
-	numberOfComments: number;
+	number_of_likes: number;
+	number_of_comments: number;
 };

@@ -13,7 +13,7 @@ export const Feed = () => {
 			const response = await axios.get("/posts/feed", {
 				headers: {
 					authorization:
-						"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImUxNjkyNWQwLTk2MjYtNGMxMy1iYTBlLTViYWEwODg1Yjg3ZSIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5NzQxMzc2LCJleHAiOjE3MTk3NDQ5NzZ9.zAN-f2qvYJgP68nEStEB8q8M7XdwYTJgWmZi-78jBX0",
+						"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImEzYjExOGJkLWU3ZGMtNDhjOC05YTE4LTExOTliNmRmMDhjMyIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5NzQzMTU5LCJleHAiOjE3MTk3NDY3NTl9.jJ6KJDIQWEgq7hAy5gljb9G-olDHRiLXOaNQks0rHfM",
 				},
 			});
 			console.log(response.data);
