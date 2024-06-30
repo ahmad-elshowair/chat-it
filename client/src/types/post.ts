@@ -1,9 +1,10 @@
 export type TPost = {
-	id: number;
+	post_id?: string;
+	user_id: string;
 	description: string;
-	photo: string;
-	createdAt: string;
-	userId: number;
+	image?: string;
+	created_at?: string;
+	updated_at?: Date;
 	numberOfLikes: number;
 	numberOfComments: number;
 };

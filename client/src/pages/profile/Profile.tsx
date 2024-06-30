@@ -41,6 +41,7 @@ export const Profile = () => {
 										.filter((u) => u.userId !== currentUserId)
 										.map((user) => (
 											<img
+												key={user.userId}
 												className="profile-info-friend-image"
 												src={user.profilePicture}
 												alt="profile"
