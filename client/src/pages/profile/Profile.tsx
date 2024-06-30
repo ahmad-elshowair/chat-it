@@ -6,7 +6,7 @@ import { Users } from "../../dummyData";
 import "./profile.css";
 
 export const Profile = () => {
-	const currentUserId = 1;
+	const currentUserId = "1";
 	return (
 		<>
 			<Topbar />
@@ -38,10 +38,10 @@ export const Profile = () => {
 								<h6> 10 friends</h6>
 								<figure className="d-flex">
 									{Users.slice(0, 6)
-										.filter((u) => u.userId !== currentUserId)
+										.filter((u) => u.user_id !== currentUserId)
 										.map((user) => (
 											<img
-												key={user.userId}
+												key={user.user_id}
 												className="profile-info-friend-image"
 												src={user.profilePicture}
 												alt="profile"

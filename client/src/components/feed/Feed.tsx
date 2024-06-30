@@ -13,7 +13,7 @@ export const Feed = () => {
 			const response = await axios.get("/posts/feed", {
 				headers: {
 					authorization:
-						"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImUxNjkyNWQwLTk2MjYtNGMxMy1iYTBlLTViYWEwODg1Yjg3ZSIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5NzM4MzY4LCJleHAiOjE3MTk3NDE5Njh9.2R6jmpUFINw1Nh8dT0s2YceI2wAXUGtXuv-sbULqdlA",
+						"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImUxNjkyNWQwLTk2MjYtNGMxMy1iYTBlLTViYWEwODg1Yjg3ZSIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5NzQxMzc2LCJleHAiOjE3MTk3NDQ5NzZ9.zAN-f2qvYJgP68nEStEB8q8M7XdwYTJgWmZi-78jBX0",
 				},
 			});
 			console.log(response.data);
@@ -25,7 +25,7 @@ export const Feed = () => {
 		<section className="feed">
 			<Share />
 			{posts.map((post) => (
-				<Post key={post.post_id} {...post} />
+				<Post key={post.post_id} {...post} user_id={post.user_id} />
 			))}
 		</section>
 	);

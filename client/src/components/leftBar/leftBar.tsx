@@ -55,7 +55,7 @@ export const LeftBar = () => {
 					<ul className="right-bar-friends-list">
 						{Users.map((user) => (
 							<Friend
-								key={user.userId}
+								key={user.user_id}
 								name={user.userName}
 								picture={user.profilePicture}
 							/>

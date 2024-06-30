@@ -5,7 +5,6 @@ import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
 import { FaComments, FaEllipsisH, FaRegComment, FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { TPost } from "../../types/post";
-import { TUser } from "../../types/user";
 import "./post.css";
 
 export const Post = ({
@@ -16,7 +15,7 @@ export const Post = ({
 	numberOfLikes,
 	created_at,
 }: TPost) => {
-	const [user, setUser] = useState<TUser>();
+	const [user, setUser] = useState({});
 
 	useEffect(() => {
 		const fetchAUser = async () => {
@@ -55,7 +54,7 @@ export const Post = ({
 							<Link to="/profile">
 								<img
 									className="post-header-img-user"
-									src={user?.picture}
+									src={user.picture || "/assets/avatars/noAvatar.png"}
 									alt="profile"
 								/>
 							</Link>
@@ -66,7 +65,7 @@ export const Post = ({
 								to="/profile"
 								target="_blank"
 								rel="noopener noreferrer">
-								{user?.user_name}
+								{user.user_name}
 							</Link>
 							<a href="#profile" className="post-header-info-links-date">
 								{created_at}
@@ -81,7 +80,11 @@ export const Post = ({
 				<article className="post-body">
 					<p className="post-body-description p-3">{description}</p>
 					<figure className="post-body-images">
-						<img className="post-body-images-image" src={image} alt="post" />
+						<img
+							className="post-body-images-image"
+							src={`/assets/${image}`}
+							alt="post"
+						/>
 					</figure>
 				</article>
 				<article className="post-statistics">

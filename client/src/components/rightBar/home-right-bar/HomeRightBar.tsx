@@ -1,10 +1,9 @@
 import { Users } from "../../../dummyData";
-import { User } from "../../../types/user";
 import { OnlineFriend } from "../../online/OnlineFriend";
 import "./homeRightBar.css";
 
 export const HomeRightBar = () => {
-	const users: User[] = Users.filter((user) => user.isOnline);
+	const users = Users.filter((user) => user.isOnline);
 	return (
 		<aside className="home-right-bar pe-4">
 			<article className="right-bar-events">
@@ -25,7 +24,7 @@ export const HomeRightBar = () => {
 				<ul className="right-bar-friends-list">
 					{users.map((user) => (
 						<OnlineFriend
-							key={user.userId}
+							key={user.user_id}
 							name={user.userName}
 							picture={user.profilePicture}
 						/>
