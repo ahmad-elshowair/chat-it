@@ -1,12 +1,13 @@
 import { FaBell, FaComment, FaHome, FaSearch } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import "./topbar.css";
 export const Topbar = () => {
 	return (
 		<nav className="navbar fixed-top">
 			<section className="container-fluid">
-				<a className="navbar-brand" href="/">
+				<Link className="navbar-brand" to="/">
 					<img src="/assets/chat-it.png" alt="lgo chat it" height={55} />
-				</a>
+				</Link>
 				<form role="search" className="nav-search">
 					<FaSearch className="ms-3" />
 					<input
@@ -37,7 +38,7 @@ export const Topbar = () => {
 					</li>
 				</ul>
 				<figure className="avatar">
-					<a href="/profile">
+					<Link to={`/profile/username`}>
 						<img
 							height={36}
 							width={36}
@@ -45,7 +46,7 @@ export const Topbar = () => {
 							src="/assets/avatars/1.jpeg"
 							className="rounded-circle"
 						/>
-					</a>
+					</Link>
 				</figure>
 			</section>
 		</nav>

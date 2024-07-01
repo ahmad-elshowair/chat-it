@@ -53,7 +53,7 @@ export const Profile = () => {
 						</div>
 					</section>
 					<section className="profile-right-bottom d-flex">
-						<Feed />
+						<Feed user_id="ahmad" />
 						<ProfileRightBar />
 					</section>
 				</section>

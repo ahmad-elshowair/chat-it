@@ -15,7 +15,7 @@ export const LeftBar = () => {
 			<section className="sidebar-content">
 				<div className="list-group">
 					<Link
-						to="/profile"
+						to="/profile/username"
 						className="list-group-item list-group-item-action">
 						<img
 							height={36}

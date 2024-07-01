@@ -130,7 +130,7 @@ class PostModel {
 			// query of all post for a user
 			const userPostsQuery = `
         SELECT 
-          u.user_name, p.description, p.image, p.updated_at
+          p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, p.updated_at, u.picture
         FROM
           users AS u
         LEFT JOIN 
@@ -166,7 +166,7 @@ class PostModel {
 			const posts: QueryResult<Post> = await connection.query(
 				`
 			SELECT 
-				p.post_id, p.description, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, p.updated_at, u.picture
+				p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, p.updated_at, u.picture
 			FROM 
 				posts p
 			JOIN 

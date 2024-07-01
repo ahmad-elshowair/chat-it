@@ -14,7 +14,7 @@ export const Post = ({
 	image,
 	number_of_likes,
 	number_of_comments,
-	created_at,
+	updated_at,
 }: TPost) => {
 	const [user, setUser] = useState<TUser>();
 
@@ -27,14 +27,14 @@ export const Post = ({
 	}, [user_id]);
 
 	// FORMATE THE DATE
-	// const date: Date = new Date();
-	// const dateFormate = date.toLocaleString("en-GB", {
-	// 	day: "numeric",
-	// 	month: "long",
-	// 	hour: "numeric",
-	// 	minute: "numeric",
-	// 	hour12: false,
-	// });
+	const date: Date = new Date(updated_at as Date);
+	const dateFormate = date.toLocaleString("en-GB", {
+		day: "numeric",
+		month: "long",
+		hour: "numeric",
+		minute: "numeric",
+		hour12: false,
+	});
 
 	const [likes, setLikes] = useState(number_of_likes);
 	const [isLiked, setIsLiked] = useState(false);
@@ -61,13 +61,13 @@ export const Post = ({
 						<div className="post-header-info-links">
 							<Link
 								className="post-header-info-links-user"
-								to="/profile"
+								to={`/profile/${user?.user_name}`}
 								target="_blank"
 								rel="noopener noreferrer">
 								{user?.user_name}
 							</Link>
 							<a href="#profile" className="post-header-info-links-date">
-								{created_at}
+								{dateFormate}
 							</a>
 						</div>
 					</div>
