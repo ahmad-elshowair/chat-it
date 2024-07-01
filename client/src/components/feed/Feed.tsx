@@ -14,13 +14,13 @@ export const Feed = ({ user_id }: { user_id?: string }) => {
 				? await axios.get("/posts/user", {
 						headers: {
 							authorization:
-								"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImEzYjExOGJkLWU3ZGMtNDhjOC05YTE4LTExOTliNmRmMDhjMyIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5NzU3NTE0LCJleHAiOjE3MTk3NjExMTR9._SiCHLV7pGtXp5OT4IF1hqEQ2cCK57RbK9yrWNW3liw",
+								"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImEzYjExOGJkLWU3ZGMtNDhjOC05YTE4LTExOTliNmRmMDhjMyIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5ODAwODA3LCJleHAiOjE3MTk4MDQ0MDd9.9c8c8sKiMQULumhHpHxeFAHulrMUo1jwmRB3CGl6WeA",
 						},
 				  })
 				: await axios.get("/posts/feed", {
 						headers: {
 							authorization:
-								"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImEzYjExOGJkLWU3ZGMtNDhjOC05YTE4LTExOTliNmRmMDhjMyIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5NzU3NTE0LCJleHAiOjE3MTk3NjExMTR9._SiCHLV7pGtXp5OT4IF1hqEQ2cCK57RbK9yrWNW3liw",
+								"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImEzYjExOGJkLWU3ZGMtNDhjOC05YTE4LTExOTliNmRmMDhjMyIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5ODAwODA3LCJleHAiOjE3MTk4MDQ0MDd9.9c8c8sKiMQULumhHpHxeFAHulrMUo1jwmRB3CGl6WeA",
 						},
 				  });
 			console.log(response.data);

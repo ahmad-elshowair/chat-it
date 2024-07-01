@@ -50,7 +50,7 @@ export const Post = ({
 				<article className="post-header">
 					<div className="post-header-info">
 						<figure>
-							<Link to="/profile">
+							<Link to={`/profile/${user?.user_name}`}>
 								<img
 									className="post-header-img-user"
 									src={user?.picture || "/assets/avatars/noAvatar.png"}
@@ -62,7 +62,6 @@ export const Post = ({
 							<Link
 								className="post-header-info-links-user"
 								to={`/profile/${user?.user_name}`}
-								target="_blank"
 								rel="noopener noreferrer">
 								{user?.user_name}
 							</Link>

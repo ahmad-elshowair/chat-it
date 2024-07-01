@@ -1,7 +1,7 @@
 import { QueryResult } from "pg";
 import db from "../database/pool";
 import User from "../types/users";
-import passwords from "../utilities/passwords";
+import { buildInsertQuery } from "../utilities/build-insert-query";
 
 class AuthModel {
 	//a method to create a new user
@@ -20,12 +20,22 @@ class AuthModel {
 			}
 
 			// insert the new user
-			const insertUser = await connection.query(
-				"INSERT INTO users (user_name, email, password) VALUES ($1, $2, $3) RETURNING *",
-				[user.user_name, user.email, passwords.hashPassword(user.password)],
-			);
+			const [query, values] = buildInsertQuery(user);
+			console.log(`${query}\n${values}`);
+
+			const result: QueryResult<User> = await connection.query(query, values);
+			// const insertUser = await connection.query(
+			// 	"INSERT INTO users (user_name, email, password, first_name, last_name) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+			// 	[
+			// 		user.user_name,
+			// 		user.email,
+			// 		passwords.hashPassword(user.password),
+			// 		user.first_name,
+			// 		user.last_name,
+			// 	],
+			// );
 			// return the inserted user
-			return insertUser.rows[0];
+			return result.rows[0];
 		} catch (error) {
 			console.error(`Error in create method: ${(error as Error).message}`);
 
