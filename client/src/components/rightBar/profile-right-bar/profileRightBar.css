@@ -15,24 +15,24 @@
 	border: 1px solid #b4bc51;
 }
 
+.info-header,
+.bio-header {
+	color: var(--green-color-0);
+}
+
 .info-box {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
+	display: flex;
+	align-items: center;
+	gap: 15px;
 }
 
 .info-key {
-	font-size: larger;
-	font-weight: 500;
-	color: #848fa1;
+	font-size: 30px;
+	color: var(--main-color);
 }
 
-.info-value {
-	font-size: 14px;
-	font-weight: 500;
-}
-
+.info-value,
 .bio-text {
-	color: var(--gray-color-0);
 	font-style: italic;
 	font-weight: 600;
 }

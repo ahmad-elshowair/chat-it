@@ -1,14 +1,27 @@
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
 import { Users } from "../../dummyData";
+import { TUser } from "../../types/user";
 import "./profile.css";
 
 export const Profile = () => {
-	const [user, setUser] = useState();
-	const currentUserId = "1";
+	const [user, setUser] = useState<TUser>();
+	const currentUserId = "a492e9e1-7cdf-4a2b-be67-c45b18c85020";
+
+	useEffect(() => {
+		const fetchAUser = async () => {
+			const response = await axios.get(`/users/${currentUserId}`);
+			console.log(response);
+
+			setUser(response.data);
+		};
+		fetchAUser();
+	}, []);
+
 	return (
 		<>
 			<Topbar />
@@ -20,7 +33,7 @@ export const Profile = () => {
 							<img
 								height={370}
 								width={"100%"}
-								src="/assets/post/3.jpeg"
+								src={user?.cover || "/assets/avatars/noCover.png"}
 								alt="cover"
 							/>
 						</figure>
@@ -33,11 +46,13 @@ export const Profile = () => {
 								/>
 							</figure>
 							<div>
-								<h1 className="profile-info-name">John Doe</h1>
-								<span className="profile-info-username">@john</span>
+								<h1 className="profile-info-name">{`${user?.first_name} ${user?.last_name}`}</h1>
+								<span className="profile-info-username">
+									@{user?.user_name}
+								</span>
 							</div>
 							<div className="d-flex flex-column">
-								<h6> 10 friends</h6>
+								<h6> 10 followers</h6>
 								<figure className="d-flex">
 									{Users.slice(0, 6)
 										.filter((u) => u.user_id !== currentUserId)
@@ -56,7 +71,12 @@ export const Profile = () => {
 					</section>
 					<section className="profile-right-bottom d-flex">
 						<Feed user_id="ahmad" />
-						<ProfileRightBar />
+						<ProfileRightBar
+							bio={user?.bio || "default bio."}
+							home_town={user?.home_town || "default home town."}
+							city={user?.city || "default city."}
+							marital_status={user?.marital_status || "Default Status"}
+						/>
 					</section>
 				</section>
 			</section>

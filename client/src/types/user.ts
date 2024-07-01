@@ -13,5 +13,5 @@ export type TUser = {
 	updated_at?: Date;
 	first_name: string;
 	last_name: string;
-	marital_status: string;
+	marital_status?: string;
 };

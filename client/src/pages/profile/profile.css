@@ -14,7 +14,7 @@
 	padding-inline-start: 90px;
 	padding-inline-end: 30px;
 	display: grid;
-	grid-template-columns: 150px 200px 1fr 100px;
+	grid-template-columns: 150px 1fr 1fr 100px;
 	align-items: center;
 }
 
