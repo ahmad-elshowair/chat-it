@@ -2,6 +2,11 @@ import "./profileRightBar.css";
 export const ProfileRightBar = () => {
 	return (
 		<section className="profile-right-bar">
+			<article className="right-bar-bio mb-3">
+				<h3>Bio</h3>
+				<p className="bio-text ps-3">The is way is Simplicity.</p>
+			</article>
+
 			<article className="right-bar-info">
 				<h3 className="info">Info</h3>
 
@@ -21,7 +26,6 @@ export const ProfileRightBar = () => {
 					</p>
 				</div>
 			</article>
-			<article></article>
 		</section>
 	);
 };

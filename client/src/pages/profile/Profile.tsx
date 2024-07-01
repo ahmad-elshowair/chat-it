@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
@@ -6,6 +7,7 @@ import { Users } from "../../dummyData";
 import "./profile.css";
 
 export const Profile = () => {
+	const [user, setUser] = useState();
 	const currentUserId = "1";
 	return (
 		<>

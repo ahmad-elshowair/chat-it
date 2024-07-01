@@ -6,9 +6,12 @@ export type TUser = {
 	picture?: string;
 	cover?: string;
 	is_admin?: boolean;
-	description?: string;
+	bio?: string;
 	city?: string;
 	home_town?: string;
 	created_at?: Date;
 	updated_at?: Date;
+	first_name: string;
+	last_name: string;
+	marital_status: string;
 };

@@ -6,6 +6,7 @@
 	top: 80px;
 }
 
+.right-bar-bio,
 .right-bar-info {
 	margin-right: 20px;
 	background-color: #eaecef;
@@ -28,4 +29,10 @@
 .info-value {
 	font-size: 14px;
 	font-weight: 500;
+}
+
+.bio-text {
+	color: var(--gray-color-0);
+	font-style: italic;
+	font-weight: 600;
 }

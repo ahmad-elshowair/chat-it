@@ -63,7 +63,7 @@ export const Post = ({
 								className="post-header-info-links-user"
 								to={`/profile/${user?.user_name}`}
 								rel="noopener noreferrer">
-								{user?.user_name}
+								{`${user?.first_name} ${user?.last_name}`}
 							</Link>
 							<a href="#profile" className="post-header-info-links-date">
 								{dateFormate}
