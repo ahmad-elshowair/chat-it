@@ -10,21 +10,22 @@ import "./post.css";
 
 export const Post = ({
 	user_id,
+	user_name,
 	description,
 	image,
-	number_of_likes,
 	number_of_comments,
+	number_of_likes,
 	updated_at,
 }: TPost) => {
-	const [user, setUser] = useState<TUser>();
+	const [user, setUser] = useState<TUser | null>(null);
 
 	useEffect(() => {
 		const fetchAUser = async () => {
-			const response = await axios.get(`/users/${user_id}`);
+			const response = await axios.get(`/users/${user_id || user_name}`);
 			setUser(response.data);
 		};
 		fetchAUser();
-	}, [user_id]);
+	}, [user_id, user_name]);
 
 	// FORMATE THE DATE
 	const date: Date = new Date(updated_at as Date);

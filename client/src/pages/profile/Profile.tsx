@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
@@ -9,18 +10,20 @@ import { TUser } from "../../types/user";
 import "./profile.css";
 
 export const Profile = () => {
-	const [user, setUser] = useState<TUser>();
-	const currentUserId = "a492e9e1-7cdf-4a2b-be67-c45b18c85020";
+	const identifier = useParams().identifier;
+	console.log(identifier);
+
+	const [user, setUser] = useState<TUser | null>(null);
+
+	const currentUserId = "1";
 
 	useEffect(() => {
 		const fetchAUser = async () => {
-			const response = await axios.get(`/users/${currentUserId}`);
-			console.log(response);
-
+			const response = await axios.get(`/users/${identifier}`);
 			setUser(response.data);
 		};
 		fetchAUser();
-	}, []);
+	}, [identifier]);
 
 	return (
 		<>
@@ -41,7 +44,7 @@ export const Profile = () => {
 							<figure className="profile-image-container">
 								<img
 									className="profile-image"
-									src="/assets/avatars/1.jpeg"
+									src={user?.picture || "/assets/avatars/noAvatar.png"}
 									alt="profile"
 								/>
 							</figure>
@@ -52,7 +55,7 @@ export const Profile = () => {
 								</span>
 							</div>
 							<div className="d-flex flex-column">
-								<h6> 10 followers</h6>
+								<h6>followers</h6>
 								<figure className="d-flex">
 									{Users.slice(0, 6)
 										.filter((u) => u.user_id !== currentUserId)
@@ -70,7 +73,7 @@ export const Profile = () => {
 						</div>
 					</section>
 					<section className="profile-right-bottom d-flex">
-						<Feed user_id="ahmad" />
+						<Feed user_id={user?.user_id} />
 						<ProfileRightBar
 							bio={user?.bio || "default bio."}
 							home_town={user?.home_town || "default home town."}

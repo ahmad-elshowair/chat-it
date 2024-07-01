@@ -38,7 +38,7 @@ export const Topbar = () => {
 					</li>
 				</ul>
 				<figure className="avatar">
-					<Link to={`/profile/username`}>
+					<Link to={`/`}>
 						<img
 							height={36}
 							width={36}

@@ -20,11 +20,6 @@
 	background-color: var(--bs-gray-200);
 }
 
-.list-group-item img {
-	padding: 1px;
-	border: 1px solid var(--main-color);
-}
-
 .list-item-icon {
 	font-size: 32px;
 	color: var(--main-color);

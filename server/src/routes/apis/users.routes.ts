@@ -7,18 +7,18 @@ import userValidation from "../../middlewares/validations/user";
 const userRoute: Router = Router();
 
 userRoute.get("/", userController.index);
-userRoute.get("/:id", userController.getUser);
+userRoute.get("/:identifier", userController.getUser);
 userRoute.post(
-  "/register",
-  userValidation.register,
-  validationMiddleware,
-  authController.createUser
+	"/register",
+	userValidation.register,
+	validationMiddleware,
+	authController.createUser,
 );
 userRoute.post(
-  "/login",
-  userValidation.login,
-  validationMiddleware,
-  authController.loginUser
+	"/login",
+	userValidation.login,
+	validationMiddleware,
+	authController.loginUser,
 );
 userRoute.put("/update/:id", authorize_user, userController.update);
 

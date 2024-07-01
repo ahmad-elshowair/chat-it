@@ -27,23 +27,31 @@ class UserModel {
 		}
 	}
 
-	// get a user by id
-	async findById(id: string): Promise<User> {
+	// get a user by username
+	async getAUser(identifier: { [key: string]: string }): Promise<User> {
 		// connect to the database
 		const connection = await db.connect();
 		try {
-			// get the user by id
-			const getUserByIdQuery = "SELECT * FROM users WHERE user_id = ($1)";
-			const getUserById: QueryResult<User> = await connection.query(
-				getUserByIdQuery,
-				[id],
+			const keys = Object.keys(identifier);
+			const values = Object.values(identifier);
+
+			const conditions = keys
+				.map((key, index) => `${key}= $${index + 1}`)
+				.join(" OR ");
+			console.log(conditions);
+
+			const getAUserQuery = `SELECT * FROM users WHERE ${conditions}`;
+			const result: QueryResult<User> = await connection.query(
+				getAUserQuery,
+				values,
 			);
+
 			// if there is not user return a message
-			if (getUserById.rowCount < 1) {
+			if (result.rowCount < 1) {
 				throw new Error("NO USER FOUND!");
 			}
 			// return the user
-			return getUserById.rows[0];
+			return result.rows[0];
 		} catch (error) {
 			throw new Error(`model: ${(error as Error).message}`);
 		} finally {
@@ -70,8 +78,6 @@ class UserModel {
 
 			// Build the dynamic update query.
 			const [updateUserQuery, values] = buildUpdateQuery(id, user);
-			// const updateUserQuery =
-			// 	"UPDATE users SET user_name = ($1), email = ($2), password = ($3), picture =($4), cover = ($5), is_admin = ($6), description = ($7), city = ($8), home_town = ($9), updated_at = ($10) WHERE user_id = ($11) RETURNING *";
 			const UpdateUser: QueryResult<User> = await connection.query(
 				updateUserQuery,
 				values,

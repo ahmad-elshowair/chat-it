@@ -14,16 +14,17 @@ export const Feed = ({ user_id }: { user_id?: string }) => {
 				? await axios.get("/posts/user", {
 						headers: {
 							authorization:
-								"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE0OTJlOWUxLTdjZGYtNGEyYi1iZTY3LWM0NWIxOGM4NTAyMCIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5ODIwNjk0LCJleHAiOjE3MTk4MjQyOTR9.qEDMUiPyoNjFRHIzZXwakDTdcPciP6FzS6_oxfjcGpA",
+								"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE0OTJlOWUxLTdjZGYtNGEyYi1iZTY3LWM0NWIxOGM4NTAyMCIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5ODQ4NTk5LCJleHAiOjE3MTk4NTIxOTl9.2ADbzBTprBSXos4ltphZmX8atr0KYB-u7bL8jKF7OwY",
 						},
 				  })
 				: await axios.get("/posts/feed", {
 						headers: {
 							authorization:
-								"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE0OTJlOWUxLTdjZGYtNGEyYi1iZTY3LWM0NWIxOGM4NTAyMCIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5ODIwNjk0LCJleHAiOjE3MTk4MjQyOTR9.qEDMUiPyoNjFRHIzZXwakDTdcPciP6FzS6_oxfjcGpA",
+								"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE0OTJlOWUxLTdjZGYtNGEyYi1iZTY3LWM0NWIxOGM4NTAyMCIsImlzX2FkbWluIjpmYWxzZSwiaWF0IjoxNzE5ODQ4NTk5LCJleHAiOjE3MTk4NTIxOTl9.2ADbzBTprBSXos4ltphZmX8atr0KYB-u7bL8jKF7OwY",
 						},
 				  });
 			console.log(response.data);
+
 			setPosts(response.data);
 		};
 		fetchFeed();
@@ -32,7 +33,7 @@ export const Feed = ({ user_id }: { user_id?: string }) => {
 		<section className="feed">
 			<Share />
 			{posts.map((post) => (
-				<Post key={post.post_id} {...post} user_id={post.user_id} />
+				<Post key={post.post_id} {...post} />
 			))}
 		</section>
 	);

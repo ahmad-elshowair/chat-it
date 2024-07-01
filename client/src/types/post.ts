@@ -7,4 +7,5 @@ export type TPost = {
 	updated_at?: Date;
 	number_of_likes: number;
 	number_of_comments: number;
+	user_name?: string;
 };
