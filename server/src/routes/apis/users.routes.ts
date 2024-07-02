@@ -7,7 +7,7 @@ import userValidation from "../../middlewares/validations/user";
 const userRoute: Router = Router();
 
 userRoute.get("/", userController.index);
-userRoute.get("/:identifier", userController.getUser);
+userRoute.get("/:id", userController.getUser);
 userRoute.post(
 	"/register",
 	userValidation.register,

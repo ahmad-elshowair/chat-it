@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { isUUID } from "validator";
 import { CustomRequest } from "../interfaces/ICustomRequest";
 import UserModel from "../models/user";
 
@@ -16,17 +15,7 @@ const index = async (_req: Request, res: Response) => {
 // get a user by id
 const getUser = async (req: Request, res: Response) => {
 	try {
-		const { identifier } = req.params;
-		if (!identifier) {
-			return res.status(400).json({ error: "IDENTIFIER MUST BE PROVIDED! " });
-		}
-		const criteria: { [key: string]: string } = {};
-		if (isUUID(identifier)) {
-			criteria["user_id"] = identifier;
-		} else {
-			criteria["user_name"] = identifier;
-		}
-		const user = await user_model.getAUser(criteria);
+		const user = await user_model.getAUser(req.params.id);
 		res.status(200).json(user);
 	} catch (error) {
 		res.status(404).json({ error: (error as Error).message });

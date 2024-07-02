@@ -28,23 +28,14 @@ class UserModel {
 	}
 
 	// get a user by username
-	async getAUser(identifier: { [key: string]: string }): Promise<User> {
+	async getAUser(user_id: string): Promise<User> {
 		// connect to the database
 		const connection = await db.connect();
 		try {
-			const keys = Object.keys(identifier);
-			const values = Object.values(identifier);
-
-			const conditions = keys
-				.map((key, index) => `${key}= $${index + 1}`)
-				.join(" OR ");
-			console.log(conditions);
-
-			const getAUserQuery = `SELECT * FROM users WHERE ${conditions}`;
-			const result: QueryResult<User> = await connection.query(
-				getAUserQuery,
-				values,
-			);
+			const getAUserQuery = `SELECT * FROM users WHERE user_id = $1`;
+			const result: QueryResult<User> = await connection.query(getAUserQuery, [
+				user_id,
+			]);
 
 			// if there is not user return a message
 			if (result.rowCount < 1) {

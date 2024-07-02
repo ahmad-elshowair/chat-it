@@ -10,8 +10,7 @@ import { TUser } from "../../types/user";
 import "./profile.css";
 
 export const Profile = () => {
-	const identifier = useParams().identifier;
-	console.log(identifier);
+	const { id } = useParams();
 
 	const [user, setUser] = useState<TUser | null>(null);
 
@@ -19,11 +18,11 @@ export const Profile = () => {
 
 	useEffect(() => {
 		const fetchAUser = async () => {
-			const response = await axios.get(`/users/${identifier}`);
+			const response = await axios.get(`/users/${id}`);
 			setUser(response.data);
 		};
 		fetchAUser();
-	}, [identifier]);
+	}, [id]);
 
 	return (
 		<>
