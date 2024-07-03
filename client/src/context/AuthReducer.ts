@@ -6,19 +6,19 @@ const AuthReducer = (state: TInitialState, action: TContextAction) => {
 			return {
 				user: null,
 				isFetching: true,
-				error: false,
+				isError: false,
 			};
 		case "LOGIN_SUCCESS":
 			return {
 				user: action.payload,
 				isFetching: false,
-				error: false,
+				isError: false,
 			};
 		case "LOGIN_FAILURE":
 			return {
 				user: null,
 				isFetching: false,
-				error: true,
+				isError: true,
 			};
 		default:
 			return { ...state };

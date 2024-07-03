@@ -38,9 +38,9 @@ const loginUser = async (
 		const token = generateToken(payload, config.jwt_secret);
 
 		res.status(200).json({
-			name: user.user_name,
+			username: user.user_name,
 			email: user.email,
-			admin: user.is_admin,
+			isAdmin: user.is_admin,
 			token,
 		});
 	} catch (error) {

@@ -1,13 +1,26 @@
-import { useRef } from "react";
+import { CircularProgress } from "@mui/material";
+import { useContext, useRef } from "react";
 import { Link } from "react-router-dom";
+import { loginCall } from "../../apiCalls";
+import { AuthContext } from "../../context/AuthContext";
 import "./login.css";
 export const Login = () => {
-	const emailRef = useRef<HTMLInputElement | null>(null);
+	// create refs for email and password
+	const emailRef = useRef<HTMLInputElement>(null);
+	const passwordRef = useRef<HTMLInputElement>(null);
 
+	const { state, dispatch } = useContext(AuthContext);
 	// A function to handle the login submit;
-	const handleLoginSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+	const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		console.log(emailRef.current?.value);
+		await loginCall(
+			{
+				email: emailRef.current?.value,
+				password: passwordRef.current?.value,
+			},
+			dispatch,
+		);
+		console.log(state);
 	};
 
 	return (
@@ -29,6 +42,7 @@ export const Login = () => {
 							id="email"
 							placeholder="exmaple@gmail.com"
 							required
+							autoComplete="off"
 							ref={emailRef}
 						/>
 					</div>
@@ -43,10 +57,11 @@ export const Login = () => {
 							id="password"
 							placeholder="***********"
 							required
+							ref={passwordRef}
 						/>
 					</div>
 					<button className="btn btn-chat" type="submit">
-						Login
+						{state.isFetching ? <CircularProgress size={"20px"} /> : "Login"}
 					</button>
 					<Link to="/register" className="btn btn-new">
 						I'm new Here!

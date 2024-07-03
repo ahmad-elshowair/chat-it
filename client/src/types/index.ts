@@ -1,8 +1,12 @@
-import { TUser } from "./user";
-
-export type TLogin = {
+export type TLoginPayload = {
+	username: string;
 	email: string;
-	password: string;
+	isAdmin: boolean;
+	token: string;
+};
+export type TLogin = {
+	email?: string;
+	password?: string;
 };
 
 export type TContextAction = {
@@ -11,7 +15,7 @@ export type TContextAction = {
 };
 
 export type TInitialState = {
-	user?: TUser;
+	user?: TLoginPayload;
 	isFetching: boolean;
-	error: boolean;
+	isError: boolean;
 };

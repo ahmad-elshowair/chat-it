@@ -4,7 +4,7 @@ export const Register = () => {
 	return (
 		<section className="register-page">
 			<header className="register-form-header">
-				<img src="/assets/chat-it.png" alt="logo" />
+				<img src="/assets/chat-it-0.png" alt="logo" />
 				<h1>Chat it with Concern !</h1>
 			</header>
 			<form action="" className="register-form">
@@ -45,6 +45,19 @@ export const Register = () => {
 							type="password"
 							name="password"
 							id="password"
+							placeholder="***********"
+							required
+						/>
+					</div>
+					<div className="register-form-body-input">
+						<label className="form-label" htmlFor="confirm-password">
+							Confirm Password
+						</label>
+						<input
+							className="form-control"
+							type="password"
+							name="confirm-password"
+							id="confirm-password"
 							placeholder="***********"
 							required
 						/>

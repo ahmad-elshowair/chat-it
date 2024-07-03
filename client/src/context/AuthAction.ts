@@ -1,10 +1,11 @@
-import { TLogin } from "../types";
+import { TLoginPayload } from "../types";
 
-export const LoginStart = () => ({
+export const LoginStart = (user: TLoginPayload) => ({
 	type: "LOGIN_START",
+	payload: user,
 });
 
-export const LoginSuccess = (user: TLogin) => ({
+export const LoginSuccess = (user: TLoginPayload) => ({
 	type: "LOGIN_SUCCESS",
 	payload: user,
 });
