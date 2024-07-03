@@ -56,3 +56,8 @@
 	box-shadow: 0 0 10px #bebebe;
 	color: var(--gray-color-0);
 }
+
+.register-page input::placeholder {
+	color: var(--gray-color-0);
+	font-size: 14px;
+}
