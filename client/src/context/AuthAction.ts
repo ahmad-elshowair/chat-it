@@ -1,13 +1,15 @@
-export const LoginStart = ({ userCredentials }: { userCredentials: any }) => ({
+import { TLogin } from "../types";
+
+export const LoginStart = () => ({
 	type: "LOGIN_START",
 });
 
-export const LoginSuccess = ({ user }: { user: any }) => ({
+export const LoginSuccess = (user: TLogin) => ({
 	type: "LOGIN_SUCCESS",
 	payload: user,
 });
 
-export const LoginFailure = ({ error }: { error: string }) => ({
+export const LoginFailure = (error: Error) => ({
 	type: "LOGIN_FAILURE",
 	payload: error,
 });

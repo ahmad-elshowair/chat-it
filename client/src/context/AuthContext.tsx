@@ -1,11 +1,7 @@
 import { Dispatch, ReactNode, createContext, useReducer } from "react";
+import { TContextAction, TInitialState } from "../types";
 import { TUser } from "../types/user"; // Ensure this path is correct
 import AuthReducer from "./AuthReducer"; // Ensure this path is correct
-
-export type Action = {
-	type: string;
-	payload?: any;
-};
 
 export type State = {
 	user?: TUser;
@@ -13,7 +9,7 @@ export type State = {
 	error: boolean;
 };
 
-const INITIAL_STATE: State = {
+const INITIAL_STATE: TInitialState = {
 	user: undefined,
 	isFetching: false,
 	error: false,
@@ -21,17 +17,13 @@ const INITIAL_STATE: State = {
 
 export const AuthContext = createContext<{
 	state: State;
-	dispatch: Dispatch<Action>;
+	dispatch: Dispatch<TContextAction>;
 }>({
 	state: INITIAL_STATE,
 	dispatch: () => {},
 });
 
-type AuthProviderProps = {
-	children: ReactNode;
-};
-
-function AuthProvider({ children }: AuthProviderProps) {
+function AuthProvider({ children }: { children: ReactNode }) {
 	const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
 	return (
 		<AuthContext.Provider value={{ state, dispatch }}>

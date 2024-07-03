@@ -1,6 +1,6 @@
-import { Action, State } from "./AuthContext";
+import { TContextAction, TInitialState } from "../types";
 
-const AuthReducer = (state: State, action: Action) => {
+const AuthReducer = (state: TInitialState, action: TContextAction) => {
 	switch (action.type) {
 		case "LOGIN_START":
 			return {
