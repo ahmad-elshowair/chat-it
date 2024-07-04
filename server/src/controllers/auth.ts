@@ -9,7 +9,13 @@ const user_model = new AuthModel();
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const user = await user_model.create(req.body);
-		res.status(201).json({ ...user });
+		const payload: UserPayload = {
+			id: user.user_id,
+			is_admin: user.is_admin,
+		};
+		const token = generateToken(payload, config.jwt_secret);
+
+		res.status(201).json({ ...user, token });
 	} catch (error) {
 		next(error);
 	}
