@@ -1,8 +1,8 @@
 import { CircularProgress } from "@mui/material";
 import { useContext, useRef } from "react";
 import { Link } from "react-router-dom";
-import { loginCall } from "../../apiCalls";
 import { AuthContext } from "../../context/AuthContext";
+import { loginCall } from "../../services/authService";
 import "./login.css";
 export const Login = () => {
 	// create refs for email and password

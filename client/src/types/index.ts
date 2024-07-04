@@ -8,7 +8,13 @@ export type TLogin = {
 	email?: string;
 	password?: string;
 };
-
+export type TRegister = {
+	username: string;
+	email: string;
+	password: string;
+	first_name: string;
+	last_name: string;
+};
 export type TContextAction = {
 	type: string;
 	payload?: any;
