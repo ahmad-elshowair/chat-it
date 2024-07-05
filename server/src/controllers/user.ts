@@ -3,6 +3,7 @@ import { CustomRequest } from "../interfaces/ICustomRequest";
 import UserModel from "../models/user";
 
 const user_model = new UserModel();
+
 const index = async (_req: Request, res: Response) => {
 	try {
 		const users = await user_model.getAll();
@@ -50,7 +51,9 @@ const deleteUser = async (req: CustomRequest, res: Response) => {
 		// check of the user has the same id or it is admin
 		if (req.user.id === id || req.user.is_admin) {
 			const deleted_user = await user_model.delete(id);
-			res.status(200).json(`the user of ${id} has deleted !`);
+			res
+				.status(200)
+				.json(`${deleted_user.user_name} has deleted successfully !`);
 		} else {
 			res
 				.status(401)

@@ -15,7 +15,13 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
 		};
 		const token = generateToken(payload, config.jwt_secret);
 
-		res.status(201).json({ ...user, token });
+		res.status(201).json({
+			user_id: user.user_id,
+			user_name: user.user_name,
+			isAdmin: user.is_admin,
+			email: user.email,
+			token,
+		});
 	} catch (error) {
 		next(error);
 	}
@@ -44,6 +50,7 @@ const loginUser = async (
 		const token = generateToken(payload, config.jwt_secret);
 
 		res.status(200).json({
+			user_id: user.user_id,
 			username: user.user_name,
 			email: user.email,
 			isAdmin: user.is_admin,

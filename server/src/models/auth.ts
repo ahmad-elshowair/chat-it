@@ -6,10 +6,10 @@ import { buildInsertQuery } from "../utilities/build-insert-query";
 class AuthModel {
 	//a method to create a new user
 	async create(user: User): Promise<User> {
-		// connect to the database
+		// CREATE
 		const connection = await db.connect();
 		try {
-			// check ig the user exist
+			// MAKE SURE THE USER EXIST.
 			const checkUser: QueryResult<User> = await connection.query(
 				"SELECT * FROM users WHERE email=$1",
 				[user.email],
@@ -19,22 +19,12 @@ class AuthModel {
 				throw new Error(`User with email ${user.email} is already exist ! `);
 			}
 
-			// insert the new user
+			// INSERT THE USER.
 			const [query, values] = buildInsertQuery(user);
-			console.log(`${query}\n${values}`);
 
 			const result: QueryResult<User> = await connection.query(query, values);
-			// const insertUser = await connection.query(
-			// 	"INSERT INTO users (user_name, email, password, first_name, last_name) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-			// 	[
-			// 		user.user_name,
-			// 		user.email,
-			// 		passwords.hashPassword(user.password),
-			// 		user.first_name,
-			// 		user.last_name,
-			// 	],
-			// );
-			// return the inserted user
+
+			// RETURN THE INSERTED USER.
 			return result.rows[0];
 		} catch (error) {
 			console.error(`Error in create method: ${(error as Error).message}`);
@@ -43,7 +33,7 @@ class AuthModel {
 				`something wrong with create method ${(error as Error).message}`,
 			);
 		} finally {
-			// release the connection
+			// RELEASE THE CONNECTION.
 			connection.release();
 		}
 	}
