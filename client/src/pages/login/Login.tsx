@@ -21,7 +21,6 @@ export const Login = () => {
 			},
 			dispatch,
 		);
-		console.log(state);
 	};
 
 	// const {
@@ -56,11 +55,6 @@ export const Login = () => {
 							required
 							ref={emailRef}
 						/>
-						{state.validationErrors?.email && (
-							<p className="alert alert-warning p-2 mb-0 mt-3">
-								{state.validationErrors?.email}
-							</p>
-						)}
 					</div>
 					<div className="login-form-body-input">
 						<label className="form-label" htmlFor="password">
@@ -73,12 +67,8 @@ export const Login = () => {
 							name="password"
 							placeholder="***********"
 							required
+							ref={passwordRef}
 						/>
-						{state.validationErrors?.password && (
-							<p className="alert alert-warning p-2 mb-0 mt-3">
-								{state.validationErrors?.password}
-							</p>
-						)}
 					</div>
 					<button className="btn btn-chat" type="submit">
 						{state.isFetching ? <CircularProgress size={"20px"} /> : "Login"}
@@ -88,7 +78,9 @@ export const Login = () => {
 					</Link>
 				</div>
 				{state.error && (
-					<p className="alert alert-danger p-2 mb-0 mt-3">{state.error}</p>
+					<p className="w-100 text-center alert alert-warning p-2 mb-0 mt-3">
+						{state.error}
+					</p>
 				)}
 			</form>
 		</section>

@@ -8,13 +8,9 @@ const postRoute: Router = Router();
 postRoute.post("/create", authorize_user, postController.create);
 postRoute.put("/update/:id", authorize_user, postController.update);
 postRoute.post("/like/:id", authorize_user, likeController.handleLike);
-postRoute.get("/all", postController.getAllPosts);
-postRoute.get("/:id", postController.getPostById);
+postRoute.get("/all", postController.index);
 postRoute.delete("/delete/:id", authorize_user, postController.deletePost);
-postRoute.get("/user", authorize_user, postController.getAllByUserId);
-postRoute.get(
-	"/feed",
-	authorize_user,
-	postController.getAllByUserIdAndFollowings,
-);
+postRoute.get("/user", authorize_user, postController.userPosts);
+postRoute.get("/feed", authorize_user, postController.feed);
+postRoute.get("/:id", authorize_user, postController.aPost);
 export default postRoute;

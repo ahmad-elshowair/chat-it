@@ -3,6 +3,20 @@ import pool from "../database/pool";
 import Post from "../types/post";
 
 class PostModel {
+	// CHECK EXISTING OF A POST.
+	private async checkPostExist(id: string): Promise<boolean> {
+		// CONNECT TO THE DATABASE.
+		const connection = await pool.connect();
+		try {
+			const postExist: QueryResult<Post> = await connection.query(
+				`SELECT * FROM posts WHERE post_id = $1, [id]`,
+			);
+			return postExist.rowCount > 0;
+		} finally {
+			// RELEASE DATABASE CONNECTION.
+			connection.release();
+		}
+	}
 	// create a post
 	async create(post: Post): Promise<Post> {
 		// connect to the database
@@ -28,7 +42,7 @@ class PostModel {
 	}
 
 	// get a post by id
-	async getById(id: string): Promise<Post> {
+	async aPost(id: string): Promise<Post> {
 		// connect to the database
 		const connection = await pool.connect();
 		try {
@@ -44,7 +58,7 @@ class PostModel {
 			// return post
 			return post.rows[0];
 		} catch (error) {
-			throw new Error(`getById model: ${(error as Error).message}`);
+			throw new Error(`aPost model: ${(error as Error).message}`);
 		} finally {
 			// release the the database
 			connection.release();
@@ -52,7 +66,7 @@ class PostModel {
 	}
 
 	// get all posts
-	async getAll(): Promise<Post[]> {
+	async index(): Promise<Post[]> {
 		// connect to the database
 		const connection = await pool.connect();
 		try {
@@ -63,7 +77,7 @@ class PostModel {
 			// return posts
 			return posts.rows;
 		} catch (error) {
-			throw new Error(`getAll model: ${(error as Error).message}`);
+			throw new Error(`index model: ${(error as Error).message}`);
 		} finally {
 			// release the the database
 			connection.release();
@@ -76,11 +90,7 @@ class PostModel {
 		const connection = await pool.connect();
 		try {
 			// check if the post exist
-			const postExist: QueryResult<Post> = await connection.query(
-				"SELECT * FROM posts WHERE post_id = $1",
-				[id],
-			);
-			if (postExist.rowCount === 0) {
+			if (!this.checkPostExist) {
 				throw new Error("Post not found");
 			}
 			// update the post
@@ -104,13 +114,10 @@ class PostModel {
 		const connection = await pool.connect();
 		try {
 			// check if the post exist
-			const postExist: QueryResult<Post> = await connection.query(
-				"SELECT * FROM posts WHERE post_id = $1",
-				[id],
-			);
-			if (postExist.rowCount === 0) {
+			if (!this.checkPostExist) {
 				throw new Error("Post not found");
 			}
+
 			// delete the post
 			await connection.query("DELETE FROM posts WHERE post_id = $1", [id]);
 			// return a message
@@ -123,7 +130,7 @@ class PostModel {
 		}
 	}
 	// get all post by user id
-	async getAllByUserId(userId: string) {
+	async userPosts(userId: string) {
 		// connect to the database
 		const connection = await pool.connect();
 		try {
@@ -148,9 +155,7 @@ class PostModel {
 			// return posts
 			return posts.rows;
 		} catch (error) {
-			throw new Error(
-				`get all post by a user model: ${(error as Error).message}`,
-			);
+			throw new Error(`userPosts model: ${(error as Error).message}`);
 		} finally {
 			// release the the database
 			connection.release();
@@ -158,7 +163,7 @@ class PostModel {
 	}
 
 	// get all the posts of a user and followings'
-	async getAllByUserIdAndFollowing(userId: string): Promise<Post[]> {
+	async feed(userId: string): Promise<Post[]> {
 		// connect to the database
 		const connection = await pool.connect();
 		try {
@@ -192,7 +197,7 @@ class PostModel {
 			// return posts
 			return posts.rows;
 		} catch (error) {
-			throw new Error(`getAllByUserId model: ${(error as Error).message}`);
+			throw new Error(`feed model: ${(error as Error).message}`);
 		} finally {
 			// release the the database
 			connection.release();

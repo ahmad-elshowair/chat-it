@@ -17,7 +17,7 @@ const create = async (req: CustomRequest, res: Response) => {
 		const createPost = await postService.create(post);
 		res.status(201).json(createPost);
 	} catch (error) {
-		res.status(400).json({ error: (error as Error).message });
+		res.status(500).json({ error: (error as Error).message });
 	}
 };
 // update a post
@@ -32,34 +32,38 @@ const update = async (req: CustomRequest, res: Response) => {
 			res.status(401).json({ message: "THAT IS NOT YOUR POST !" });
 		}
 	} catch (error) {
-		res.status(400).json({ error: (error as Error).message });
+		res.status(500).json({ error: (error as Error).message });
 	}
 };
 
 // get post by id
-const getPostById = async (req: Request, res: Response) => {
+const aPost = async (req: Request, res: Response) => {
 	try {
-		const post = await postService.getById(req.params.id);
+		const post = await postService.aPost(req.params.id);
 		res.status(200).json(post);
 	} catch (error) {
-		res.status(400).json({ error: (error as Error).message });
+		res.status(500).json({ error: (error as Error).message });
 	}
 };
 
 // get all posts
-const getAllPosts = async (req: Request, res: Response) => {
+const index = async (req: Request, res: Response) => {
 	try {
-		const posts = await postService.getAll();
+		const posts = await postService.index();
+		if (posts.length < 1) {
+			res.status(200).json({ message: "NO POSTS FOUND" });
+		}
 		res.status(200).json(posts);
 	} catch (error) {
-		res.status(400).json({ error: (error as Error).message });
+		console.error("Error fetching posts:", error);
+		res.status(500).json({ error: "An error occurred while fetching posts." });
 	}
 };
 
 // delete post
 const deletePost = async (req: CustomRequest, res: Response) => {
 	try {
-		const post = await postService.getById(req.params.id);
+		const post = await postService.aPost(req.params.id);
 		if (post.user_id === req.user.id) {
 			const deletePost = await postService.delete(req.params.id);
 			res.status(200).json(deletePost);
@@ -67,40 +71,43 @@ const deletePost = async (req: CustomRequest, res: Response) => {
 			res.status(401).json({ message: "THAT IS NOT YOUR POST !" });
 		}
 	} catch (error) {
-		res.status(400).json({ error: (error as Error).message });
+		res.status(500).json({ error: (error as Error).message });
 	}
 };
 // GET ALL POSTS BY USER ID
-const getAllByUserId = async (req: CustomRequest, res: Response) => {
+const userPosts = async (req: CustomRequest, res: Response) => {
 	try {
-		const posts: Post[] = await postService.getAllByUserId(req.user.id);
+		const posts: Post[] = await postService.userPosts(req.user.id);
+		if (posts.length < 1) {
+			res.status(200).json({ message: "NO POSTS FOUND" });
+		}
 		res.status(200).json(posts);
 	} catch (error) {
-		res.status(400).json({ error: (error as Error).message });
+		console.error("Error fetching posts:", error);
+		res.status(500).json({ error: "An error occurred while fetching posts." });
 	}
 };
 
 // GET ALL POSTS OF A USER AND HIS FOLLOWINGS
-const getAllByUserIdAndFollowings = async (
-	req: CustomRequest,
-	res: Response,
-) => {
+const feed = async (req: CustomRequest, res: Response) => {
 	try {
-		const posts: Post[] = await postService.getAllByUserIdAndFollowing(
-			req.user.id,
-		);
+		const posts: Post[] = await postService.feed(req.user.id);
+		if (posts.length < 1) {
+			res.status(200).json({ message: "NO POSTS FOUND" });
+		}
 		res.status(200).json(posts);
 	} catch (error) {
-		res.status(400).json({ error: (error as Error).message });
+		console.error("Error fetching posts:", error);
+		res.status(500).json({ error: "An error occurred while fetching posts." });
 	}
 };
 
 export default {
 	create,
 	update,
-	getPostById,
-	getAllPosts,
+	aPost,
+	index,
 	deletePost,
-	getAllByUserId,
-	getAllByUserIdAndFollowings,
+	userPosts,
+	feed,
 };

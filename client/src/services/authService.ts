@@ -18,8 +18,8 @@ export const registerUser = async (
 		if (axios.isAxiosError(error) && error.response) {
 			if (error.response.status === 400 && error.response.data.errors) {
 				dispatch({
-					type: "VALIDATION_ERRORS",
-					payload: error.response.data.errors,
+					type: "FAILURE",
+					payload: error.response.data.errors[0].msg,
 				});
 			} else {
 				errorMessage = error.response.data;
@@ -46,8 +46,8 @@ export const loginUser = async (
 		if (axios.isAxiosError(error) && error.response) {
 			if (error.response.status === 400 && error.response.data.errors) {
 				dispatch({
-					type: "VALIDATION_ERRORS",
-					payload: error.response.data.errors,
+					type: "FAILURE",
+					payload: error.response.data.errors[0].msg,
 				});
 			} else {
 				errorMessage = error.response.data;

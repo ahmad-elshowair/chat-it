@@ -19,12 +19,10 @@ export type RegisterCredentials = {
 export type AuthAction =
 	| { type: "START" }
 	| { type: "SUCCEEDED"; payload: UserPayload }
-	| { type: "FAILURE"; payload: string }
-	| { type: "VALIDATION_ERRORS"; payload: Record<string, string> };
+	| { type: "FAILURE"; payload: string };
 
 export type AuthState = {
 	user: UserPayload | null;
 	isFetching: boolean;
 	error: string | null;
-	validationErrors: Record<string, string> | null;
 };

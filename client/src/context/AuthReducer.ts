@@ -8,7 +8,6 @@ const AuthReducer = (state: AuthState, action: AuthAction) => {
 				user: null,
 				isFetching: true,
 				error: null,
-				validationErrors: null,
 			};
 		case "SUCCEEDED":
 			return {
@@ -16,23 +15,13 @@ const AuthReducer = (state: AuthState, action: AuthAction) => {
 				user: action.payload,
 				isFetching: false,
 				error: null,
-				validationErrors: null,
 			};
 		case "FAILURE":
 			return {
 				...state,
 				user: null,
 				isFetching: false,
-				error: action.payload as string,
-				validationErrors: null,
-			};
-		case "VALIDATION_ERRORS":
-			return {
-				...state,
-				user: null,
-				isFetching: false,
-				error: null,
-				validationErrors: action.payload as Record<string, string>,
+				error: action.payload,
 			};
 		default:
 			return { ...state };
