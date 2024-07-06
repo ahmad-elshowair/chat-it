@@ -1,16 +1,17 @@
 import { Dispatch, ReactNode, createContext, useReducer } from "react";
-import { TContextAction, TInitialState } from "../types";
-import AuthReducer from "./AuthReducer"; // Ensure this path is correct
+import { AuthAction, AuthState } from "../types";
+import AuthReducer from "./AuthReducer";
 
-const initialState: TInitialState = {
-	user: undefined,
+const initialState: AuthState = {
+	user: null,
 	isFetching: false,
-	isError: false,
+	error: null,
+	validationErrors: null,
 };
 
 export const AuthContext = createContext<{
-	state: TInitialState;
-	dispatch: Dispatch<TContextAction>;
+	state: AuthState;
+	dispatch: Dispatch<AuthAction>;
 }>({
 	state: initialState,
 	dispatch: () => {},

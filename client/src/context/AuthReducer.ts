@@ -1,24 +1,38 @@
-import { TContextAction, TInitialState } from "../types";
+import { AuthAction, AuthState } from "../types";
 
-const AuthReducer = (state: TInitialState, action: TContextAction) => {
+const AuthReducer = (state: AuthState, action: AuthAction) => {
 	switch (action.type) {
-		case "LOGIN_START":
+		case "START":
 			return {
+				...state,
 				user: null,
 				isFetching: true,
-				isError: false,
+				error: null,
+				validationErrors: null,
 			};
-		case "LOGIN_SUCCESS":
+		case "SUCCEEDED":
 			return {
+				...state,
 				user: action.payload,
 				isFetching: false,
-				isError: false,
+				error: null,
+				validationErrors: null,
 			};
-		case "LOGIN_FAILURE":
+		case "FAILURE":
 			return {
+				...state,
 				user: null,
 				isFetching: false,
-				isError: true,
+				error: action.payload as string,
+				validationErrors: null,
+			};
+		case "VALIDATION_ERRORS":
+			return {
+				...state,
+				user: null,
+				isFetching: false,
+				error: null,
+				validationErrors: action.payload as Record<string, string>,
 			};
 		default:
 			return { ...state };

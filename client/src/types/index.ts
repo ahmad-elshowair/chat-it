@@ -1,27 +1,30 @@
-export type TLoginPayload = {
+export type UserPayload = {
+	user_id: string;
 	username: string;
 	email: string;
 	isAdmin: boolean;
 	token: string;
 };
-export type TLogin = {
+export type LoginCredentials = {
 	email?: string;
 	password?: string;
 };
-export type TRegister = {
+export type RegisterCredentials = {
 	username: string;
 	email: string;
 	password: string;
 	first_name: string;
 	last_name: string;
 };
-export type TContextAction = {
-	type: string;
-	payload?: any;
-};
+export type AuthAction =
+	| { type: "START" }
+	| { type: "SUCCEEDED"; payload: UserPayload }
+	| { type: "FAILURE"; payload: string }
+	| { type: "VALIDATION_ERRORS"; payload: Record<string, string> };
 
-export type TInitialState = {
-	user?: TLoginPayload;
+export type AuthState = {
+	user: UserPayload | null;
 	isFetching: boolean;
-	isError: boolean;
+	error: string | null;
+	validationErrors: Record<string, string> | null;
 };

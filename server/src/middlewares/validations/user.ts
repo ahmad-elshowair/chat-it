@@ -2,15 +2,17 @@ import { ValidationChain, check } from "express-validator";
 import db from "../../database/pool";
 import passwords from "../../utilities/passwords";
 
-const checkEmail: ValidationChain = check("email")
+const checkIsEmail: ValidationChain = check("email")
 	.isEmail()
-	.withMessage("it is not an email !");
-const checkPassword: ValidationChain = check("password")
+	.withMessage("Invalid email format! Example: 'example@domain-name.com'");
+
+const checkPasswordLength: ValidationChain = check("password")
 	.isLength({ min: 6 })
-	.withMessage("Password Minium Length is 6 characters");
+	.withMessage("PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG !");
+
 const checkName: ValidationChain = check("user_name")
 	.isLength({ min: 3 })
-	.withMessage("name is too short");
+	.withMessage("USERNAME MUST BE AT LEAST 6 CHARACTERS LONG !");
 
 const checkLogin: ValidationChain = check("email").custom(
 	async (email: string, { req }) => {
@@ -23,7 +25,7 @@ const checkLogin: ValidationChain = check("email").custom(
 			]);
 			// check if the email exist
 			if (user.rows.length === 0) {
-				throw new Error(`INCORRECT EMAIL !`);
+				throw new Error(`${email} IS NOT EXIST !`);
 			}
 			// check if the password is correct
 			if (!passwords.checkPassword(req.body.password, user.rows[0].password)) {
@@ -38,6 +40,6 @@ const checkLogin: ValidationChain = check("email").custom(
 	},
 );
 export default {
-	register: [checkEmail, checkPassword, checkName],
-	login: [checkLogin, checkEmail],
+	register: [checkIsEmail, checkPasswordLength, checkName],
+	login: [checkLogin, checkIsEmail],
 };

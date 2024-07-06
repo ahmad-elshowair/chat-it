@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useContext } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import { registerUser } from "../../services/authService";
-import { TRegister } from "../../types";
+import { RegisterCredentials } from "../../types";
 import "./register.css";
 export const Register = () => {
-	//EXTENT 'TRegister' TYPE ALIAS
-	type TRegisterForm = TRegister & {
+	//EXTENT 'RegisterCredentials' TYPE ALIAS
+	type TRegisterForm = RegisterCredentials & {
 		confirm_password: string;
 	};
+
+	const { state, dispatch } = useContext(AuthContext);
 
 	// USE USE FORM HOOK
 	const {
@@ -17,18 +20,11 @@ export const Register = () => {
 		formState: { errors },
 		watch,
 	} = useForm<TRegisterForm>();
-	const [apiError, setApiError] = useState<string | null>(null);
-	const navigate = useNavigate();
 
 	const onSubmit = async (data: TRegisterForm) => {
-		try {
-			// OMIT 'confirm_password' WHEN SENDING DATA TO API.
-			const { confirm_password, ...userData } = data;
-			await registerUser(userData);
-			navigate("/login");
-		} catch (error) {
-			setApiError((error as Error).message);
-		}
+		// OMIT 'confirm_password' WHEN SENDING DATA TO API.
+		const { confirm_password, ...userData } = data;
+		await registerUser(userData, dispatch);
 	};
 
 	return (
@@ -91,7 +87,8 @@ export const Register = () => {
 								required: "EMAIL IS REQUIRED!",
 								pattern: {
 									value: /\S+@S+\.\S+/,
-									message: "INVALID EMAIL!",
+									message:
+										"Invalid email format! Example: 'example@domain-name.com'",
 								},
 							})}
 						/>
@@ -181,9 +178,6 @@ export const Register = () => {
 							</span>
 						)}
 					</div>
-					{apiError && (
-						<article className="alert alert-danger">{apiError}</article>
-					)}
 					<button className="btn btn-chat" type="submit">
 						register
 					</button>
@@ -192,6 +186,9 @@ export const Register = () => {
 					</Link>
 				</div>
 			</form>
+			{state.error && (
+				<article className="alert alert-danger">{state.error}</article>
+			)}
 		</section>
 	);
 };

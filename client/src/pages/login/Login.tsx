@@ -2,18 +2,19 @@ import { CircularProgress } from "@mui/material";
 import { useContext, useRef } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { loginCall } from "../../services/authService";
+import { loginUser } from "../../services/authService";
 import "./login.css";
+
 export const Login = () => {
-	// create refs for email and password
+	const { state, dispatch } = useContext(AuthContext);
+
+	// CREATE REFS FOR EMAIL AND PASSWORD
 	const emailRef = useRef<HTMLInputElement>(null);
 	const passwordRef = useRef<HTMLInputElement>(null);
-
-	const { state, dispatch } = useContext(AuthContext);
-	// A function to handle the login submit;
+	//A FUNCTION TO HANDLE THE LOGIN
 	const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		await loginCall(
+		await loginUser(
 			{
 				email: emailRef.current?.value,
 				password: passwordRef.current?.value,
@@ -22,6 +23,16 @@ export const Login = () => {
 		);
 		console.log(state);
 	};
+
+	// const {
+	// 	register,
+	// 	handleSubmit,
+	// 	formState: { errors },
+	// } = useForm<LoginCredentials>();
+
+	// const onSubmit: SubmitHandler<LoginCredentials> = async (loginData) => {
+	// 	await loginUser(loginData, dispatch);
+	// };
 
 	return (
 		<section className="login-page">
@@ -38,13 +49,18 @@ export const Login = () => {
 						<input
 							className="form-control"
 							type="email"
-							name="email"
 							id="email"
+							name="email"
 							placeholder="exmaple@gmail.com"
-							required
 							autoComplete="off"
+							required
 							ref={emailRef}
 						/>
+						{state.validationErrors?.email && (
+							<p className="alert alert-warning p-2 mb-0 mt-3">
+								{state.validationErrors?.email}
+							</p>
+						)}
 					</div>
 					<div className="login-form-body-input">
 						<label className="form-label" htmlFor="password">
@@ -53,12 +69,16 @@ export const Login = () => {
 						<input
 							className="form-control"
 							type="password"
-							name="password"
 							id="password"
+							name="password"
 							placeholder="***********"
 							required
-							ref={passwordRef}
 						/>
+						{state.validationErrors?.password && (
+							<p className="alert alert-warning p-2 mb-0 mt-3">
+								{state.validationErrors?.password}
+							</p>
+						)}
 					</div>
 					<button className="btn btn-chat" type="submit">
 						{state.isFetching ? <CircularProgress size={"20px"} /> : "Login"}
@@ -67,6 +87,9 @@ export const Login = () => {
 						I'm new Here!
 					</Link>
 				</div>
+				{state.error && (
+					<p className="alert alert-danger p-2 mb-0 mt-3">{state.error}</p>
+				)}
 			</form>
 		</section>
 	);
