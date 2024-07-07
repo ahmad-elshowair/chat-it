@@ -49,7 +49,7 @@ const checkPassword: ValidationChain = check("password").custom(
 );
 
 // CHECK IF THE USER NAME LENGTH IS AT LEAST 3 CHARACTERS.
-const checkNameLength: ValidationChain = checkLength(
+const checkUserNameLength: ValidationChain = checkLength(
 	"user_name",
 	6,
 	"USERNAME MUST BE AT LEAST 6 CHARACTERS LONG !",
@@ -97,7 +97,7 @@ export default {
 	register: [
 		checkIsEmail,
 		checkPasswordLength,
-		checkNameLength,
+		checkUserNameLength,
 		checkFirstNameLength,
 		checkLastNameLength,
 		checkPasswordMatch,
