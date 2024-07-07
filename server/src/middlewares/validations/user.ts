@@ -51,7 +51,7 @@ const checkPassword: ValidationChain = check("password").custom(
 // CHECK IF THE USER NAME LENGTH IS AT LEAST 3 CHARACTERS.
 const checkNameLength: ValidationChain = checkLength(
 	"user_name",
-	3,
+	6,
 	"USERNAME MUST BE AT LEAST 6 CHARACTERS LONG !",
 );
 
