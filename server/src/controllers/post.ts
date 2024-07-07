@@ -50,9 +50,6 @@ const aPost = async (req: Request, res: Response) => {
 const index = async (req: Request, res: Response) => {
 	try {
 		const posts = await postService.index();
-		if (posts.length < 1) {
-			res.status(200).json({ message: "NO POSTS FOUND" });
-		}
 		res.status(200).json(posts);
 	} catch (error) {
 		console.error("Error fetching posts:", error);
@@ -78,9 +75,7 @@ const deletePost = async (req: CustomRequest, res: Response) => {
 const userPosts = async (req: CustomRequest, res: Response) => {
 	try {
 		const posts: Post[] = await postService.userPosts(req.user.id);
-		if (posts.length < 1) {
-			res.status(200).json({ message: "NO POSTS FOUND" });
-		}
+
 		res.status(200).json(posts);
 	} catch (error) {
 		console.error("Error fetching posts:", error);
@@ -92,9 +87,7 @@ const userPosts = async (req: CustomRequest, res: Response) => {
 const feed = async (req: CustomRequest, res: Response) => {
 	try {
 		const posts: Post[] = await postService.feed(req.user.id);
-		if (posts.length < 1) {
-			res.status(200).json({ message: "NO POSTS FOUND" });
-		}
+
 		res.status(200).json(posts);
 	} catch (error) {
 		console.error("Error fetching posts:", error);

@@ -21,11 +21,11 @@ export const Post = ({
 
 	useEffect(() => {
 		const fetchAUser = async () => {
-			const response = await axios.get(`/users/${user_id}`);
+			const response = await axios.get(`/users/${user_name}`);
 			setUser(response.data);
 		};
 		fetchAUser();
-	}, [user_id]);
+	}, [user_name]);
 
 	// FORMATE THE DATE
 	const date: Date = new Date(updated_at as Date);
@@ -51,7 +51,7 @@ export const Post = ({
 				<article className="post-header">
 					<div className="post-header-info">
 						<figure>
-							<Link to={`/profile/${user?.user_id}`}>
+							<Link to={`/profile/${user?.user_name}`}>
 								<img
 									className="post-header-img-user"
 									src={user?.picture || "/assets/avatars/noAvatar.png"}
@@ -62,7 +62,7 @@ export const Post = ({
 						<div className="post-header-info-links">
 							<Link
 								className="post-header-info-links-user"
-								to={`/profile/${user?.user_id}`}
+								to={`/profile/${user?.user_name}`}
 								rel="noopener noreferrer">
 								{`${user?.first_name} ${user?.last_name}`}
 							</Link>

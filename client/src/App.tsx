@@ -27,7 +27,7 @@ function App() {
 				/>
 
 				<Route
-					path="/profile/:id"
+					path="/profile/:user_name"
 					element={state.user ? <Profile /> : <Navigate to="/login" replace />}
 				/>
 

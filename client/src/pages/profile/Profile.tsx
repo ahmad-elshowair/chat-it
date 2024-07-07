@@ -10,7 +10,8 @@ import { TUser } from "../../types/user";
 import "./profile.css";
 
 export const Profile = () => {
-	const { id } = useParams();
+	const params = useParams();
+	console.log(params);
 
 	const [user, setUser] = useState<TUser | null>(null);
 
@@ -18,11 +19,11 @@ export const Profile = () => {
 
 	useEffect(() => {
 		const fetchAUser = async () => {
-			const response = await axios.get(`/users/${id}`);
+			const response = await axios.get(`/users/${params.user_name}`);
 			setUser(response.data);
 		};
 		fetchAUser();
-	}, [id]);
+	}, [params.user_name]);
 
 	return (
 		<>
@@ -72,7 +73,7 @@ export const Profile = () => {
 						</div>
 					</section>
 					<section className="profile-right-bottom d-flex">
-						<Feed user_id={user?.user_id} />
+						<Feed user_name={user?.user_name} />
 						<ProfileRightBar
 							bio={user?.bio || "default bio."}
 							home_town={user?.home_town || "default home town."}

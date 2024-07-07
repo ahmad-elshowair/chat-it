@@ -16,7 +16,7 @@ const index = async (_req: Request, res: Response) => {
 // get a user by id
 const getUser = async (req: Request, res: Response) => {
 	try {
-		const user = await user_model.getAUser(req.params.id);
+		const user = await user_model.getAUser(req.params.user_name);
 		res.status(200).json(user);
 	} catch (error) {
 		res.status(404).json({ error: (error as Error).message });

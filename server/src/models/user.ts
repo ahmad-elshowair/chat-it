@@ -28,13 +28,13 @@ class UserModel {
 	}
 
 	// get a user by username
-	async getAUser(user_id: string): Promise<User> {
+	async getAUser(user_name: string): Promise<User> {
 		// connect to the database
 		const connection = await db.connect();
 		try {
-			const getAUserQuery = `SELECT * FROM users WHERE user_id = $1`;
+			const getAUserQuery = `SELECT * FROM users WHERE user_name = $1`;
 			const result: QueryResult<User> = await connection.query(getAUserQuery, [
-				user_id,
+				user_name,
 			]);
 
 			// if there is not user return a message
