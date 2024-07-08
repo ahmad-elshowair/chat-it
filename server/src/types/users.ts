@@ -13,6 +13,7 @@ type User = {
 	updated_at?: Date;
 	first_name: string;
 	last_name: string;
+	marital_status: string;
 };
 
 export default User;

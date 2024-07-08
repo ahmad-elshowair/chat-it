@@ -18,9 +18,18 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
 		res.status(201).json({
 			user_id: user.user_id,
 			user_name: user.user_name,
-			isAdmin: user.is_admin,
 			email: user.email,
-			token,
+			picture: user.picture,
+			cover: user.cover,
+			is_admin: user.is_admin,
+			bio: user.bio,
+			city: user.city,
+			home_town: user.home_town,
+			updated_at: user.updated_at,
+			first_name: user.first_name,
+			last_name: user.last_name,
+			marital_status: user.marital_status,
+			token: token,
 		});
 	} catch (error) {
 		next(error);
@@ -47,10 +56,19 @@ const loginUser = async (
 
 		res.status(200).json({
 			user_id: user.user_id,
-			username: user.user_name,
+			user_name: user.user_name,
 			email: user.email,
-			isAdmin: user.is_admin,
-			token,
+			picture: user.picture,
+			cover: user.cover,
+			is_admin: user.is_admin,
+			bio: user.bio,
+			city: user.city,
+			home_town: user.home_town,
+			updated_at: user.updated_at,
+			first_name: user.first_name,
+			last_name: user.last_name,
+			marital_status: user.marital_status,
+			token: token,
 		});
 	} catch (error) {
 		next(error);

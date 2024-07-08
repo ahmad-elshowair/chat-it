@@ -5,6 +5,7 @@ import {
 	FaUserFriends,
 	FaUsers,
 } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import { Users } from "../../dummyData";
 import { Friend } from "../friend/Friend";
 import "./leftBar.css";
@@ -13,10 +14,10 @@ export const LeftBar = () => {
 		<aside className="sidebar">
 			<section className="sidebar-content">
 				<div className="list-group">
-					<a href="#friends" className="list-group-item list-group-item-action">
+					<Link to="/" className="list-group-item list-group-item-action">
 						<FaRss className="list-item-icon" />
 						<span className="list-item-text">Feed</span>
-					</a>
+					</Link>
 
 					<a href="#friends" className="list-group-item list-group-item-action">
 						<FaUserFriends className="list-item-icon" />

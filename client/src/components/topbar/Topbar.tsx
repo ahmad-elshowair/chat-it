@@ -1,7 +1,12 @@
+import { useContext } from "react";
 import { FaBell, FaComment, FaHome, FaSearch } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import "./topbar.css";
 export const Topbar = () => {
+	const { state } = useContext(AuthContext);
+	console.log(state); // Logging the state.
+	const { user } = state;
 	return (
 		<nav className="navbar fixed-top">
 			<section className="container-fluid">
@@ -38,12 +43,12 @@ export const Topbar = () => {
 					</li>
 				</ul>
 				<figure className="avatar">
-					<Link to={`/`}>
+					<Link to={`/profile/${user?.user_name}`}>
 						<img
 							height={36}
 							width={36}
 							alt="avatar"
-							src="/assets/avatars/1.jpeg"
+							src={`${user?.picture}` || "/assets/avatars/noAvatar.png"}
 							className="rounded-circle"
 						/>
 					</Link>
