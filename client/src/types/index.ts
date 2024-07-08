@@ -10,7 +10,7 @@ export type LoginCredentials = {
 	password?: string;
 };
 export type RegisterCredentials = {
-	username: string;
+	user_name: string;
 	email: string;
 	password: string;
 	first_name: string;
@@ -19,10 +19,10 @@ export type RegisterCredentials = {
 export type AuthAction =
 	| { type: "START" }
 	| { type: "SUCCEEDED"; payload: UserPayload }
-	| { type: "FAILURE"; payload: string };
+	| { type: "FAILURE"; payload: string[] };
 
 export type AuthState = {
 	user: UserPayload | null;
-	isFetching: boolean;
-	error: string | null;
+	loading: boolean;
+	errors: string[] | null;
 };

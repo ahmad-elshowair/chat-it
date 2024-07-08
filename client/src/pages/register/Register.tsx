@@ -12,6 +12,7 @@ export const Register = () => {
 	};
 
 	const { state, dispatch } = useContext(AuthContext);
+	const { errors: backendErrors } = state;
 
 	// USE USE FORM HOOK
 	const {
@@ -22,9 +23,13 @@ export const Register = () => {
 	} = useForm<TRegisterForm>();
 
 	const onSubmit = async (data: TRegisterForm) => {
-		// OMIT 'confirm_password' WHEN SENDING DATA TO API.
-		const { confirm_password, ...userData } = data;
-		await registerUser(userData, dispatch);
+		try {
+			// OMIT 'confirm_password' WHEN SENDING DATA TO API.
+			const { confirm_password, ...userData } = data;
+			await registerUser(userData, dispatch);
+		} catch (error) {
+			console.error(error);
+		}
 	};
 
 	return (
@@ -49,10 +54,14 @@ export const Register = () => {
 							placeholder="Mohammed"
 							{...register("first_name", {
 								required: "First Name is Required",
+								minLength: {
+									value: 3,
+									message: "First name must be at least 3 characters!",
+								},
 							})}
 						/>
 						{errors.first_name && (
-							<span className="alert alert-warning">
+							<span className="alert alert-warning p-2 text-danger mt-1 text-center">
 								{errors.first_name.message}
 							</span>
 						)}
@@ -66,10 +75,16 @@ export const Register = () => {
 							type="text"
 							id="last_name"
 							placeholder="Khan"
-							{...register("last_name", { required: "LAST NAME IS REQUIRED!" })}
+							{...register("last_name", {
+								required: "LAST NAME IS REQUIRED!",
+								minLength: {
+									value: 3,
+									message: "Last name must be at least 3 characters!",
+								},
+							})}
 						/>
 						{errors.last_name && (
-							<span className="alert alert-warning">
+							<span className="alert alert-warning p-2 text-danger mt-1 text-center">
 								{errors.last_name.message}
 							</span>
 						)}
@@ -86,39 +101,40 @@ export const Register = () => {
 							{...register("email", {
 								required: "EMAIL IS REQUIRED!",
 								pattern: {
-									value: /\S+@S+\.\S+/,
+									value: /\S+@\S+\.\S+/,
 									message:
 										"Invalid email format! Example: 'example@domain-name.com'",
 								},
 							})}
 						/>
 						{errors.email && (
-							<span className="alert alert-warning">
+							<span className="alert alert-warning p-2 text-danger mt-1 text-center">
 								{errors.email.message}
 							</span>
 						)}
 					</div>
 
 					<div className="register-form-body-input">
-						<label className="form-label" htmlFor="username">
+						<label className="form-label" htmlFor="user_name">
 							User Name
 						</label>
 						<input
 							className="form-control"
 							type="text"
-							id="username"
+							id="user_name"
 							placeholder="mohammed-khan"
-							{...register("username", {
+							{...register("user_name", {
 								required: "USERNAME IS REQUIRED!",
 								pattern: {
 									value: /^[a-z0-9_-]+$/,
 									message:
-										"USERNAME CAN ON;Y CONTAIN LOWERCASE LETTERS, NUMBERS, UNDERSCORES, AND HYPHENS !",
+										"USERNAME CAN ONLY CONTAIN LOWERCASE LETTERS, NUMBERS, UNDERSCORES, AND HYPHENS !",
+								},
+								minLength: {
+									value: 6,
+									message: "user name must be at least 6 characters !",
 								},
 								validate: {
-									minLength: (value: string) =>
-										(value && value.length >= 3) ||
-										"USERNAME MUST BE AT LEAST 3 CHARACTERS LONG!",
 									noConsecutiveSymbols: (value: string) =>
 										(value && !/[-_]{2,}/.test(value)) ||
 										"USERNAME CANNOT CONTAIN CONSECUTIVE SYMBOLS!",
@@ -128,9 +144,9 @@ export const Register = () => {
 								},
 							})}
 						/>
-						{errors.username && (
-							<span className="alert alert-warning">
-								{errors.username.message}
+						{errors.user_name && (
+							<span className="alert alert-warning p-2 text-danger mt-1 text-center">
+								{errors.user_name.message}
 							</span>
 						)}
 					</div>
@@ -152,7 +168,7 @@ export const Register = () => {
 							})}
 						/>
 						{errors.password && (
-							<span className="alert alert-warning">
+							<span className="alert alert-warning p-2 text-danger mt-1 text-center">
 								{errors.password.message}
 							</span>
 						)}
@@ -173,7 +189,7 @@ export const Register = () => {
 							})}
 						/>
 						{errors.confirm_password && (
-							<span className="alert alert-warning">
+							<span className="alert alert-warning p-2 text-danger mt-1 text-center">
 								{errors.confirm_password.message}
 							</span>
 						)}
@@ -185,10 +201,18 @@ export const Register = () => {
 						I'm homie
 					</Link>
 				</div>
+				{backendErrors && backendErrors.length > 0 && (
+					<article className="w-100 text-center">
+						{backendErrors.map((error, index) => (
+							<p
+								key={index}
+								className="alert alert-warning mt-3 p-2 text-danger">
+								{error}
+							</p>
+						))}
+					</article>
+				)}
 			</form>
-			{state.error && (
-				<article className="alert alert-danger">{state.error}</article>
-			)}
 		</section>
 	);
 };

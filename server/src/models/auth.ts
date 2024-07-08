@@ -5,33 +5,40 @@ import { buildInsertQuery } from "../utilities/build-insert-query";
 
 class AuthModel {
 	//a method to create a new user
-	async create(user: User): Promise<User> {
-		// CREATE
+	async register(registerCredentials: User): Promise<User> {
 		const connection = await db.connect();
 		try {
-			// MAKE SURE THE USER EXIST.
-			const checkUser: QueryResult<User> = await connection.query(
+			// MAKE SURE THE EMAIL IS NOT EXIST.
+			const checKUserResult: QueryResult<User> = await connection.query(
 				"SELECT * FROM users WHERE email=$1",
-				[user.email],
+				[registerCredentials.email],
 			);
+			const existingUser = checKUserResult.rows[0];
 
-			if (checkUser.rows.length > 0) {
-				throw new Error(`User with email ${user.email} is already exist ! `);
+			if (existingUser) {
+				throw new Error(`Email is already in user !`);
 			}
 
-			// INSERT THE USER.
-			const [query, values] = buildInsertQuery(user);
+			const [query, values] = buildInsertQuery(registerCredentials);
+			// Insert the user into the database
+			const registerUserResult: QueryResult<User> = await connection.query(
+				query,
+				values,
+			);
 
-			const result: QueryResult<User> = await connection.query(query, values);
+			const registerUser = registerUserResult.rows[0];
+
+			// Commit the transaction
+			await connection.query("COMMIT");
 
 			// RETURN THE INSERTED USER.
-			return result.rows[0];
+			return registerUser;
 		} catch (error) {
-			console.error(`Error in create method: ${(error as Error).message}`);
+			// Rollback the transaction on error
+			await connection.query("ROLLBACK");
+			console.error(`Error in create model: ${(error as Error).message}`);
 
-			throw new Error(
-				`something wrong with create method ${(error as Error).message}`,
-			);
+			throw new Error(`Error in create model ${(error as Error).message}`);
 		} finally {
 			// RELEASE THE CONNECTION.
 			connection.release();
@@ -44,12 +51,16 @@ class AuthModel {
 		const connection = await db.connect();
 		try {
 			//select a user form the database
-			const checkUser: QueryResult<User> = await db.query(
+			const result: QueryResult<User> = await db.query(
 				"SELECT * FROM users WHERE email=$1",
 				[email],
 			);
+			const user = result.rows[0];
+			if (!user) {
+				throw new Error(`user not found !`);
+			}
 			// return the user
-			return checkUser.rows[0];
+			return user;
 		} catch (error) {
 			throw new Error(
 				`something wrong with login method ${(error as Error).message}`,

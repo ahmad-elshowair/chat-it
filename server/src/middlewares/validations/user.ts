@@ -1,52 +1,15 @@
 import { ValidationChain, check } from "express-validator";
+import { QueryResult } from "pg";
 import db from "../../database/pool";
+import User from "../../types/users";
 import passwords from "../../utilities/passwords";
 
-const checkLength = (
+// A helper function to check the length
+export const checkLength = (
 	field: string,
 	min: number,
 	message: string,
 ): ValidationChain => check(field).isLength({ min }).withMessage(message);
-
-const checkIsEmail: ValidationChain = check("email")
-	.isEmail()
-	.withMessage("Invalid email format! Example: 'example@domain-name.com'");
-
-const checkPasswordLength: ValidationChain = checkLength(
-	"password",
-	6,
-	"PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG !",
-);
-const checkPasswordMatch: ValidationChain = check("confirm_password").custom(
-	(confirmPassword: string, { req }) => {
-		if (confirmPassword !== req.body.password) {
-			throw new Error(`PASSWORDS DO NOT MATCH !`);
-		}
-		return true;
-	},
-);
-
-// CHECK IF THE PASSWORD IS CORRECT.
-const checkPassword: ValidationChain = check("password").custom(
-	async (password: string, { req }) => {
-		const connection = await db.connect();
-		try {
-			const result = await connection.query(
-				"SELECT * FROM users WHERE email = $1",
-				[req.body.email],
-			);
-			const user = result.rows[0];
-			// check if the password is correct
-			if (!user || !passwords.checkPassword(password, user.rows[0].password)) {
-				throw new Error("INCORRECT PASSWORD !");
-			}
-		} catch (error) {
-			throw new Error(`Authentication failed ${(error as Error).message}!`);
-		} finally {
-			connection.release();
-		}
-	},
-);
 
 // CHECK IF THE USER NAME LENGTH IS AT LEAST 3 CHARACTERS.
 const checkUserNameLength: ValidationChain = checkLength(
@@ -69,38 +32,106 @@ const checkLastNameLength: ValidationChain = checkLength(
 	"THE LAST NAME MUST BE AT LEAST 3 CHARACTERS!",
 );
 
-//CHECK IF THE EMAIL EXISTS IN THE DATABASE.
-const isEmailExist: ValidationChain = check("email").custom(
-	async (email: string, { req }) => {
-		// connect to the database
+const checkPasswordLength: ValidationChain = checkLength(
+	"password",
+	6,
+	"PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG !",
+);
+
+const checkIsEmail: ValidationChain = check("email")
+	.isEmail()
+	.withMessage("Invalid email format! Example: 'example@domain-name.com'");
+
+// CHECK IF THE PASSWORD IS CORRECT.
+const checkPassword: ValidationChain = check("password").custom(
+	async (password: string, { req }) => {
 		const connection = await db.connect();
 		try {
-			// select the user from the database
-			const result = await db.query("SELECT * FROM users WHERE email=$1", [
-				email,
-			]);
-			const user = result.rows[0];
+			const result: QueryResult<User> = await connection.query(
+				"SELECT * FROM users WHERE email = $1",
+				[req.body.email],
+			);
+			const user: User = result.rows[0];
 
-			if (!user) {
-				throw new Error(`${email} DOES NOT EXIST !`);
+			if (user && !passwords.checkPassword(password, user.password)) {
+				throw new Error("INCORRECT PASSWORD !");
 			}
-
-			req.user = user;
 		} catch (error) {
-			throw new Error(`USER LOOKUP FAILED: ${(error as Error).message}`);
+			if (
+				error instanceof Error &&
+				error.message !== " EMAIL DOES NOT EXIST !"
+			) {
+				throw new Error(`${(error as Error).message}!`);
+			}
 		} finally {
 			connection.release();
 		}
 	},
 );
-export default {
-	register: [
-		checkIsEmail,
-		checkPasswordLength,
-		checkUserNameLength,
-		checkFirstNameLength,
-		checkLastNameLength,
-		checkPasswordMatch,
-	],
-	login: [isEmailExist, checkIsEmail, checkPasswordLength, checkPassword],
-};
+
+// Check if the use name exists in the database
+const checkUserNameExists: ValidationChain = check("user_name").custom(
+	async (user_name: string) => {
+		const connection = await db.connect();
+		try {
+			const result: QueryResult<User> = await connection.query(
+				"SELECT * FROM users WHERE user_name = $1",
+				[user_name],
+			);
+			const user: User = result.rows[0];
+			if (user) {
+				throw new Error("USERNAME ALREADY EXISTS !");
+			}
+		} catch (error) {
+			if (error instanceof Error) {
+				throw new Error(`${(error as Error).message}!`);
+			}
+		} finally {
+			connection.release();
+		}
+	},
+);
+
+//CHECK IF THE EMAIL EXISTS IN THE DATABASE.
+const isEmailExist = (context: "register" | "login"): ValidationChain =>
+	check("email").custom(async (email: string, { req }) => {
+		// connect to the database
+		const connection = await db.connect();
+		try {
+			// select the user from the database
+			const result: QueryResult<User> = await db.query(
+				"SELECT * FROM users WHERE email=$1",
+				[email],
+			);
+			const user: User = result.rows[0];
+
+			if (context === "login" && !user) {
+				throw new Error(`EMAIL DOES NOT EXIST !`);
+			}
+
+			if (context === "register" && user) {
+				throw new Error(`EMAIL ALREADY EXISTS !`);
+			}
+
+			req.user = user;
+		} catch (error) {
+			throw new Error(`${(error as Error).message}`);
+		} finally {
+			connection.release();
+		}
+	});
+export const registerValidation = [
+	checkIsEmail,
+	checkPasswordLength,
+	checkUserNameLength,
+	checkFirstNameLength,
+	checkLastNameLength,
+	isEmailExist("register"),
+	checkUserNameExists,
+];
+export const loginValidation = [
+	checkIsEmail,
+	checkPasswordLength,
+	isEmailExist("login"),
+	checkPassword,
+];

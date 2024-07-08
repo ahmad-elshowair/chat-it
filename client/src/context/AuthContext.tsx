@@ -4,8 +4,8 @@ import AuthReducer from "./AuthReducer";
 
 const initialState: AuthState = {
 	user: null,
-	isFetching: false,
-	error: null,
+	loading: false,
+	errors: null,
 };
 
 export const AuthContext = createContext<{

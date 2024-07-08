@@ -8,7 +8,7 @@ const user_model = new AuthModel();
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const user = await user_model.create(req.body);
+		const user = await user_model.register(req.body);
 		const payload: UserPayload = {
 			id: user.user_id,
 			is_admin: user.is_admin,
@@ -36,10 +36,6 @@ const loginUser = async (
 	const { email, password } = req.body;
 	try {
 		const user = await user_model.login(email, password);
-		//check the user
-		if (!user) {
-			res.status(401).json({ error: "Invalid email or password" });
-		}
 
 		const payload: UserPayload = {
 			id: user.user_id,

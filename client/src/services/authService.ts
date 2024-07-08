@@ -17,14 +17,19 @@ export const registerUser = async (
 		let errorMessage: string = "AN UNEXPECTED ERROR WITH REGISTRATION !";
 		if (axios.isAxiosError(error) && error.response) {
 			if (error.response.status === 400 && error.response.data.errors) {
-				dispatch({
-					type: "FAILURE",
-					payload: error.response.data.errors[0].msg,
-				});
+				const validationErrors = error.response.data.errors.map(
+					(err: { msg: string }) => err.msg,
+				);
+
+				console.log(validationErrors);
+
+				dispatch({ type: "FAILURE", payload: validationErrors });
 			} else {
 				errorMessage = error.response.data;
-				dispatch({ type: "FAILURE", payload: errorMessage });
+				dispatch({ type: "FAILURE", payload: [errorMessage] });
 			}
+		} else {
+			dispatch({ type: "FAILURE", payload: [errorMessage] });
 		}
 	}
 };
@@ -45,17 +50,19 @@ export const loginUser = async (
 		let errorMessage: string = "AN UNEXPECTED ERROR WITH LOGIN !";
 		if (axios.isAxiosError(error) && error.response) {
 			if (error.response.status === 400 && error.response.data.errors) {
-				dispatch({
-					type: "FAILURE",
-					payload: error.response.data.errors[0].msg,
-				});
+				const validationErrors = error.response.data.errors.map(
+					(err: { msg: string }) => err.msg,
+				);
+
+				console.log(validationErrors);
+
+				dispatch({ type: "FAILURE", payload: validationErrors });
 			} else {
 				errorMessage = error.response.data;
-				dispatch({
-					type: "FAILURE",
-					payload: errorMessage,
-				});
+				dispatch({ type: "FAILURE", payload: [errorMessage] });
 			}
+		} else {
+			dispatch({ type: "FAILURE", payload: [errorMessage] });
 		}
 	}
 };

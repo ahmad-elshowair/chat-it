@@ -1,37 +1,31 @@
 import { CircularProgress } from "@mui/material";
-import { useContext, useRef } from "react";
+import { useContext } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../services/authService";
+import { LoginCredentials } from "../../types";
 import "./login.css";
 
 export const Login = () => {
 	const { state, dispatch } = useContext(AuthContext);
 
-	// CREATE REFS FOR EMAIL AND PASSWORD
-	const emailRef = useRef<HTMLInputElement>(null);
-	const passwordRef = useRef<HTMLInputElement>(null);
-	//A FUNCTION TO HANDLE THE LOGIN
-	const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		await loginUser(
-			{
-				email: emailRef.current?.value,
-				password: passwordRef.current?.value,
-			},
-			dispatch,
-		);
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<LoginCredentials>();
+
+	const onSubmit: SubmitHandler<LoginCredentials> = async (
+		loginData: LoginCredentials,
+	) => {
+		try {
+			await loginUser(loginData, dispatch);
+		} catch (error) {
+			console.log(error);
+		}
 	};
-
-	// const {
-	// 	register,
-	// 	handleSubmit,
-	// 	formState: { errors },
-	// } = useForm<LoginCredentials>();
-
-	// const onSubmit: SubmitHandler<LoginCredentials> = async (loginData) => {
-	// 	await loginUser(loginData, dispatch);
-	// };
+	console.log(state.errors);
 
 	return (
 		<section className="login-page">
@@ -39,7 +33,7 @@ export const Login = () => {
 				<img src="/assets/chat-it.png" alt="logo" />
 				<h1>A warm Welcome Back !</h1>
 			</header>
-			<form action="" onSubmit={handleLoginSubmit} className="login-form">
+			<form action="" onSubmit={handleSubmit(onSubmit)} className="login-form">
 				<div className="login-form-body">
 					<div className="login-form-body-input">
 						<label className="form-label" htmlFor="email">
@@ -49,12 +43,22 @@ export const Login = () => {
 							className="form-control"
 							type="email"
 							id="email"
-							name="email"
 							placeholder="exmaple@gmail.com"
 							autoComplete="off"
-							required
-							ref={emailRef}
+							{...register("email", {
+								required: "EMAIL IS REQUIRED!",
+								pattern: {
+									value: /\S+@\S+\.\S+/,
+									message:
+										"Invalid email format! Example: 'example@domain-name.com'",
+								},
+							})}
 						/>
+						{errors.email && (
+							<span className="alert alert-warning p-2 text-danger text-center mt-1">
+								{errors.email.message}
+							</span>
+						)}
 					</div>
 					<div className="login-form-body-input">
 						<label className="form-label" htmlFor="password">
@@ -64,23 +68,38 @@ export const Login = () => {
 							className="form-control"
 							type="password"
 							id="password"
-							name="password"
 							placeholder="***********"
-							required
-							ref={passwordRef}
+							{...register("password", {
+								required: "PASSWORD IS REQUIRED!",
+								minLength: {
+									value: 8,
+									message: "PASSWORD MUST BE AT LEAST 8 CHARACTERS LONG!",
+								},
+							})}
 						/>
+						{errors.password && (
+							<span className="alert alert-warning p-2 text-danger text-center mt-1">
+								{errors.password.message}
+							</span>
+						)}
 					</div>
 					<button className="btn btn-chat" type="submit">
-						{state.isFetching ? <CircularProgress size={"20px"} /> : "Login"}
+						{state.loading ? <CircularProgress size={"20px"} /> : "Login"}
 					</button>
 					<Link to="/register" className="btn btn-new">
 						I'm new Here!
 					</Link>
 				</div>
-				{state.error && (
-					<p className="w-100 text-center alert alert-warning p-2 mb-0 mt-3">
-						{state.error}
-					</p>
+				{state.errors && state.errors.length > 0 && (
+					<article className="w-100 text-center">
+						{state.errors.map((error, index) => (
+							<p
+								key={index}
+								className="alert alert-warning p-2 mt-3 text-danger">
+								{error}
+							</p>
+						))}
+					</article>
 				)}
 			</form>
 		</section>

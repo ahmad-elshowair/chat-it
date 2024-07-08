@@ -3,20 +3,23 @@ import authController from "../../controllers/auth";
 import userController from "../../controllers/user";
 import authorize_user from "../../middlewares/auth";
 import { validationMiddleware } from "../../middlewares/validation";
-import userValidation from "../../middlewares/validations/user";
+import {
+	loginValidation,
+	registerValidation,
+} from "../../middlewares/validations/user";
 const userRoute: Router = Router();
 
 userRoute.get("/", userController.index);
 userRoute.get("/:user_name", userController.getUser);
 userRoute.post(
 	"/register",
-	userValidation.register,
+	registerValidation,
 	validationMiddleware,
 	authController.createUser,
 );
 userRoute.post(
 	"/login",
-	userValidation.login,
+	loginValidation,
 	validationMiddleware,
 	authController.loginUser,
 );
