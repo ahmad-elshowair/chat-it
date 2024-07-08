@@ -6,11 +6,11 @@ import authorize_user from "../../middlewares/auth";
 const postRoute: Router = Router();
 
 postRoute.post("/create", authorize_user, postController.create);
-postRoute.put("/update/:id", authorize_user, postController.update);
-postRoute.post("/like/:id", authorize_user, likeController.handleLike);
+postRoute.put("/update/:post_id", authorize_user, postController.update);
+postRoute.post("/like/:post_id", authorize_user, likeController.handleLike);
 postRoute.get("/all", postController.index);
-postRoute.delete("/delete/:id", authorize_user, postController.deletePost);
+postRoute.delete("/delete/:post_id", authorize_user, postController.deletePost);
 postRoute.get("/user", authorize_user, postController.userPosts);
 postRoute.get("/feed", authorize_user, postController.feed);
-postRoute.get("/:id", authorize_user, postController.aPost);
+postRoute.get("/:post_id", authorize_user, postController.aPost);
 export default postRoute;
