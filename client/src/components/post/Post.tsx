@@ -1,9 +1,10 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AiFillLike } from "react-icons/ai";
 import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
 import { FaComments, FaEllipsisH, FaRegComment, FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import { TPost } from "../../types/post";
 import { TUser } from "../../types/user";
 import "./post.css";
@@ -16,9 +17,12 @@ export const Post = ({
 	number_of_comments,
 	number_of_likes,
 	updated_at,
+	post_id,
 }: TPost) => {
+	const { state } = useContext(AuthContext);
 	const [user, setUser] = useState<TUser | null>(null);
 
+	const token = state.user?.token;
 	useEffect(() => {
 		const fetchAUser = async () => {
 			const response = await axios.get(`/users/${user_name}`);
@@ -40,7 +44,14 @@ export const Post = ({
 	const [likes, setLikes] = useState(number_of_likes);
 	const [isLiked, setIsLiked] = useState(false);
 
-	const likeHandler = () => {
+	const likeHandler = async () => {
+		try {
+			await axios.post(`/posts/like/${post_id}`, {
+				headers: {
+					authorization: `Bearer ${token}`,
+				},
+			});
+		} catch (error) {}
 		setLikes(isLiked ? likes - 1 : likes + 1);
 		setIsLiked(!isLiked);
 	};
