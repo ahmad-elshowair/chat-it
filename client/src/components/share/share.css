@@ -1,61 +1,88 @@
 .share-post {
-  width: 100%;
-  box-shadow: 0 0 4px #906b6b;
-  padding: 10px;
-  border-radius: 10px;
+	width: 100%;
+	box-shadow: 0 0 4px #906b6b;
+	padding: 10px;
+	border-radius: 10px;
 }
 
 .share-post img {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  padding: 1px;
-  border: 1px solid var(--main-color);
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	padding: 1px;
+	border: 1px solid var(--main-color);
 }
 
 .input-bar {
-  display: flex;
-  justify-content: space-between;
+	display: flex;
+	justify-content: space-between;
 }
 
 .input-bar .btn-outline {
-  background-color: var(--bs-gray-200);
-  border-radius: 30px;
-  width: 100%;
-  margin-left: 20px;
-  height: 40px;
-  text-align: left;
-  color: var(--bs-code-color);
+	background-color: var(--bs-gray-200);
+	border-radius: 30px;
+	width: 100%;
+	margin-left: 20px;
+	height: 40px;
+	text-align: left;
+	color: var(--bs-code-color);
 }
 
 .buttons-bar {
-  display: flex;
-  justify-content: space-around;
+	display: flex;
+	justify-content: space-around;
 }
 
 .buttons-bar .icon {
-  color: var(--main-color);
-  font-size: 20px;
-  margin-right: 10px;
+	color: var(--main-color);
+	font-size: 20px;
+	margin-right: 10px;
 }
 
 .buttons-bar .btn {
-  color: var(--bs-code-color);
+	color: var(--bs-code-color);
 }
 
 .buttons-bar .btn:hover {
-  background-color: var(--bs-gray-200);
+	background-color: var(--bs-gray-200);
 }
 
 .share-post textarea {
-  border: none;
+	border: none;
 }
 
 .share-post textarea:focus {
-  outline: none;
-  box-shadow: none;
+	outline: none;
+	box-shadow: none;
 }
 
-.share-post .modal-header {
-  border: none;
+.modal-header {
+	justify-content: center;
+}
+
+.modal-footer {
+	border: none;
+}
+
+.modal-footer h6.m-0 {
+	color: var(--bs-gray-600);
+}
+.modal-footer .icon {
+	color: var(--main-color);
+	font-size: 50px;
+	cursor: pointer;
+	padding: 5px;
+	border-radius: 5px;
+}
+
+.modal-footer .icon:hover {
+	background-color: var(--bs-gray-200);
+}
+.btn-close {
+	position: absolute;
+	right: 16px;
+}
+
+.modal-backdrop.show {
+	opacity: 0.6;
 }
