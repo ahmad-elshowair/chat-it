@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useContext, useEffect, useState } from "react";
 import { AiFillLike } from "react-icons/ai";
 import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
@@ -10,7 +10,6 @@ import { TUser } from "../../types/user";
 import "./post.css";
 
 export const Post = ({
-	user_id,
 	user_name,
 	description,
 	image,
@@ -23,10 +22,15 @@ export const Post = ({
 	const [user, setUser] = useState<TUser | null>(null);
 
 	const token = state.user?.token;
+
 	useEffect(() => {
 		const fetchAUser = async () => {
-			const response = await axios.get(`/users/${user_name}`);
-			setUser(response.data);
+			try {
+				const response = await axios.get(`/users/${user_name}`);
+				setUser(response.data);
+			} catch (error) {
+				console.error(`Failed to fetch user: ${error}`);
+			}
 		};
 		fetchAUser();
 	}, [user_name]);
@@ -41,19 +45,40 @@ export const Post = ({
 		hour12: false,
 	});
 
-	const [likes, setLikes] = useState(number_of_likes);
-	const [isLiked, setIsLiked] = useState(false);
+	const [likeState, setLikeState] = useState({
+		isLiked: false,
+		likes: number_of_likes,
+	});
 
 	const likeHandler = async () => {
+		setLikeState((pervState) => ({
+			...pervState,
+			isLiked: !pervState.isLiked,
+			likes: pervState.isLiked ? pervState.likes - 1 : pervState.likes + 1,
+		}));
+
 		try {
-			await axios.post(`/posts/like/${post_id}`, {
-				headers: {
-					authorization: `Bearer ${token}`,
+			await axios.post(
+				`/posts/like/${post_id}`,
+				{},
+				{
+					headers: {
+						authorization: `Bearer ${token}`,
+					},
 				},
-			});
-		} catch (error) {}
-		setLikes(isLiked ? likes - 1 : likes + 1);
-		setIsLiked(!isLiked);
+			);
+		} catch (error) {
+			const axiosError = error as AxiosError;
+			if (axiosError.response) {
+				console.error("Error data:", axiosError.response.data);
+				console.error("Error status:", axiosError.response.status);
+			}
+			setLikeState((prevState) => ({
+				...prevState,
+				isLiked: !prevState.isLiked,
+				likes: prevState.isLiked ? prevState.likes - 1 : prevState.likes + 1,
+			}));
+		}
 	};
 
 	return (
@@ -101,7 +126,7 @@ export const Post = ({
 					<span className="post-statistics-icon">
 						<BiSolidLike className="likes me-2" />
 						<span className="post-statistics-number">
-							{likes} people like it{" "}
+							{likeState.likes} people like it{" "}
 						</span>
 					</span>
 					<span className="post-statistics-icon">
@@ -112,8 +137,12 @@ export const Post = ({
 				<hr />
 				<article className="post-footer">
 					<div className="post-footer-icons">
-						<button type="button" className="btn" onClick={likeHandler}>
-							{isLiked ? (
+						<button
+							type="button"
+							className="btn"
+							onClick={likeHandler}
+							aria-label={likeState.isLiked ? "Unlike Post" : "Like post"}>
+							{likeState.isLiked ? (
 								<AiFillLike className="like" />
 							) : (
 								<BiLike className="like" />

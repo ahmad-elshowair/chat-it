@@ -26,7 +26,7 @@ const update = async (req: CustomRequest, res: Response) => {
 		// check if the user is the owner of this post
 		const post = req.body;
 		if (req.user.id === post.user_id) {
-			const updatedPost = await postService.update(req.params.id, post);
+			const updatedPost = await postService.update(req.params.post_id, post);
 			res.status(200).json(updatedPost);
 		} else {
 			res.status(401).json({ message: "THAT IS NOT YOUR POST !" });
@@ -39,7 +39,7 @@ const update = async (req: CustomRequest, res: Response) => {
 // get post by id
 const aPost = async (req: Request, res: Response) => {
 	try {
-		const post = await postService.aPost(req.params.id);
+		const post = await postService.aPost(req.params.post_id);
 		res.status(200).json(post);
 	} catch (error) {
 		res.status(500).json({ error: (error as Error).message });
@@ -62,7 +62,7 @@ const deletePost = async (req: CustomRequest, res: Response) => {
 	try {
 		const post = await postService.aPost(req.params.id);
 		if (post.user_id === req.user.id) {
-			const deletePost = await postService.delete(req.params.id);
+			const deletePost = await postService.delete(req.params.post_id);
 			res.status(200).json(deletePost);
 		} else {
 			res.status(401).json({ message: "THAT IS NOT YOUR POST !" });

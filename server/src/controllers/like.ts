@@ -11,7 +11,7 @@ const handleLike = async (req: CustomRequest, res: Response) => {
 	try {
 		const like: Like = {
 			user_id: req.user.id,
-			post_id: req.params.id,
+			post_id: req.params.post_id,
 		};
 		const isLiked = await likeService.like(like);
 		res.status(200).json(isLiked);
