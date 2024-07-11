@@ -3,6 +3,6 @@ import { UserPayload } from "../interfaces/IUserPayload";
 
 export const generateToken = (payload: UserPayload, secret: string) => {
 	return jwt.sign(payload, secret, {
-		expiresIn: "1h",
+		expiresIn: "1d",
 	});
 };

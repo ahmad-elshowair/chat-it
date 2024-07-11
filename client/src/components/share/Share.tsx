@@ -1,4 +1,4 @@
-import { ChangeEvent, useContext } from "react";
+import { useContext } from "react";
 import { FaLaugh, FaPhotoVideo, FaVideo } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
@@ -8,22 +8,6 @@ export const Share = () => {
 	const { state } = useContext(AuthContext);
 	const { user } = state;
 
-	/**
-	 * add the name of the inputted file to span element that has class name of file-name-holder.
-	 * and make that span visible
-	 */
-	const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-		const fileInput = event.target;
-
-		const fileName = fileInput.files?.[0]?.name;
-		const fileNameHolder = document.querySelector(
-			".file-name-holder",
-		) as HTMLSpanElement;
-		if (fileName && fileNameHolder) {
-			fileNameHolder.textContent = fileName;
-			fileNameHolder.classList.remove("d-none");
-		}
-	};
 	return (
 		<aside className="share-post">
 			<section className="input-bar">
@@ -34,7 +18,8 @@ export const Share = () => {
 						className="rounded-circle"
 					/>
 				</Link>
-				<ModalPost handleFileChange={handleFileChange} />
+				<ModalPost user_id={user?.user_id} token={user?.token} />
+
 				<button
 					type="button"
 					className="btn btn-outline"

@@ -34,7 +34,7 @@ class PostModel {
 			// return post
 			return insertPost.rows[0];
 		} catch (error) {
-			throw new Error(`create model: ${(error as Error).message}`);
+			throw new Error(`create post model: ${(error as Error).message}`);
 		} finally {
 			// release the the database
 			connection.release();

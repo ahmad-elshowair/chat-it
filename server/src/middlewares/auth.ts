@@ -18,7 +18,7 @@ const authorize_user = (
 					token,
 					config.jwt_secret,
 				);
-				if (decoded) {
+				if (typeof decoded === "object" && "id" in decoded) {
 					req.user = decoded;
 					next();
 				} else {
@@ -29,19 +29,17 @@ const authorize_user = (
 			} else {
 				// invalid token
 				return res.status(401).json({
-					error: "Invalid Token",
+					error: "Invalid Token Or Bearer",
 				});
-				next();
 			}
 		} else {
 			// no token provided
 			return res.status(401).json({
 				error: "No Token Provided",
 			});
-			next();
 		}
 	} catch (error) {
-		throw new Error(`authorization error: ${(error as Error).message}`);
+		next(error);
 	}
 };
 export default authorize_user;
