@@ -8,7 +8,7 @@ export const HomeRightBar = () => {
 		<aside className="home-right-bar pe-4">
 			<article className="right-bar-events">
 				<img
-					src="/assets/gift.png"
+					src="https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/posts/gift.png"
 					alt="ads"
 					className="right-bar-events-image"
 				/>
@@ -17,7 +17,11 @@ export const HomeRightBar = () => {
 				</p>
 			</article>
 			<figure className="right-bar-ads mt-3">
-				<img src="/assets/ad.png" alt="ads" className="right-bar-ads-img" />
+				<img
+					src="https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/posts/ad.png"
+					alt="ads"
+					className="right-bar-ads-img"
+				/>
 			</figure>
 			<section className="right-bar-friends mt-5">
 				<h4 className="right-bar-friends-heading">Online Friends</h4>

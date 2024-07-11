@@ -90,7 +90,10 @@ export const Post = ({
 							<Link to={`/profile/${user?.user_name}`}>
 								<img
 									className="post-header-img-user"
-									src={user?.picture || "/assets/avatars/noAvatar.png"}
+									src={
+										user?.picture ||
+										"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+									}
 									alt="profile"
 								/>
 							</Link>
@@ -115,11 +118,7 @@ export const Post = ({
 				<article className="post-body">
 					<p className="post-body-description p-3">{description}</p>
 					<figure className="post-body-images">
-						<img
-							className="post-body-images-image"
-							src={`/assets/${image}`}
-							alt="post"
-						/>
+						<img className="post-body-images-image" src={image} alt="post" />
 					</figure>
 				</article>
 				<article className="post-statistics">

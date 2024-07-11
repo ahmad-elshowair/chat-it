@@ -36,7 +36,10 @@ export const Profile = () => {
 							<img
 								height={370}
 								width={"100%"}
-								src={user?.cover || "/assets/avatars/noCover.png"}
+								src={
+									user?.cover ||
+									"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noCover.png"
+								}
 								alt="cover"
 							/>
 						</figure>
@@ -44,7 +47,10 @@ export const Profile = () => {
 							<figure className="profile-image-container">
 								<img
 									className="profile-image"
-									src={user?.picture || "/assets/avatars/noAvatar.png"}
+									src={
+										user?.picture ||
+										"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+									}
 									alt="profile"
 								/>
 							</figure>

@@ -13,7 +13,10 @@ export const Share = () => {
 			<section className="input-bar">
 				<Link to={`/profile/${user?.user_name}`}>
 					<img
-						src={user?.picture || "/assets/avatars/noAvatar.png"}
+						src={
+							user?.picture ||
+							"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+						}
 						alt="profile"
 						className="rounded-circle"
 					/>

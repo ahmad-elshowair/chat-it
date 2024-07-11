@@ -1,6 +1,9 @@
 import axios, { AxiosError } from "axios";
+import { Modal } from "bootstrap";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { FaPhotoVideo } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { uploadFile } from "../../services/uploadFile";
 import { TPost } from "../../types/post";
 
 export const ModalPost = ({
@@ -10,6 +13,7 @@ export const ModalPost = ({
 	user_id?: string;
 	token?: string;
 }) => {
+	const navigate = useNavigate();
 	const [filename, setFilename] = useState<string>("");
 	const [file, setFile] = useState<File | null>(null);
 	const [error, setError] = useState("");
@@ -53,15 +57,30 @@ export const ModalPost = ({
 	};
 	const handleSharePost = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+
+		let imageUrl: string | null = null;
+		if (file) {
+			imageUrl = await uploadFile(file, "posts");
+			if (!imageUrl) {
+				setError("failed to upload the image file.");
+			}
+		}
+
 		const post: TPost = {
 			user_id: user_id,
 			description: description,
 			number_of_comments: 0,
 			number_of_likes: 0,
-			image: file ? new Date().toLocaleString() + filename : undefined,
+			image: imageUrl || undefined,
 		};
-		createPost(post);
+		await createPost(post);
+		const modalEl = document.getElementById("sharePostModal") as HTMLElement;
+		const modal = Modal.getInstance(modalEl);
+		modal?.toggle();
+		modal?.dispose();
+		navigate("/");
 	};
+
 	return (
 		<article
 			className="modal fade"

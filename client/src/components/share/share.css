@@ -82,7 +82,3 @@
 	position: absolute;
 	right: 16px;
 }
-
-.modal-backdrop.show {
-	opacity: 0.6;
-}

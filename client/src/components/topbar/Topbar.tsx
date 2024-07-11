@@ -11,7 +11,11 @@ export const Topbar = () => {
 		<nav className="navbar fixed-top">
 			<section className="container-fluid">
 				<Link className="navbar-brand" to="/">
-					<img src="/assets/chat-it.png" alt="lgo chat it" height={55} />
+					<img
+						src="https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/posts/chat_it.png"
+						alt="lgo chat it"
+						height={60}
+					/>
 				</Link>
 				<form role="search" className="nav-search">
 					<FaSearch className="ms-3" />
@@ -48,7 +52,10 @@ export const Topbar = () => {
 							height={36}
 							width={36}
 							alt="avatar"
-							src={`${user?.picture}` || "/assets/avatars/noAvatar.png"}
+							src={
+								`${user?.picture}` ||
+								"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+							}
 							className="rounded-circle"
 						/>
 					</Link>
