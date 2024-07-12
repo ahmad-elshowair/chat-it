@@ -118,7 +118,9 @@ export const Post = ({
 				<article className="post-body">
 					<p className="post-body-description p-3">{description}</p>
 					<figure className="post-body-images">
-						<img className="post-body-images-image" src={image} alt="post" />
+						{image && (
+							<img className="post-body-images-image" src={image} alt="post" />
+						)}
 					</figure>
 				</article>
 				<article className="post-statistics">

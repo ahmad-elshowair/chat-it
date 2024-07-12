@@ -46,39 +46,3 @@
 .buttons-bar .btn:hover {
 	background-color: var(--bs-gray-200);
 }
-
-.share-post textarea {
-	border: none;
-}
-
-.share-post textarea:focus {
-	outline: none;
-	box-shadow: none;
-}
-
-.modal-header {
-	justify-content: center;
-}
-
-.modal-footer {
-	border: none;
-}
-
-.modal-footer h6.m-0 {
-	color: var(--bs-gray-600);
-}
-.modal-footer .icon {
-	color: var(--main-color);
-	font-size: 50px;
-	cursor: pointer;
-	padding: 5px;
-	border-radius: 5px;
-}
-
-.modal-footer .icon:hover {
-	background-color: var(--bs-gray-200);
-}
-.btn-close {
-	position: absolute;
-	right: 16px;
-}
