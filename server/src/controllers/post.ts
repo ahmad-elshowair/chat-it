@@ -72,10 +72,9 @@ const deletePost = async (req: CustomRequest, res: Response) => {
 	}
 };
 // GET ALL POSTS BY USER ID
-const userPosts = async (req: CustomRequest, res: Response) => {
+const userPosts = async (req: Request, res: Response) => {
 	try {
-		const posts: Post[] = await postService.userPosts(req.user.id);
-
+		const posts: Post[] = await postService.userPosts(req.params.user_id);
 		res.status(200).json(posts);
 	} catch (error) {
 		console.error("Error fetching posts:", error);

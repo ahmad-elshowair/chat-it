@@ -10,7 +10,7 @@ postRoute.put("/update/:post_id", authorize_user, postController.update);
 postRoute.post("/like/:post_id", authorize_user, likeController.handleLike);
 postRoute.get("/all", postController.index);
 postRoute.delete("/delete/:post_id", authorize_user, postController.deletePost);
-postRoute.get("/user", authorize_user, postController.userPosts);
+postRoute.get("/user/:user_id", postController.userPosts);
 postRoute.get("/feed", authorize_user, postController.feed);
 postRoute.get("/:post_id", authorize_user, postController.aPost);
 export default postRoute;

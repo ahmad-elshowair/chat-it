@@ -79,7 +79,7 @@ export const Profile = () => {
 						</div>
 					</section>
 					<section className="profile-right-bottom d-flex">
-						<Feed user_name={user?.user_name} />
+						<Feed user_id={user?.user_id} />
 						<ProfileRightBar
 							bio={user?.bio || "default bio."}
 							home_town={user?.home_town || "default home town."}

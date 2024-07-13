@@ -6,7 +6,7 @@ import { Post } from "../post/Post";
 import { Share } from "../share/Share";
 import "./feed.css";
 
-export const Feed = ({ user_name }: { user_name?: string }) => {
+export const Feed = ({ user_id }: { user_id?: string }) => {
 	const { state } = useContext(AuthContext);
 	const [posts, setPosts] = useState<TPost[]>([]);
 
@@ -14,12 +14,8 @@ export const Feed = ({ user_name }: { user_name?: string }) => {
 	useEffect(() => {
 		const fetchFeed = async () => {
 			try {
-				const response = user_name
-					? await axios.get("/posts/user", {
-							headers: {
-								authorization: `Bearer ${token}`,
-							},
-					  })
+				const response = user_id
+					? await axios.get(`/posts/user/${user_id}`)
 					: await axios.get("/posts/feed", {
 							headers: {
 								authorization: `Bearer ${token}`,
@@ -37,7 +33,7 @@ export const Feed = ({ user_name }: { user_name?: string }) => {
 		};
 
 		fetchFeed();
-	}, [token, user_name]);
+	}, [token, user_id]);
 	return (
 		<section className="feed">
 			<Share />
