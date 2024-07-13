@@ -12,7 +12,6 @@ dummyData.ts
 /build
 
 # misc
-.env
 .DS_Store
 .env.local
 .env.development.local
@@ -22,3 +21,6 @@ dummyData.ts
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# local env files
+.env
