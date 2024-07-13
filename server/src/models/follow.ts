@@ -28,13 +28,13 @@ export default class FollowService {
 
 				// DECREMENT THE "number_of_followings" FOR THE FOLLOWING USER.
 				await connection.query(
-					"UPDATE users SET number_of_followings = number_of_followings - 1 WHERE user_id=($1) AND number_of_followings > 0",
+					"UPDATE users SET number_of_followings = number_of_followings - 1 WHERE user_id= ($1) AND number_of_followings > 0",
 					[user_id_following],
 				);
 
 				// DECREMENT THE "number_of_followers" FOR THE FOLLOWED USER.
 				await connection.query(
-					"UPDATE users SET number_of_followers = number_of_followers - 1 WHERE user_id = ($2) AND number_of_followers > 0",
+					"UPDATE users SET number_of_followers = number_of_followers - 1 WHERE user_id = ($1) AND number_of_followers > 0",
 					[user_id_followed],
 				);
 
@@ -51,13 +51,13 @@ export default class FollowService {
 
 				// INCREMENT THE "number_of_followings" FOR THE FOLLOWING USER.
 				await connection.query(
-					"UPDATE users SET number_of_followings = number_of_followings + 1 WHERE user_id=($1)",
+					"UPDATE users SET number_of_followings = number_of_followings + 1 WHERE user_id = ($1)",
 					[user_id_following],
 				);
 
 				// INCREMENT THE "number_of_followers" FOR THE FOLLOWED USER.
 				await connection.query(
-					"UPDATE users SET number_of_followers = number_of_followers + 1 WHERE user_id = ($2)",
+					"UPDATE users SET number_of_followers = number_of_followers + 1 WHERE user_id = ($1)",
 					[user_id_followed],
 				);
 
@@ -69,6 +69,7 @@ export default class FollowService {
 		} catch (error) {
 			// ROLLBACK TRANSACTION ON ERROR.
 			await connection.query("ROLLBACK");
+			console.error(error);
 			throw new Error(`Follow model error: ${(error as Error).message}`);
 		} finally {
 			// release the connection
