@@ -25,4 +25,6 @@ followRouter.get(
 	authorize_user,
 	followController.getFollowers,
 );
+
+followRouter.get("/friends", authorize_user, followController.getFriends);
 export default followRouter;

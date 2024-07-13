@@ -1,5 +1,6 @@
 import { PoolClient, QueryResult } from "pg";
 import db from "../database/pool";
+import User from "../types/users";
 
 export default class FollowService {
 	// follow
@@ -127,6 +128,52 @@ export default class FollowService {
 			throw new Error(`get followers model error: ${(error as Error).message}`);
 		} finally {
 			// release the connection
+			connection.release();
+		}
+	}
+
+	// GET FRIENDS OF A USER
+	async getFriends(user_id: string) {
+		// CONNECT TO THE DATABASE.
+		const connection: PoolClient = await db.connect();
+		try {
+			// START TRANSACTION.
+			await connection.query("BEGIN");
+
+			const query = `SELECT 
+								u.user_id,
+								u.user_name,
+								u.first_name,
+								u.last_name,
+								u.picture,
+								u.cover,
+								u.bio,
+								u.marital_status,
+								u.number_of_followers,
+								u.number_of_followings
+							FROM
+								users u
+								JOIN follows f1 ON u.user_id = f1.user_id_followed
+								JOIN follows f2 ON f1.user_id_following = f2.user_id_followed
+							WHERE
+								f1.user_id_following = ($1)
+								AND f2.user_id_following = u.user_id
+								AND u.user_id != ($1)`;
+
+			const result: QueryResult<User> = await connection.query(query, [
+				user_id,
+			]);
+			const friends = result.rows;
+			// COMMIT TRANSACTION.
+			await connection.query("COMMIT");
+
+			return friends;
+		} catch (error) {
+			// ROLLBACK TRANSACTION.
+			await connection.query("ROLLBACK");
+			throw new Error(`get friends model error: ${(error as Error).message}`);
+		} finally {
+			// RELEASE THE CONNECTION
 			connection.release();
 		}
 	}

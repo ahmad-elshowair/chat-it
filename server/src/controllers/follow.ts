@@ -53,8 +53,21 @@ const getFollowers = async (req: CustomRequest, res: Response) => {
 	}
 };
 
+const getFriends = async (req: CustomRequest, res: Response) => {
+	const user_id: string = req.user.id;
+	try {
+		const friends = await followService.getFriends(user_id);
+		res.status(200).json(friends);
+	} catch (error) {
+		res.status(500).json({
+			error: (error as Error).message,
+		});
+	}
+};
+
 export default {
 	follow,
 	getFollowings,
 	getFollowers,
+	getFriends,
 };
