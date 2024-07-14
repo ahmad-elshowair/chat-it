@@ -1,10 +1,11 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
+import { AuthContext } from "../../context/AuthContext";
 import { TUser } from "../../types/user";
 import "./profile.css";
 
@@ -12,6 +13,7 @@ export const Profile = () => {
 	const params = useParams();
 	console.log(params);
 
+	const { user: currentUser } = useContext(AuthContext).state;
 	const [user, setUser] = useState<TUser | null>(null);
 
 	useEffect(() => {
@@ -67,7 +69,9 @@ export const Profile = () => {
 									<span>{user?.number_of_followers}</span>
 								</div>
 							</div>
-							<button className="btn btn-chat">Follow</button>
+							{user?.user_name !== currentUser?.user_name && (
+								<button className="btn btn-chat">Follow</button>
+							)}
 						</div>
 					</section>
 					<section className="profile-right-bottom d-flex">
