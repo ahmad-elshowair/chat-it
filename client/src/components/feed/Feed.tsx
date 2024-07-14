@@ -36,7 +36,7 @@ export const Feed = ({ user_id }: { user_id?: string }) => {
 	}, [token, user_id]);
 	return (
 		<section className="feed">
-			<Share />
+			{(!user_id || user_id === state.user?.user_id) && <Share />}
 			{posts && posts.map((post) => <Post key={post.post_id} {...post} />)}
 		</section>
 	);
