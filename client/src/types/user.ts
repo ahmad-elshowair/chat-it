@@ -14,4 +14,6 @@ export type TUser = {
 	first_name: string;
 	last_name: string;
 	marital_status?: string;
+	number_of_followings?: number;
+	number_of_followers?: number;
 };

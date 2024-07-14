@@ -49,3 +49,18 @@
 .profile-info-friend-image:hover {
 	border: 3px solid var(--main-color);
 }
+
+.follow-box {
+	width: 33%;
+}
+
+.follow-box span {
+	color: var(--gray-color-0);
+	cursor: pointer;
+	transition: all ease-in-out 0.5s;
+}
+
+.follow-box span:hover {
+	text-decoration: underline;
+	font-weight: 600;
+}

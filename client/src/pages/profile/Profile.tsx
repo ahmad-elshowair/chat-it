@@ -5,7 +5,6 @@ import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
-import { Users } from "../../dummyData";
 import { TUser } from "../../types/user";
 import "./profile.css";
 
@@ -14,8 +13,6 @@ export const Profile = () => {
 	console.log(params);
 
 	const [user, setUser] = useState<TUser | null>(null);
-
-	const currentUserId = "1";
 
 	useEffect(() => {
 		const fetchAUser = async () => {
@@ -60,20 +57,15 @@ export const Profile = () => {
 									@{user?.user_name}
 								</span>
 							</div>
-							<div className="d-flex flex-column">
-								<h6>followers</h6>
-								<figure className="d-flex">
-									{Users.slice(0, 6)
-										.filter((u) => u.user_id !== currentUserId)
-										.map((user) => (
-											<img
-												key={user.user_id}
-												className="profile-info-friend-image"
-												src={user.profilePicture}
-												alt="profile"
-											/>
-										))}
-								</figure>
+							<div className="d-flex gap-3 follow-box">
+								<div className="d-flex flex-column align-items-center">
+									<h6 className="fst-italic fw-bold">followings</h6>
+									<span>{user?.number_of_followings}</span>
+								</div>
+								<div className="d-flex flex-column align-items-center">
+									<h6 className="fst-italic fw-bold">followers</h6>
+									<span>{user?.number_of_followers}</span>
+								</div>
 							</div>
 							<button className="btn btn-chat">Follow</button>
 						</div>
