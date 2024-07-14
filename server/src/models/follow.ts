@@ -79,7 +79,7 @@ export default class FollowService {
 	}
 
 	// get number followings for a user
-	async getFollowings(user_id: string): Promise<number> {
+	async getNumberOfFollowings(user_id: string): Promise<number> {
 		const connection: PoolClient = await db.connect();
 		try {
 			// get followings query
@@ -107,7 +107,7 @@ export default class FollowService {
 	}
 
 	// get number followers for a user
-	async getFollowers(user_id: string): Promise<number> {
+	async getNumberOfFollowers(user_id: string): Promise<number> {
 		const connection: PoolClient = await db.connect();
 		try {
 			// get the followers
@@ -172,6 +172,88 @@ export default class FollowService {
 			// ROLLBACK TRANSACTION.
 			await connection.query("ROLLBACK");
 			throw new Error(`get friends model error: ${(error as Error).message}`);
+		} finally {
+			// RELEASE THE CONNECTION
+			connection.release();
+		}
+	}
+
+	// GET FOLLOWINGS OF A USER.
+	async getFollowings(user_id: string): Promise<User[]> {
+		// CONNECT TO THE DATABASE.
+		const connection: PoolClient = await db.connect();
+		try {
+			// START TRANSACTION.
+			await connection.query("BEGIN");
+			const query = `SELECT
+			u.user_id,
+			u.user_name,
+			u.first_name,
+			u.last_name,
+			u.picture,
+			u.cover,
+			u.bio,
+			u.number_of_followers,
+			u.number_of_followings
+			FROM
+			users u
+			JOIN follows f ON u.user_id = f.user_id_followed
+			WHERE f.user_id_following = ($1)
+			ORDER BY f.created_on DESC`;
+			const result: QueryResult<User> = await connection.query(query, [
+				user_id,
+			]);
+			const followings = result.rows;
+			// COMMIT TRANSACTION.
+			await connection.query("COMMIT");
+			return followings;
+		} catch (error) {
+			// ROLLBACK TRANSACTION.
+			await connection.query("ROLLBACK");
+			throw new Error(
+				`get followings model error: ${(error as Error).message}`,
+			);
+		} finally {
+			// RELEASE THE CONNECTION
+			connection.release();
+		}
+	}
+
+	// GET FOLLOWINGS OF A USER.
+	async getFollowers(user_id: string): Promise<User[]> {
+		// CONNECT TO THE DATABASE.
+		const connection: PoolClient = await db.connect();
+		try {
+			// START TRANSACTION.
+			await connection.query("BEGIN");
+			const query = `SELECT
+			u.user_id,
+			u.user_name,
+			u.first_name,
+			u.last_name,
+			u.picture,
+			u.cover,
+			u.bio,
+			u.number_of_followers,
+			u.number_of_followings
+			FROM
+			users u
+			JOIN follows f ON u.user_id = f.user_id_following
+			WHERE f.user_id_followed = ($1)
+			ORDER BY f.created_on DESC`;
+			const result: QueryResult<User> = await connection.query(query, [
+				user_id,
+			]);
+			const followers = result.rows;
+			// COMMIT TRANSACTION.
+			await connection.query("COMMIT");
+			return followers;
+		} catch (error) {
+			// ROLLBACK TRANSACTION.
+			await connection.query("ROLLBACK");
+			throw new Error(
+				`get followings model error: ${(error as Error).message}`,
+			);
 		} finally {
 			// RELEASE THE CONNECTION
 			connection.release();

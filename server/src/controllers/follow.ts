@@ -27,11 +27,11 @@ const follow = async (req: CustomRequest, res: Response) => {
 };
 
 // get followings of a user
-const getFollowings = async (req: CustomRequest, res: Response) => {
+const getNumberOfFollowings = async (req: CustomRequest, res: Response) => {
 	try {
 		const user_id: string = req.user.id;
 		// get the followings from the database
-		const numFollowings = await followService.getFollowings(user_id);
+		const numFollowings = await followService.getNumberOfFollowings(user_id);
 		res.status(200).json(numFollowings);
 	} catch (error) {
 		res.status(500).json({
@@ -41,10 +41,10 @@ const getFollowings = async (req: CustomRequest, res: Response) => {
 };
 
 // get all the followers of a user
-const getFollowers = async (req: CustomRequest, res: Response) => {
+const getNumberOfFollowers = async (req: CustomRequest, res: Response) => {
 	const user_id: string = req.user.id;
 	try {
-		const numFollowers = await followService.getFollowers(user_id);
+		const numFollowers = await followService.getNumberOfFollowers(user_id);
 		res.status(200).json(numFollowers);
 	} catch (error) {
 		res.status(500).json({
@@ -65,9 +65,31 @@ const getFriends = async (req: CustomRequest, res: Response) => {
 	}
 };
 
+const getFollowings = async (req: CustomRequest, res: Response) => {
+	const user_id = req.user.id;
+	try {
+		const followings = await followService.getFollowings(user_id);
+		res.status(200).json(followings);
+	} catch (error) {
+		res.status(500).json({ error: (error as Error).message });
+	}
+};
+
+const getFollowers = async (req: CustomRequest, res: Response) => {
+	const user_id = req.user.id;
+	try {
+		const followers = await followService.getFollowers(user_id);
+		res.status(200).json(followers);
+	} catch (error) {
+		res.status(500).json({ error: (error as Error).message });
+	}
+};
+
 export default {
 	follow,
+	getNumberOfFollowings,
+	getNumberOfFollowers,
+	getFriends,
 	getFollowings,
 	getFollowers,
-	getFriends,
 };

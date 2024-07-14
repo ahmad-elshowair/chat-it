@@ -17,14 +17,19 @@ followRouter.post(
 followRouter.get(
 	"/num-followings",
 	authorize_user,
-	followController.getFollowings,
+	followController.getNumberOfFollowings,
 );
 
 followRouter.get(
 	"/num-followers",
 	authorize_user,
-	followController.getFollowers,
+	followController.getNumberOfFollowers,
 );
 
 followRouter.get("/friends", authorize_user, followController.getFriends);
+
+followRouter.get("/followings", authorize_user, followController.getFollowings);
+
+followRouter.get("/followers", authorize_user, followController.getFollowers);
+
 export default followRouter;
