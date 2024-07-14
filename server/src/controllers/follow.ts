@@ -85,6 +85,20 @@ const getFollowers = async (req: CustomRequest, res: Response) => {
 	}
 };
 
+const isFollowed = async (req: CustomRequest, res: Response) => {
+	const following_id = req.user.id;
+	const followed_id = req.params.followed_id;
+	try {
+		const checkIsFollowed = await followService.checkIfFollowing(
+			following_id,
+			followed_id,
+		);
+		res.status(200).json(checkIsFollowed);
+	} catch (error) {
+		res.status(500).json({ error: (error as Error).message });
+	}
+};
+
 export default {
 	follow,
 	getNumberOfFollowings,
@@ -92,4 +106,5 @@ export default {
 	getFriends,
 	getFollowings,
 	getFollowers,
+	isFollowed,
 };

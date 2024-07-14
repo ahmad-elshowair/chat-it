@@ -52,7 +52,7 @@ class PostModel {
 				[id],
 			);
 			// check if the post exist
-			if (post.rowCount === 0) {
+			if (!(await this.checkPostExist(id))) {
 				throw new Error("Post not found");
 			}
 			// return post

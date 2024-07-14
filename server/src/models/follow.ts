@@ -3,6 +3,39 @@ import db from "../database/pool";
 import User from "../types/users";
 
 export default class FollowService {
+	// CHECK IF A USER FOLLOWING A USER.
+	async checkIfFollowing(
+		following_id: string,
+		followed_id: string,
+	): Promise<boolean> {
+		// CONNECT TO THE DATABASE
+		const connection: PoolClient = await db.connect();
+		try {
+			// BEGIN TRANSACTION
+			await connection.query("BEGIN");
+
+			// CHECK IF A USER FOLLOWING A USER.
+			const result: QueryResult = await connection.query(
+				"SELECT * FROM follows WHERE following_id = ($1) AND user_id_followed = ($2)",
+				[following_id, followed_id],
+			);
+
+			// COMMIT TRANSACTION
+			await connection.query("COMMIT");
+
+			// RETURN RESULT
+			return result.rowCount > 0;
+		} catch (error) {
+			// ROLLBACK TRANSACTION ON ERROR.
+			await connection.query("ROLLBACK");
+			console.error(error);
+			throw new Error(`check follow model error: ${(error as Error).message}`);
+		} finally {
+			// RELEASE THE CONNECTION.
+			connection.release();
+		}
+	}
+
 	// follow
 	async follow(
 		user_id_following: string,
@@ -13,14 +46,7 @@ export default class FollowService {
 			// START TRANSACTION
 			await connection.query("BEGIN");
 
-			// check if the follower follows the followed
-			const queryCheckFollow =
-				"SELECT * FROM follows WHERE user_id_following = ($1) AND user_id_followed = ($2)";
-			const checkFollow: QueryResult = await connection.query(
-				queryCheckFollow,
-				[user_id_following, user_id_followed],
-			);
-			if (checkFollow.rowCount > 0) {
+			if (await this.checkIfFollowing(user_id_following, user_id_followed)) {
 				// un follow the user
 				await connection.query(
 					"DELETE FROM follows WHERE user_id_following = ($1) AND user_id_followed = ($2)",

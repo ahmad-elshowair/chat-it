@@ -32,4 +32,10 @@ followRouter.get("/followings", authorize_user, followController.getFollowings);
 
 followRouter.get("/followers", authorize_user, followController.getFollowers);
 
+followRouter.get(
+	"/is-followed/:followed-id",
+	authorize_user,
+	followController.isFollowed,
+);
+
 export default followRouter;
