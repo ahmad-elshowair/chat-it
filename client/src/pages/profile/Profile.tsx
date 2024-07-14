@@ -35,7 +35,7 @@ export const Profile = () => {
 					`/follows/is-followed/${user?.user_id}`,
 					{ headers: { Authorization: `Bearer ${currentUser?.token}` } },
 				);
-				setIsFollowed(response.data.isFollowed);
+				setIsFollowed(response.data);
 			} catch (error) {
 				console.error(error);
 			}
@@ -44,7 +44,16 @@ export const Profile = () => {
 	}, [currentUser?.token, user?.user_id]);
 
 	const handleFollow = async () => {
-		console.log(isFollowed);
+		try {
+			const response = await axios.post(
+				"/follows/follow",
+				{ user_id_followed: user?.user_id },
+				{ headers: { authorization: `Bearer ${currentUser?.token}` } },
+			);
+			console.log(response.data);
+		} catch (error) {
+			console.error(error);
+		}
 	};
 	return (
 		<>

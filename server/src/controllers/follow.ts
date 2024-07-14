@@ -86,7 +86,7 @@ const getFollowers = async (req: CustomRequest, res: Response) => {
 };
 
 const isFollowed = async (req: CustomRequest, res: Response) => {
-	const following_id = req.user.id;
+	const following_id: string = req.user.id;
 	const followed_id = req.params.followed_id;
 	try {
 		const checkIsFollowed = await followService.checkIfFollowing(

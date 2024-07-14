@@ -16,7 +16,7 @@ export default class FollowService {
 
 			// CHECK IF A USER FOLLOWING A USER.
 			const result: QueryResult = await connection.query(
-				"SELECT * FROM follows WHERE following_id = ($1) AND user_id_followed = ($2)",
+				"SELECT * FROM follows WHERE user_id_following = ($1) AND user_id_followed = ($2)",
 				[following_id, followed_id],
 			);
 
