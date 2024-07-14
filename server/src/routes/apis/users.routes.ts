@@ -9,7 +9,7 @@ import {
 } from "../../middlewares/validations/user";
 const userRoute: Router = Router();
 
-userRoute.get("/", userController.index);
+userRoute.get("/", authorize_user, userController.index);
 userRoute.get("/:user_name", userController.getUser);
 userRoute.post(
 	"/register",

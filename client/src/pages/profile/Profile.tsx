@@ -11,19 +11,41 @@ import "./profile.css";
 
 export const Profile = () => {
 	const params = useParams();
-	console.log(params);
 
 	const { user: currentUser } = useContext(AuthContext).state;
 	const [user, setUser] = useState<TUser | null>(null);
+	const [isFollowed, setIsFollowed] = useState<boolean>(false);
 
 	useEffect(() => {
 		const fetchAUser = async () => {
-			const response = await axios.get(`/users/${params.user_name}`);
-			setUser(response.data);
+			try {
+				const response = await axios.get(`/users/${params.user_name}`);
+				setUser(response.data);
+			} catch (error) {
+				console.error(error);
+			}
 		};
 		fetchAUser();
 	}, [params.user_name]);
 
+	useEffect(() => {
+		const checkIsFollowed = async () => {
+			try {
+				const response = await axios.get(
+					`/follows/is-followed/${user?.user_id}`,
+					{ headers: { Authorization: `Bearer ${currentUser?.token}` } },
+				);
+				setIsFollowed(response.data.isFollowed);
+			} catch (error) {
+				console.error(error);
+			}
+		};
+		checkIsFollowed();
+	}, [currentUser?.token, user?.user_id]);
+
+	const handleFollow = async () => {
+		console.log(isFollowed);
+	};
 	return (
 		<>
 			<Topbar />
@@ -69,9 +91,18 @@ export const Profile = () => {
 									<span>{user?.number_of_followers}</span>
 								</div>
 							</div>
-							{user?.user_name !== currentUser?.user_name && (
-								<button className="btn btn-chat">Follow</button>
-							)}
+							{user?.user_name !== currentUser?.user_name &&
+								(isFollowed ? (
+									<button
+										className="btn btn-outline-warning"
+										onClick={handleFollow}>
+										Unfollow
+									</button>
+								) : (
+									<button className="btn btn-chat" onClick={handleFollow}>
+										Follow
+									</button>
+								))}
 						</div>
 					</section>
 					<section className="profile-right-bottom d-flex">

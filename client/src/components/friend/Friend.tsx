@@ -1,25 +1,30 @@
+import { Link } from "react-router-dom";
 import "./friend.css";
 export const Friend = ({
 	name,
 	picture,
+	user_name,
 }: {
-	name: string;
-	picture: string;
+	name?: string;
+	picture?: string;
+	user_name?: string;
 }) => {
 	return (
 		<li className="my-3 friend">
-			<a
+			<Link
 				className="right-bar-friends-list-friend"
-				href="#profile"
-				target="_blank"
+				to={`/profile/${user_name}`}
 				rel="noopener noreferrer">
 				<img
-					src={picture}
+					src={
+						picture ||
+						`https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png`
+					}
 					alt="profile"
 					className="right-bar-friends-list-img"
 				/>
 				<h5 className="right-bar-friends-list-text">{name}</h5>
-			</a>
+			</Link>
 		</li>
 	);
 };

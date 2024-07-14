@@ -1,3 +1,5 @@
+import axios from "axios";
+import { useContext, useEffect, useState } from "react";
 import {
 	FaCalendarCheck,
 	FaDesktop,
@@ -6,10 +8,28 @@ import {
 	FaUsers,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { Users } from "../../dummyData";
+import { AuthContext } from "../../context/AuthContext";
+import { TUser } from "../../types/user";
 import { Friend } from "../friend/Friend";
 import "./leftBar.css";
 export const LeftBar = () => {
+	const { user: currentUser } = useContext(AuthContext).state;
+	const [users, setUsers] = useState<TUser[]>([]);
+
+	useEffect(() => {
+		const fetchUsers = async () => {
+			try {
+				const response = await axios.get("/users", {
+					headers: { authorization: `Bearer ${currentUser?.token}` },
+				});
+				setUsers(response.data);
+			} catch (error) {
+				console.error(error);
+			}
+		};
+		fetchUsers();
+	}, [currentUser?.token]);
+
 	return (
 		<aside className="sidebar">
 			<section className="sidebar-content">
@@ -38,14 +58,15 @@ export const LeftBar = () => {
 					</a>
 				</div>
 				<section className="ps-3 mt-4 pb-3">
-					<h3 className="">Friends</h3>
+					<h4 className="">People you may know</h4>
 					<hr />
 					<ul className="right-bar-friends-list">
-						{Users.map((user) => (
+						{users.map((user) => (
 							<Friend
 								key={user.user_id}
-								name={user.userName}
-								picture={user.profilePicture}
+								user_name={user.user_name}
+								name={`${user.first_name}  ${user.last_name}`}
+								picture={user.picture}
 							/>
 						))}
 					</ul>

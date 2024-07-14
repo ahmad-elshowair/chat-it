@@ -15,25 +15,25 @@ import { Profile } from "./pages/profile/Profile";
 import { Register } from "./pages/register/Register";
 
 function App() {
-	const { state } = useContext(AuthContext);
+	const { user } = useContext(AuthContext).state;
 	return (
 		<Router>
 			<Routes>
-				<Route path="/" element={state.user ? <Home /> : <Login />} />
+				<Route path="/" element={user ? <Home /> : <Login />} />
 
 				<Route
 					path="/login"
-					element={state.user ? <Navigate to="/" replace /> : <Login />}
+					element={user ? <Navigate to="/" replace /> : <Login />}
 				/>
 
 				<Route
 					path="/profile/:user_name"
-					element={state.user ? <Profile /> : <Navigate to="/login" replace />}
+					element={user ? <Profile /> : <Navigate to="/login" replace />}
 				/>
 
 				<Route
 					path="/register"
-					element={state.user ? <Navigate to="/" replace /> : <Register />}
+					element={user ? <Navigate to="/" replace /> : <Register />}
 				/>
 			</Routes>
 		</Router>
