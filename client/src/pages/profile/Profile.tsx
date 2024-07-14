@@ -73,10 +73,12 @@ export const Profile = () => {
 					<section className="profile-right-bottom d-flex">
 						<Feed user_id={user?.user_id} />
 						<ProfileRightBar
-							bio={user?.bio || "default bio."}
-							home_town={user?.home_town || "default home town."}
-							city={user?.city || "default city."}
-							marital_status={user?.marital_status || "Default Status"}
+							{...user}
+							// bio={user?.bio || "default bio."}
+							// home_town={user?.home_town || "default home town."}
+							// city={user?.city || "default city."}
+							// marital_status={user?.marital_status || "Default Status"}
+							// user_id={user?.user_id}
 						/>
 					</section>
 				</section>

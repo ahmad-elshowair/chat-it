@@ -7,7 +7,8 @@
 }
 
 .right-bar-bio,
-.right-bar-info {
+.right-bar-info,
+.right-bar__friends {
 	margin-right: 20px;
 	background-color: #eaecef;
 	padding: 10px;
@@ -16,7 +17,8 @@
 }
 
 .info-header,
-.bio-header {
+.bio-header,
+.friends-header {
 	color: var(--green-color-0);
 }
 

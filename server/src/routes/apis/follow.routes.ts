@@ -26,7 +26,7 @@ followRouter.get(
 	followController.getNumberOfFollowers,
 );
 
-followRouter.get("/friends", authorize_user, followController.getFriends);
+followRouter.get("/friends/:user_id", followController.getFriends);
 
 followRouter.get("/followings", authorize_user, followController.getFollowings);
 

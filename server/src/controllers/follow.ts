@@ -54,7 +54,7 @@ const getNumberOfFollowers = async (req: CustomRequest, res: Response) => {
 };
 
 const getFriends = async (req: CustomRequest, res: Response) => {
-	const user_id: string = req.user.id;
+	const user_id = req.params.user_id;
 	try {
 		const friends = await followService.getFriends(user_id);
 		res.status(200).json(friends);
