@@ -4,9 +4,10 @@ import UserModel from "../models/user";
 
 const user_model = new UserModel();
 
-const index = async (_req: Request, res: Response) => {
+const index = async (req: CustomRequest, res: Response) => {
+	const user_id = req.user.id;
 	try {
-		const users = await user_model.getAll();
+		const users = await user_model.getAll(user_id);
 		res.status(200).json(users);
 	} catch (error) {
 		res.status(404).json({ error: (error as Error).message });

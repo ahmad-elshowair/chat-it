@@ -5,13 +5,16 @@ import { buildUpdateQuery } from "../utilities/build-update-query";
 
 class UserModel {
 	// get all users
-	async getAll(): Promise<User[]> {
+	async getAll(user_id: string): Promise<User[]> {
 		const connection = await db.connect();
 		try {
 			// connect to the database
 			// get all the users
-			const getUsersQuery = "SELECT * FROM users";
-			const getUsers: QueryResult<User> = await connection.query(getUsersQuery);
+			const getUsersQuery = "SELECT * FROM users WHERE user_id != ($1)";
+			const getUsers: QueryResult<User> = await connection.query(
+				getUsersQuery,
+				[user_id],
+			);
 			// if there are not users return a message
 			if (getUsers.rowCount < 1) {
 				throw new Error("NO USERS FOND!");

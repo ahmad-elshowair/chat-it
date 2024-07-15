@@ -14,6 +14,13 @@ followRouter.post(
 	followController.follow,
 );
 
+followRouter.post(
+	"/unfollow",
+	authorize_user,
+	followValidation.checkFollow,
+	followController.unFollow,
+);
+
 followRouter.get(
 	"/num-followings",
 	authorize_user,

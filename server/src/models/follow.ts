@@ -36,7 +36,7 @@ export default class FollowService {
 		}
 	}
 
-	// follow
+	// FOLLOW USER.
 	async follow(
 		user_id_following: string,
 		user_id_followed: string,
@@ -46,8 +46,52 @@ export default class FollowService {
 			// START TRANSACTION
 			await connection.query("BEGIN");
 
+			if (!this.checkIfFollowing(user_id_following, user_id_followed)) {
+				await connection.query(
+					`INSERT INTO follows (user_id_following, user_id_followed) VALUES ($1, $2)`,
+					[user_id_following, user_id_followed],
+				);
+
+				// INCREMENT THE "number_of_followings" FOR THE FOLLOWING USER.
+				await connection.query(
+					"UPDATE users SET number_of_followings = number_of_followings + 1 WHERE user_id = ($1)",
+					[user_id_following],
+				);
+
+				// INCREMENT THE "number_of_followers" FOR THE FOLLOWED USER.
+				await connection.query(
+					"UPDATE users SET number_of_followers = number_of_followers + 1 WHERE user_id = ($1)",
+					[user_id_followed],
+				);
+
+				// COMMIT TRANSACTION
+				await connection.query("COMMIT");
+
+				return { message: `${user_id_followed} has been followed !` };
+			} else {
+				// ROLLBACK TRANSACTION ON MESSAGE.
+				await connection.query("ROLLBACK");
+				return { message: `${user_id_followed} is already followed` };
+			}
+		} catch (error) {
+			// ROLLBACK TRANSACTION ON ERROR.
+			await connection.query("ROLLBACK");
+			console.error(error);
+			throw new Error(`Follow model error: ${(error as Error).message}`);
+		} finally {
+			// release the connection
+			connection.release();
+		}
+	}
+
+	// UNFOLLOW USER.
+	async unfollow(user_id_following: string, user_id_followed: string) {
+		const connection: PoolClient = await db.connect();
+		try {
+			// START TRANSACTION
+			await connection.query("BEGIN");
+
 			if (await this.checkIfFollowing(user_id_following, user_id_followed)) {
-				// un follow the user
 				await connection.query(
 					"DELETE FROM follows WHERE user_id_following = ($1) AND user_id_followed = ($2)",
 					[user_id_following, user_id_followed],
@@ -70,36 +114,17 @@ export default class FollowService {
 
 				return { message: `${user_id_followed} has been un followed` };
 			} else {
-				// add the follow
-				await connection.query(
-					`INSERT INTO follows (user_id_following, user_id_followed) VALUES ($1, $2)`,
-					[user_id_following, user_id_followed],
-				);
-
-				// INCREMENT THE "number_of_followings" FOR THE FOLLOWING USER.
-				await connection.query(
-					"UPDATE users SET number_of_followings = number_of_followings + 1 WHERE user_id = ($1)",
-					[user_id_following],
-				);
-
-				// INCREMENT THE "number_of_followers" FOR THE FOLLOWED USER.
-				await connection.query(
-					"UPDATE users SET number_of_followers = number_of_followers + 1 WHERE user_id = ($1)",
-					[user_id_followed],
-				);
-
-				// COMMIT TRANSACTION
-				await connection.query("COMMIT");
-
-				return { message: `${user_id_followed} has been followed !` };
+				// ROLLBACK TRANSACTION ON MESSAGE.
+				await connection.query("ROLLBACK");
+				return { message: `${user_id_followed} is not currently followed` };
 			}
 		} catch (error) {
 			// ROLLBACK TRANSACTION ON ERROR.
 			await connection.query("ROLLBACK");
 			console.error(error);
-			throw new Error(`Follow model error: ${(error as Error).message}`);
+			throw new Error(`Unfollow model error: ${(error as Error).message}`);
 		} finally {
-			// release the connection
+			// RELEASE THE CONNECTION
 			connection.release();
 		}
 	}

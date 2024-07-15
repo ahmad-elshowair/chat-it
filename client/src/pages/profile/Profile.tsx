@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
@@ -10,51 +10,79 @@ import { TUser } from "../../types/user";
 import "./profile.css";
 
 export const Profile = () => {
-	const params = useParams();
+	const { user_name } = useParams<{ user_name: string }>();
 
 	const { user: currentUser } = useContext(AuthContext).state;
 	const [user, setUser] = useState<TUser | null>(null);
 	const [isFollowed, setIsFollowed] = useState<boolean>(false);
 
-	useEffect(() => {
-		const fetchAUser = async () => {
-			try {
-				const response = await axios.get(`/users/${params.user_name}`);
-				setUser(response.data);
-			} catch (error) {
-				console.error(error);
-			}
-		};
-		fetchAUser();
-	}, [params.user_name]);
-
-	useEffect(() => {
-		const checkIsFollowed = async () => {
-			try {
-				const response = await axios.get(
-					`/follows/is-followed/${user?.user_id}`,
-					{ headers: { Authorization: `Bearer ${currentUser?.token}` } },
-				);
-				setIsFollowed(response.data);
-			} catch (error) {
-				console.error(error);
-			}
-		};
-		checkIsFollowed();
-	}, [currentUser?.token, user?.user_id]);
-
-	const handleFollow = async () => {
+	const fetchAUser = useCallback(async () => {
 		try {
-			const response = await axios.post(
-				"/follows/follow",
-				{ user_id_followed: user?.user_id },
-				{ headers: { authorization: `Bearer ${currentUser?.token}` } },
+			const response = await axios.get(`/users/${user_name}`);
+			setUser(response.data);
+		} catch (error) {
+			console.error(`Error Fetching user: ${error}`);
+		}
+	}, [user_name]);
+
+	const checkIsFollowed = useCallback(async () => {
+		try {
+			const response = await axios.get(
+				`/follows/is-followed/${user?.user_id}`,
+				{ headers: { Authorization: `Bearer ${currentUser?.token}` } },
 			);
+			setIsFollowed(response.data);
 			console.log(response.data);
 		} catch (error) {
 			console.error(error);
 		}
-	};
+	}, [currentUser?.token, user?.user_id]);
+
+	useEffect(() => {
+		fetchAUser();
+	}, [fetchAUser]);
+
+	useEffect(() => {
+		checkIsFollowed();
+	}, [checkIsFollowed]);
+
+	const handleFollow = useCallback(async () => {
+		try {
+			if (isFollowed) {
+				await axios.post(
+					"/follows/unfollow",
+					{ user_id_followed: user?.user_id },
+					{ headers: { authorization: `Bearer ${currentUser?.token}` } },
+				);
+
+				setIsFollowed(false);
+			} else {
+				await axios.post(
+					"/follows/follow",
+					{ user_id_followed: user?.user_id },
+					{ headers: { authorization: `Bearer ${currentUser?.token}` } },
+				);
+				setIsFollowed(true);
+			}
+		} catch (error) {
+			console.error(`Error updating follow status: ${error}`);
+		}
+	}, [currentUser?.token, isFollowed, user?.user_id]);
+
+	const profileImageSrc = useMemo(() => {
+		return (
+			user?.picture ||
+			"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+		);
+	}, [user?.picture]);
+
+	const CoverImageSrc = useMemo(() => {
+		return (
+			user?.cover ||
+			"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noCover.png"
+		);
+	}, [user?.cover]);
+
 	return (
 		<>
 			<Topbar />
@@ -66,10 +94,7 @@ export const Profile = () => {
 							<img
 								height={370}
 								width={"100%"}
-								src={
-									user?.cover ||
-									"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noCover.png"
-								}
+								src={CoverImageSrc}
 								alt="cover"
 							/>
 						</figure>
@@ -77,10 +102,7 @@ export const Profile = () => {
 							<figure className="profile-image-container">
 								<img
 									className="profile-image"
-									src={
-										user?.picture ||
-										"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
-									}
+									src={profileImageSrc}
 									alt="profile"
 								/>
 							</figure>
@@ -100,30 +122,20 @@ export const Profile = () => {
 									<span>{user?.number_of_followers}</span>
 								</div>
 							</div>
-							{user?.user_name !== currentUser?.user_name &&
-								(isFollowed ? (
-									<button
-										className="btn btn-outline-warning"
-										onClick={handleFollow}>
-										Unfollow
-									</button>
-								) : (
-									<button className="btn btn-chat" onClick={handleFollow}>
-										Follow
-									</button>
-								))}
+							{user?.user_name !== currentUser?.user_name && (
+								<button
+									className={`btn ${
+										isFollowed ? "btn-outline-warning" : "btn-chat"
+									}`}
+									onClick={handleFollow}>
+									{isFollowed ? "Unfollow" : "Follow"}
+								</button>
+							)}
 						</div>
 					</section>
 					<section className="profile-right-bottom d-flex">
 						<Feed user_id={user?.user_id} />
-						<ProfileRightBar
-							{...user}
-							// bio={user?.bio || "default bio."}
-							// home_town={user?.home_town || "default home town."}
-							// city={user?.city || "default city."}
-							// marital_status={user?.marital_status || "Default Status"}
-							// user_id={user?.user_id}
-						/>
+						<ProfileRightBar {...user} />
 					</section>
 				</section>
 			</section>

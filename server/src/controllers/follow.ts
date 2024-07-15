@@ -26,6 +26,28 @@ const follow = async (req: CustomRequest, res: Response) => {
 	}
 };
 
+// follow function
+const unFollow = async (req: CustomRequest, res: Response) => {
+	try {
+		const user_id_following: string = req.user.id;
+		const user_id_followed: string = req.body.user_id_followed;
+		// check if the user different
+		if (user_id_following !== user_id_followed) {
+			const followAUser = await followService.follow(
+				user_id_following,
+				user_id_followed,
+			);
+			res.status(201).json(followAUser);
+		} else {
+			res.status(403).json("YOU CANNOT UNFOLLOW YOURSELF !");
+		}
+	} catch (error) {
+		res.status(500).json({
+			error: (error as Error).message,
+		});
+	}
+};
+
 // get followings of a user
 const getNumberOfFollowings = async (req: CustomRequest, res: Response) => {
 	try {
@@ -101,6 +123,7 @@ const isFollowed = async (req: CustomRequest, res: Response) => {
 
 export default {
 	follow,
+	unFollow,
 	getNumberOfFollowings,
 	getNumberOfFollowers,
 	getFriends,
