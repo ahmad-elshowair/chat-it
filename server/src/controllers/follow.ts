@@ -33,11 +33,11 @@ const unFollow = async (req: CustomRequest, res: Response) => {
 		const user_id_followed: string = req.body.user_id_followed;
 		// check if the user different
 		if (user_id_following !== user_id_followed) {
-			const followAUser = await followService.follow(
+			const unFollowAUser = await followService.unFollow(
 				user_id_following,
 				user_id_followed,
 			);
-			res.status(201).json(followAUser);
+			res.status(201).json(unFollowAUser);
 		} else {
 			res.status(403).json("YOU CANNOT UNFOLLOW YOURSELF !");
 		}

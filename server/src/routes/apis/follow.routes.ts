@@ -14,7 +14,7 @@ followRouter.post(
 	followController.follow,
 );
 
-followRouter.post(
+followRouter.delete(
 	"/unfollow",
 	authorize_user,
 	followValidation.checkFollow,

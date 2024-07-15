@@ -14,7 +14,7 @@ export const Profile = () => {
 
 	const { user: currentUser } = useContext(AuthContext).state;
 	const [user, setUser] = useState<TUser | null>(null);
-	const [isFollowed, setIsFollowed] = useState<boolean>(false);
+	const [isFollowed, setIsFollowed] = useState<boolean>();
 
 	const fetchAUser = useCallback(async () => {
 		try {
@@ -27,33 +27,26 @@ export const Profile = () => {
 
 	const checkIsFollowed = useCallback(async () => {
 		try {
-			const response = await axios.get(
-				`/follows/is-followed/${user?.user_id}`,
-				{ headers: { Authorization: `Bearer ${currentUser?.token}` } },
-			);
-			setIsFollowed(response.data);
-			console.log(response.data);
+			if (currentUser?.token && user?.user_id) {
+				const response = await axios.get(
+					`/follows/is-followed/${user?.user_id}`,
+					{ headers: { Authorization: `Bearer ${currentUser?.token}` } },
+				);
+				setIsFollowed(response.data);
+				console.log(response.data);
+			}
 		} catch (error) {
 			console.error(error);
 		}
 	}, [currentUser?.token, user?.user_id]);
 
-	useEffect(() => {
-		fetchAUser();
-	}, [fetchAUser]);
-
-	useEffect(() => {
-		checkIsFollowed();
-	}, [checkIsFollowed]);
-
 	const handleFollow = useCallback(async () => {
 		try {
 			if (isFollowed) {
-				await axios.post(
-					"/follows/unfollow",
-					{ user_id_followed: user?.user_id },
-					{ headers: { authorization: `Bearer ${currentUser?.token}` } },
-				);
+				await axios.delete("/follows/unfollow", {
+					data: { user_id_followed: user?.user_id },
+					headers: { authorization: `Bearer ${currentUser?.token}` },
+				});
 
 				setIsFollowed(false);
 			} else {
@@ -68,6 +61,14 @@ export const Profile = () => {
 			console.error(`Error updating follow status: ${error}`);
 		}
 	}, [currentUser?.token, isFollowed, user?.user_id]);
+
+	useEffect(() => {
+		fetchAUser();
+	}, [fetchAUser]);
+
+	useEffect(() => {
+		checkIsFollowed();
+	}, [checkIsFollowed]);
 
 	const profileImageSrc = useMemo(() => {
 		return (

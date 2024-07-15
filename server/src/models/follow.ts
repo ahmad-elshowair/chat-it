@@ -46,7 +46,7 @@ export default class FollowService {
 			// START TRANSACTION
 			await connection.query("BEGIN");
 
-			if (!this.checkIfFollowing(user_id_following, user_id_followed)) {
+			if (!(await this.checkIfFollowing(user_id_following, user_id_followed))) {
 				await connection.query(
 					`INSERT INTO follows (user_id_following, user_id_followed) VALUES ($1, $2)`,
 					[user_id_following, user_id_followed],
@@ -85,7 +85,7 @@ export default class FollowService {
 	}
 
 	// UNFOLLOW USER.
-	async unfollow(user_id_following: string, user_id_followed: string) {
+	async unFollow(user_id_following: string, user_id_followed: string) {
 		const connection: PoolClient = await db.connect();
 		try {
 			// START TRANSACTION
