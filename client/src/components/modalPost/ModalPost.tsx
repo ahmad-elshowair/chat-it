@@ -1,7 +1,8 @@
 import axios, { AxiosError } from "axios";
 import { ChangeEvent, FormEvent, useState } from "react";
-import { Button, FloatingLabel, Form, Modal } from "react-bootstrap";
+import { Button, Card, FloatingLabel, Form, Modal } from "react-bootstrap";
 import { FaPhotoVideo } from "react-icons/fa";
+import { GrClose } from "react-icons/gr";
 import { useNavigate } from "react-router-dom";
 import { uploadFile } from "../../services/uploadFile";
 import { TPost } from "../../types/post";
@@ -76,6 +77,11 @@ export const ModalPost = ({
 			}
 		}
 	};
+
+	const closeImage = () => {
+		setFile(null);
+		setFileName("");
+	};
 	return (
 		<Modal
 			show={show}
@@ -98,6 +104,15 @@ export const ModalPost = ({
 							onChange={(e) => setDescription(e.target.value)}
 						/>
 					</FloatingLabel>
+					{file && (
+						<Card className="mt-3">
+							<Card.Img
+								src={URL.createObjectURL(file)}
+								className="post-image"
+							/>
+							<GrClose onClick={closeImage} className="close-image_btn" />
+						</Card>
+					)}
 					<Form.Group
 						controlId="formFile"
 						className="mt-3 d-flex align-items-center justify-content-around">
