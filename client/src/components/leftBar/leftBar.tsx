@@ -19,7 +19,7 @@ export const LeftBar = () => {
 	useEffect(() => {
 		const fetchUsers = async () => {
 			try {
-				const response = await axios.get("/users", {
+				const response = await axios.get("/users/unknowns", {
 					headers: { authorization: `Bearer ${currentUser?.token}` },
 				});
 				setUsers(response.data);

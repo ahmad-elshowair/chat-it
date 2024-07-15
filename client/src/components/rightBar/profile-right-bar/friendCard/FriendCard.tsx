@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import "./friendCard.css";
 
 export const FriendCard = ({
 	picture,
@@ -10,7 +11,7 @@ export const FriendCard = ({
 	user_name?: string;
 }) => {
 	return (
-		<Link to={`/profile/${user_name}`}>
+		<Link to={`/profile/${user_name}`} className="friend-profile">
 			<div className="friend-card d-flex flex-column align-items-center">
 				<div className="friend-card__image mb-1">
 					<img
@@ -25,7 +26,7 @@ export const FriendCard = ({
 					/>
 				</div>
 				<div className="friend-card__info">
-					<h5 className="friend-card__name">{first_name}</h5>
+					<h5 className="friend-card__name m-0 fs-6">{first_name}</h5>
 				</div>
 			</div>
 		</Link>

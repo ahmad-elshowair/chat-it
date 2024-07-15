@@ -10,7 +10,7 @@ const index = async (req: CustomRequest, res: Response) => {
 		const users = await user_model.getAll(user_id);
 		res.status(200).json(users);
 	} catch (error) {
-		res.status(404).json({ error: (error as Error).message });
+		res.status(500).json({ error: (error as Error).message });
 	}
 };
 
@@ -20,7 +20,7 @@ const getUser = async (req: Request, res: Response) => {
 		const user = await user_model.getAUser(req.params.user_name);
 		res.status(200).json(user);
 	} catch (error) {
-		res.status(404).json({ error: (error as Error).message });
+		res.status(500).json({ error: (error as Error).message });
 	}
 };
 
@@ -61,7 +61,18 @@ const deleteUser = async (req: CustomRequest, res: Response) => {
 				.json({ error: "You are not authorized to delete this user" });
 		}
 	} catch (error) {
-		res.status(404).json({ error: (error as Error).message });
+		res.status(500).json({ error: (error as Error).message });
+	}
+};
+
+// GET ALL OTHER USERS
+const getUnknownUsers = async (req: CustomRequest, res: Response) => {
+	const user_id = req.user.id;
+	try {
+		const unknowns = await user_model.getUnknowns(user_id);
+		res.status(200).json(unknowns);
+	} catch (error) {
+		res.status(500).json({ error: (error as Error).message });
 	}
 };
 
@@ -70,4 +81,5 @@ export default {
 	update,
 	getUser,
 	deleteUser,
+	getUnknownUsers,
 };

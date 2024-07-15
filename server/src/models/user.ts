@@ -23,7 +23,7 @@ class UserModel {
 			// return the users
 			return users;
 		} catch (error) {
-			throw new Error(`model: ${(error as Error).message}`);
+			throw new Error(`get all model: ${(error as Error).message}`);
 		} finally {
 			// close the connection
 			connection.release();
@@ -44,9 +44,11 @@ class UserModel {
 			if (result.rowCount < 1) {
 				throw new Error("NO USER FOUND!");
 			}
+			await connection.query("COMMIT");
 			// return the user
 			return result.rows[0];
 		} catch (error) {
+			await connection.query("ROLLBACK");
 			throw new Error(`model: ${(error as Error).message}`);
 		} finally {
 			// close the connection
@@ -119,5 +121,38 @@ class UserModel {
 			connection.release();
 		}
 	}
+
+	// GET ALL USERS BUT LOGGED IN AND THE FOLLOWINGS
+	async getUnknowns(user_id: string): Promise<User[]> {
+		// connect to the database
+		const connection = await db.connect();
+		try {
+			await connection.query("BEGIN");
+			const getUnknownsQuery = `SELECT
+										u.user_id, 
+										u.user_name, 
+										u.first_name, 
+										u.last_name, 
+										u.picture
+									FROM users u
+										LEFT JOIN follows f ON u.user_id = f.user_id_followed
+										AND f.user_id_following = ($1)
+									WHERE u.user_id != ($1)
+									AND f.user_id_followed IS NULL`;
+			const result: QueryResult = await connection.query(getUnknownsQuery, [
+				user_id,
+			]);
+			// return the users
+			return result.rows;
+		} catch (error) {
+			throw new Error(
+				`cannot get unknown users due to ${(error as Error).message}`,
+			);
+		} finally {
+			// release the connection
+			connection.release();
+		}
+	}
 }
+
 export default UserModel;

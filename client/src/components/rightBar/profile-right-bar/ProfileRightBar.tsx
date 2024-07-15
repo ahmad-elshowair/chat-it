@@ -68,7 +68,7 @@ export const ProfileRightBar = ({
 			<h3 className="friends-header">Friends</h3>
 			<article className="right-bar__friends d-flex justify-content-center align-items-center">
 				{friends.length > 0 ? (
-					<div className="d-flex flex-wrap ps-3">
+					<div className="d-flex flex-wrap gap-2">
 						{friends.map((friend) => (
 							<FriendCard key={friend?.user_id} {...friend} />
 						))}

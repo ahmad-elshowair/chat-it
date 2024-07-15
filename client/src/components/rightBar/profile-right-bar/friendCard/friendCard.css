@@ -1,0 +1,9 @@
+.friend-card__name {
+	color: var(--gray-color-0);
+}
+.friend-card__name:hover {
+	text-decoration: underline;
+}
+.friend-profile {
+	text-decoration: none;
+}
