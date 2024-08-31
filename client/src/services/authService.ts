@@ -2,15 +2,16 @@ import axios from "axios";
 import { Dispatch } from "react";
 import { AuthAction, LoginCredentials, RegisterCredentials } from "../types";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
-
 export const registerUser = async (
 	userData: RegisterCredentials,
 	dispatch: Dispatch<AuthAction>,
 ) => {
 	dispatch({ type: "START" });
 	try {
-		const response = await axios.post(`${API_URL}/users/register`, userData);
+		const response = await axios.post(
+			`http://localhost:5000/api/users/register`,
+			userData,
+		);
 		dispatch({ type: "SUCCEEDED", payload: response.data });
 		// return response.data;
 	} catch (error) {
@@ -41,7 +42,7 @@ export const loginUser = async (
 	dispatch({ type: "START" });
 	try {
 		const response = await axios.post(
-			`${API_URL}/users/login`,
+			`http://localhost:5000/api/users/login`,
 			userCredentials,
 		);
 
