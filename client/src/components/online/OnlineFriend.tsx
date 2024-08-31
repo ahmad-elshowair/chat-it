@@ -11,7 +11,6 @@ export const OnlineFriend = ({
 			<a
 				className="right-bar-friends-list-friend"
 				href="#profile"
-				target="_blank"
 				rel="noopener noreferrer">
 				<img
 					src={picture}
