@@ -4,7 +4,6 @@ import { Button, Card, FloatingLabel, Form, Modal } from "react-bootstrap";
 import { FaPhotoVideo } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
 import { useNavigate } from "react-router-dom";
-import { uploadFile } from "../../services/uploadFile";
 import { TPost } from "../../types/post";
 import "./modalPost.css";
 
@@ -24,6 +23,7 @@ export const ModalPost = ({
 	const [file, setFile] = useState<File | null>(null);
 	const [description, setDescription] = useState<string>("");
 	const [error, setError] = useState<string>("");
+	const folder = "posts";
 
 	const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
 		const input = event.target;
@@ -35,11 +35,15 @@ export const ModalPost = ({
 	};
 	const createPost = async (post: TPost) => {
 		try {
-			const response = await axios.post("/posts/create", post, {
-				headers: {
-					Authorization: `Bearer ${token}`,
+			const response = await axios.post(
+				"http://localhost:5000/api/posts/create",
+				post,
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
 				},
-			});
+			);
 			console.log(response.data);
 		} catch (error) {
 			const axiosError = error as AxiosError;
@@ -55,7 +59,17 @@ export const ModalPost = ({
 
 		let imageUrl: string | null = null;
 		if (file) {
-			imageUrl = await uploadFile(file, "posts");
+			const formDate = new FormData();
+
+			formDate.append("file", file);
+			formDate.append("folder", folder);
+
+			const uploadResponse = await axios.post(
+				"http://localhost:5000/api/upload",
+				formDate,
+			);
+
+			imageUrl = `http://localhost:5000/${uploadResponse.data.filePath}`;
 			if (!imageUrl) {
 				setError("Failed to upload the image !");
 				return;

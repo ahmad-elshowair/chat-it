@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-export const uploadFile = async (file: File, folder: string) => {
+export const uploadFileSupabase = async (file: File, folder: string) => {
 	const filePath = `${folder}/${new Date().toISOString()}_${file.name}`;
 	const { data, error } = await supabase.storage
 		.from("chat-it")
