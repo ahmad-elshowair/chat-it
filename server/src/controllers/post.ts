@@ -37,9 +37,9 @@ const update = async (req: CustomRequest, res: Response) => {
 };
 
 // get post by id
-const aPost = async (req: Request, res: Response) => {
+const getPostById = async (req: Request, res: Response) => {
 	try {
-		const post = await postService.aPost(req.params.post_id);
+		const post = await postService.fetchPostById(req.params.post_id);
 		res.status(200).json(post);
 	} catch (error) {
 		res.status(500).json({ error: (error as Error).message });
@@ -60,12 +60,14 @@ const index = async (req: Request, res: Response) => {
 // delete post
 const deletePost = async (req: CustomRequest, res: Response) => {
 	try {
-		const post = await postService.aPost(req.params.id);
+		const post = await postService.fetchPostById(req.params.post_id);
 		if (post.user_id === req.user.id) {
 			const deletePost = await postService.delete(req.params.post_id);
 			res.status(200).json(deletePost);
 		} else {
-			res.status(401).json({ message: "THAT IS NOT YOUR POST !" });
+			res
+				.status(401)
+				.json({ message: "YOU ARE NOT AUTHORIZED TO DELETE THIS POST!" });
 		}
 	} catch (error) {
 		res.status(500).json({ error: (error as Error).message });
@@ -97,7 +99,7 @@ const feed = async (req: CustomRequest, res: Response) => {
 export default {
 	create,
 	update,
-	aPost,
+	getPostById,
 	index,
 	deletePost,
 	userPosts,

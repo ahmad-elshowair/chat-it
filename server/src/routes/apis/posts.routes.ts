@@ -12,5 +12,5 @@ postRoute.get("/all", postController.index);
 postRoute.delete("/delete/:post_id", authorize_user, postController.deletePost);
 postRoute.get("/user/:user_id", postController.userPosts);
 postRoute.get("/feed", authorize_user, postController.feed);
-postRoute.get("/:post_id", authorize_user, postController.aPost);
+postRoute.get("/:post_id", authorize_user, postController.getPostById);
 export default postRoute;

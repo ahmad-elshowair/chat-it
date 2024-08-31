@@ -42,23 +42,23 @@ class PostModel {
 	}
 
 	// get a post by id
-	async aPost(id: string): Promise<Post> {
+	async fetchPostById(post_id: string): Promise<Post> {
 		// connect to the database
 		const connection = await pool.connect();
 		try {
 			// get post data
 			const post: QueryResult<Post> = await connection.query(
 				"SELECT * FROM posts WHERE post_id = $1",
-				[id],
+				[post_id],
 			);
 			// check if the post exist
-			if (!(await this.checkPostExist(id))) {
+			if (post.rowCount === 0) {
 				throw new Error("Post not found");
 			}
 			// return post
 			return post.rows[0];
 		} catch (error) {
-			throw new Error(`aPost model: ${(error as Error).message}`);
+			throw new Error(`fetch post by id model: ${(error as Error).message}`);
 		} finally {
 			// release the the database
 			connection.release();
@@ -72,7 +72,7 @@ class PostModel {
 		try {
 			// get all posts
 			const posts: QueryResult<Post> = await connection.query(
-				"SELECT * FROM posts ORDER BY post_id DESC",
+				"SELECT * FROM posts ORDER BY updated_at DESC",
 			);
 			// return posts
 			return posts.rows;
