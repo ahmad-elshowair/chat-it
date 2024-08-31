@@ -35,10 +35,7 @@ export const Register = () => {
 	return (
 		<section className="register-page">
 			<header className="register-form-header">
-				<img
-					src="https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/posts/chat_it_0.png"
-					alt="logo"
-				/>
+				<img src="http://localhost:5000/api/images/chat-it-0.png" alt="logo" />
 				<h1>Chat it with Concern !</h1>
 			</header>
 			<form
