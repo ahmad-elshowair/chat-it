@@ -1,4 +1,4 @@
-type Post = {
+export type Post = {
 	post_id?: string;
 	user_id: string;
 	description: string;
@@ -6,5 +6,3 @@ type Post = {
 	created_at?: Date;
 	updated_at?: Date;
 };
-
-export default Post;

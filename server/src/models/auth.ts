@@ -1,6 +1,6 @@
 import { QueryResult } from "pg";
 import db from "../database/pool";
-import User from "../types/users";
+import { User } from "../types/users";
 import { buildInsertQuery } from "../utilities/build-insert-query";
 
 class AuthModel {
@@ -9,7 +9,7 @@ class AuthModel {
 		const connection = await db.connect();
 		try {
 			// MAKE SURE THE EMAIL IS NOT EXIST.
-			const checKUserResult: QueryResult<User> = await connection.query(
+			const checKUserResult = await connection.query<User>(
 				"SELECT * FROM users WHERE email=$1",
 				[registerCredentials.email],
 			);

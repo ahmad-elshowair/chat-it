@@ -1,6 +1,6 @@
 import { PoolClient, QueryResult } from "pg";
 import db from "../database/pool";
-import User from "../types/users";
+import { User } from "../types/users";
 
 export default class FollowService {
 	// CHECK IF A USER FOLLOWING A USER.

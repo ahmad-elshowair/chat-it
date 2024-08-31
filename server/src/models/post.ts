@@ -1,6 +1,6 @@
 import { QueryResult } from "pg";
 import pool from "../database/pool";
-import Post from "../types/post";
+import { Post } from "../types/post";
 
 class PostModel {
 	// CHECK EXISTING OF A POST.

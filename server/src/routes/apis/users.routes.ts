@@ -16,13 +16,13 @@ userRoute.post(
 	"/register",
 	registerValidation,
 	validationMiddleware,
-	authController.createUser,
+	authController.register,
 );
 userRoute.post(
 	"/login",
 	loginValidation,
 	validationMiddleware,
-	authController.loginUser,
+	authController.login,
 );
 userRoute.put("/update/:id", authorize_user, userController.update);
 

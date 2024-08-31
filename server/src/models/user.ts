@@ -1,6 +1,6 @@
 import { QueryResult } from "pg";
 import db from "../database/pool";
-import User from "../types/users";
+import { User } from "../types/users";
 import { buildUpdateQuery } from "../utilities/build-update-query";
 
 class UserModel {

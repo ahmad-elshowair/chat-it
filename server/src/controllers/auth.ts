@@ -6,7 +6,7 @@ import { generateToken } from "../utilities/generateToken";
 
 const user_model = new AuthModel();
 
-const createUser = async (req: Request, res: Response, next: NextFunction) => {
+const register = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const user = await user_model.register(req.body);
 		const payload: UserPayload = {
@@ -37,7 +37,7 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 // login user
-const loginUser = async (
+const login = async (
 	req: Request,
 	res: Response,
 	next: NextFunction,
@@ -76,6 +76,6 @@ const loginUser = async (
 };
 
 export default {
-	createUser,
-	loginUser,
+	register,
+	login,
 };

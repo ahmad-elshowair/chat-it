@@ -1,6 +1,6 @@
 import { PoolClient, QueryResult } from "pg";
 import pool from "../database/pool";
-import Like from "../types/like";
+import { Like } from "../types/like";
 
 class LikeModel {
 	// like a post
