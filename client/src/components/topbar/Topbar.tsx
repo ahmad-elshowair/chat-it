@@ -9,7 +9,7 @@ export const Topbar = () => {
 	const { user } = state;
 
 	const localFolder =
-		process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
+		process.env.REACT_APP_IMAGES_API || "http://localhost:5000/api/images";
 
 	return (
 		<nav className="navbar fixed-top">

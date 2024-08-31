@@ -34,7 +34,7 @@ export const LeftBar = () => {
 		fetchUsers();
 	}, [currentUser?.token]);
 	const localFolder =
-		process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
+		process.env.REACT_APP_IMAGES_API || "http://localhost:5000/api/images";
 
 	return (
 		<aside className="sidebar">

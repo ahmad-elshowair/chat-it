@@ -3,7 +3,7 @@ import { OnlineFriend } from "../../online/OnlineFriend";
 import "./homeRightBar.css";
 
 const localFolder =
-	process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
+	process.env.REACT_APP_IMAGES_API || "http://localhost:5000/api/images";
 export const HomeRightBar = () => {
 	const users = Users.filter((user) => user.isOnline);
 	return (
