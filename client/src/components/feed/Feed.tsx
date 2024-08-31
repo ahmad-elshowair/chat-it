@@ -15,8 +15,8 @@ export const Feed = ({ user_id }: { user_id?: string }) => {
 		const fetchFeed = async () => {
 			try {
 				const response = user_id
-					? await axios.get(`/posts/user/${user_id}`)
-					: await axios.get("/posts/feed", {
+					? await axios.get(`http://localhost:5000/api/posts/user/${user_id}`)
+					: await axios.get("http://localhost:5000/api/posts/feed", {
 							headers: {
 								authorization: `Bearer ${token}`,
 							},

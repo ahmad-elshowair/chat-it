@@ -12,14 +12,19 @@ export const Share = () => {
 
 	const handleClose = () => setShow(false);
 	const handleShow = () => setShow(true);
+
+	const localFolder =
+		process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
+
 	return (
 		<aside className="share-post">
 			<section className="input-bar">
 				<Link to={`/profile/${user?.user_name}`}>
 					<img
 						src={
-							user?.picture ||
-							"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+							user?.picture
+								? `${localFolder}/avatars/${user.picture}`
+								: `${localFolder}/no-avatar.png`
 						}
 						alt="profile"
 						className="rounded-circle"

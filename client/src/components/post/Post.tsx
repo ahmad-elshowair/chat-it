@@ -26,7 +26,9 @@ export const Post = ({
 	useEffect(() => {
 		const fetchAUser = async () => {
 			try {
-				const response = await axios.get(`/users/${user_name}`);
+				const response = await axios.get(
+					`http://localhost:5000/api/users/${user_name}`,
+				);
 				setUser(response.data);
 			} catch (error) {
 				console.error(`Failed to fetch user: ${error}`);
@@ -59,7 +61,7 @@ export const Post = ({
 
 		try {
 			await axios.post(
-				`/posts/like/${post_id}`,
+				`http://localhost:5000/api/posts/like/${post_id}`,
 				{},
 				{
 					headers: {
@@ -80,6 +82,8 @@ export const Post = ({
 			}));
 		}
 	};
+	const localFolder =
+		process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
 
 	return (
 		<section className="post card mt-2 mb-3">
@@ -91,8 +95,9 @@ export const Post = ({
 								<img
 									className="post-header-img-user"
 									src={
-										user?.picture ||
-										"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+										user?.picture
+											? `${localFolder}/avatars/${user.picture}`
+											: `${localFolder}/no-avatar.png`
 									}
 									alt="profile"
 								/>

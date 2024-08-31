@@ -2,14 +2,16 @@ import { Users } from "../../../dummyData";
 import { OnlineFriend } from "../../online/OnlineFriend";
 import "./homeRightBar.css";
 
+const localFolder =
+	process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
 export const HomeRightBar = () => {
 	const users = Users.filter((user) => user.isOnline);
 	return (
 		<aside className="home-right-bar pe-4">
 			<article className="right-bar-events">
 				<img
-					src="https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/posts/gift.png"
-					alt="ads"
+					src={`${localFolder}/gift.png`}
+					alt="gift"
 					className="right-bar-events-image"
 				/>
 				<p className="right-bar-events-text">
@@ -18,7 +20,7 @@ export const HomeRightBar = () => {
 			</article>
 			<figure className="right-bar-ads mt-3">
 				<img
-					src="https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/posts/ad.png"
+					src={`${localFolder}/ad.png`}
 					alt="ads"
 					className="right-bar-ads-img"
 				/>

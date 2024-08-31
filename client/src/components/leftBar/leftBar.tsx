@@ -12,6 +12,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { TUser } from "../../types/user";
 import { Friend } from "../friend/Friend";
 import "./leftBar.css";
+
 export const LeftBar = () => {
 	const { user: currentUser } = useContext(AuthContext).state;
 	const [users, setUsers] = useState<TUser[]>([]);
@@ -19,9 +20,12 @@ export const LeftBar = () => {
 	useEffect(() => {
 		const fetchUsers = async () => {
 			try {
-				const response = await axios.get("/users/unknowns", {
-					headers: { authorization: `Bearer ${currentUser?.token}` },
-				});
+				const response = await axios.get(
+					"http://localhost:5000/api/users/unknowns",
+					{
+						headers: { authorization: `Bearer ${currentUser?.token}` },
+					},
+				);
 				setUsers(response.data);
 			} catch (error) {
 				console.error(error);
@@ -29,6 +33,8 @@ export const LeftBar = () => {
 		};
 		fetchUsers();
 	}, [currentUser?.token]);
+	const localFolder =
+		process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
 
 	return (
 		<aside className="sidebar">
@@ -66,7 +72,11 @@ export const LeftBar = () => {
 								key={user.user_id}
 								user_name={user.user_name}
 								name={`${user.first_name}  ${user.last_name}`}
-								picture={user.picture}
+								picture={
+									user.picture
+										? `${localFolder}/avatars/${user.picture}`
+										: `${localFolder}/no-avatar.png`
+								}
 							/>
 						))}
 					</ul>

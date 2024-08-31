@@ -16,10 +16,7 @@ export const Friend = ({
 				to={`/profile/${user_name}`}
 				rel="noopener noreferrer">
 				<img
-					src={
-						picture ||
-						`https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png`
-					}
+					src={picture}
 					alt="profile"
 					className="right-bar-friends-list-img"
 				/>

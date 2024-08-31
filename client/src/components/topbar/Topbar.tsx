@@ -7,12 +7,16 @@ export const Topbar = () => {
 	const { state } = useContext(AuthContext);
 	console.log(state); // Logging the state.
 	const { user } = state;
+
+	const localFolder =
+		process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
+
 	return (
 		<nav className="navbar fixed-top">
 			<section className="container-fluid">
 				<Link className="navbar-brand" to="/">
 					<img
-						src="https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/posts/chat_it.png"
+						src={`${localFolder}/chat_it.png`}
 						alt="lgo chat it"
 						height={60}
 					/>
@@ -53,8 +57,9 @@ export const Topbar = () => {
 							width={36}
 							alt="avatar"
 							src={
-								`${user?.picture}` ||
-								"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+								user?.picture
+									? `${localFolder}/avatars/${user.picture}`
+									: `${localFolder}/no-avatar.png`
 							}
 							className="rounded-circle"
 						/>

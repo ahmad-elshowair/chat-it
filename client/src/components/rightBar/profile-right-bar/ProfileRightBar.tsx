@@ -23,7 +23,9 @@ export const ProfileRightBar = ({
 	useEffect(() => {
 		const getFriends = async () => {
 			try {
-				const response = await axios.get(`/follows/friends/${user_id}`);
+				const response = await axios.get(
+					`http://localhost:5000/api/follows/friends/${user_id}`,
+				);
 				setFriends(response.data);
 			} catch (error) {
 				console.error(error);

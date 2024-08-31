@@ -30,10 +30,7 @@ export const Login = () => {
 	return (
 		<section className="login-page">
 			<header className="login-form-header">
-				<img
-					src="https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/posts/chat_it.png"
-					alt="logo"
-				/>
+				<img src="http://localhost:5000/api/images/chat_it.png" alt="logo" />
 				<h1>A warm Welcome Back !</h1>
 			</header>
 			<form action="" onSubmit={handleSubmit(onSubmit)} className="login-form">

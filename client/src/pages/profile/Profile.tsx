@@ -9,6 +9,8 @@ import { AuthContext } from "../../context/AuthContext";
 import { TUser } from "../../types/user";
 import "./profile.css";
 
+const localApi =
+	process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
 export const Profile = () => {
 	const { user_name } = useParams<{ user_name: string }>();
 
@@ -18,7 +20,9 @@ export const Profile = () => {
 
 	const fetchAUser = useCallback(async () => {
 		try {
-			const response = await axios.get(`/users/${user_name}`);
+			const response = await axios.get(
+				`http://localhost:5000/api/users/${user_name}`,
+			);
 			setUser(response.data);
 		} catch (error) {
 			console.error(`Error Fetching user: ${error}`);
@@ -29,7 +33,7 @@ export const Profile = () => {
 		try {
 			if (currentUser?.token && user?.user_id) {
 				const response = await axios.get(
-					`/follows/is-followed/${user?.user_id}`,
+					`http://localhost:5000/api/follows/is-followed/${user?.user_id}`,
 					{ headers: { Authorization: `Bearer ${currentUser?.token}` } },
 				);
 				setIsFollowed(response.data);
@@ -43,7 +47,7 @@ export const Profile = () => {
 	const handleFollow = useCallback(async () => {
 		try {
 			if (isFollowed) {
-				await axios.delete("/follows/unfollow", {
+				await axios.delete("http://localhost:5000/api/follows/unfollow", {
 					data: { user_id_followed: user?.user_id },
 					headers: { authorization: `Bearer ${currentUser?.token}` },
 				});
@@ -51,7 +55,7 @@ export const Profile = () => {
 				setIsFollowed(false);
 			} else {
 				await axios.post(
-					"/follows/follow",
+					"http://localhost:5000/api/follows/follow",
 					{ user_id_followed: user?.user_id },
 					{ headers: { authorization: `Bearer ${currentUser?.token}` } },
 				);
@@ -71,17 +75,15 @@ export const Profile = () => {
 	}, [checkIsFollowed]);
 
 	const profileImageSrc = useMemo(() => {
-		return (
-			user?.picture ||
-			"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
-		);
+		return user?.picture
+			? `${localApi}/avatars/${user?.picture}`
+			: `${localApi}/no-avatar.png`;
 	}, [user?.picture]);
 
 	const CoverImageSrc = useMemo(() => {
-		return (
-			user?.cover ||
-			"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noCover.png"
-		);
+		return user?.cover
+			? `${localApi}/avatars/${user?.cover}`
+			: `${localApi}/noCover.png`;
 	}, [user?.cover]);
 
 	return (
@@ -136,7 +138,13 @@ export const Profile = () => {
 					</section>
 					<section className="profile-right-bottom d-flex">
 						<Feed user_id={user?.user_id} />
-						<ProfileRightBar {...user} />
+						<ProfileRightBar
+							user_id={user?.user_id}
+							bio={user?.bio}
+							city={user?.city}
+							marital_status={user?.marital_status}
+							home_town={user?.home_town}
+						/>
 					</section>
 				</section>
 			</section>

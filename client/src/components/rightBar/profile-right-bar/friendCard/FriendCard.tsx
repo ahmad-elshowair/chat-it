@@ -17,8 +17,9 @@ export const FriendCard = ({
 					<img
 						className="img-thumbnail"
 						src={
-							picture ||
-							"https://izpppddbctnbadazrjoo.supabase.co/storage/v1/object/public/chat-it/avatars/noAvatar.png"
+							picture
+								? `http://localhost:5000/api/images/avatars/${picture}`
+								: `http://localhost:5000/api/images/no-avatar.png`
 						}
 						alt="avatar"
 						height={80}
