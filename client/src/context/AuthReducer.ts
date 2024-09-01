@@ -13,7 +13,7 @@ const AuthReducer = (state: AuthState, action: AuthAction) => {
 				...state,
 				loading: false,
 				user: action.payload,
-				errors: [],
+				errors: null,
 			};
 		case "FAILURE":
 			return {
@@ -21,6 +21,17 @@ const AuthReducer = (state: AuthState, action: AuthAction) => {
 				loading: false,
 				errors: action.payload,
 			};
+		case "REFRESH_TOKEN":
+			if (state.user) {
+				return {
+					...state,
+					user: {
+						...state.user,
+						access_token: action.payload.access_token,
+					},
+				};
+			}
+			return state;
 
 		default:
 			return { ...state };
