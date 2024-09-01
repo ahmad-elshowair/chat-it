@@ -51,7 +51,7 @@ class AuthModel {
 		const connection = await db.connect();
 		try {
 			//select a user form the database
-			const result: QueryResult<User> = await db.query(
+			const result = await db.query<User>(
 				"SELECT * FROM users WHERE email=$1",
 				[email],
 			);

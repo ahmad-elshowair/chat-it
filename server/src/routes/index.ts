@@ -10,5 +10,5 @@ routes.use("/users", users);
 routes.use("/posts", posts);
 routes.use("/follows", follows);
 routes.use("/upload", uploadRouter);
-routes.use("auth", authentication);
+routes.use("/auth", authentication);
 export default routes;

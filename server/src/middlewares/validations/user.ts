@@ -1,7 +1,7 @@
 import { ValidationChain, check } from "express-validator";
 import { QueryResult } from "pg";
 import db from "../../database/pool";
-import User from "../../types/users";
+import { User } from "../../types/users";
 import passwords from "../../utilities/passwords";
 
 // A helper function to check the length

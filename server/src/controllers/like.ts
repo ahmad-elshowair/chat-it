@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { CustomRequest } from "../interfaces/ICustomRequest";
 import LikeModel from "../models/like";
-import Like from "../types/like";
+import { Like } from "../types/like";
 
 // create an instance of LikeModel
 const likeService = new LikeModel();

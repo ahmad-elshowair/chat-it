@@ -13,7 +13,7 @@ export const AuthContext = createContext<{
 	dispatch: Dispatch<AuthAction>;
 }>({
 	state: initialState,
-	dispatch: () => {},
+	dispatch: () => null,
 });
 
 function AuthProvider({ children }: { children: ReactNode }) {

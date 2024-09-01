@@ -1,4 +1,4 @@
-import User from "../types/users";
+import { User } from "../types/users";
 import passwords from "./passwords";
 
 export const buildUpdateQuery = (

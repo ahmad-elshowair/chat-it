@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { CustomRequest } from "../interfaces/ICustomRequest";
 import PostModel from "../models/post";
-import Post from "../types/post";
+import { Post } from "../types/post";
 
 // create an instance of user model
 const postService = new PostModel();
