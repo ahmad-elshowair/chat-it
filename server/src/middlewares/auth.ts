@@ -1,5 +1,5 @@
 import { NextFunction, Response } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import config from "../configs/config";
 import { CustomRequest } from "../interfaces/ICustomRequest";
 
@@ -8,38 +8,16 @@ const authorize_user = (
 	res: Response,
 	next: NextFunction,
 ) => {
+	const token = req.cookies.access_token;
+	if (!token) {
+		return res.status(401).json({ message: "Access Token is missing!" });
+	}
 	try {
-		const headerAuth = req.headers["authorization"];
-		if (headerAuth) {
-			const token = headerAuth.split(" ")[1];
-			const bearer = headerAuth.split(" ")[0].toLowerCase();
-			if (token && bearer === "bearer") {
-				const decoded: string | JwtPayload = jwt.verify(
-					token,
-					config.jwt_secret,
-				);
-				if (typeof decoded === "object" && "id" in decoded) {
-					req.user = decoded;
-					next();
-				} else {
-					return res.status(401).json({
-						error: "Invalid Token",
-					});
-				}
-			} else {
-				// invalid token
-				return res.status(401).json({
-					error: "Invalid Token Or Bearer",
-				});
-			}
-		} else {
-			// no token provided
-			return res.status(401).json({
-				error: "No Token Provided",
-			});
-		}
+		const decoded = jwt.verify(token, config.jwt_secret);
+		req.user = decoded;
+		next();
 	} catch (error) {
-		next(error);
+		return res.status(403).json({ message: "Invalid Access token" });
 	}
 };
 export default authorize_user;
