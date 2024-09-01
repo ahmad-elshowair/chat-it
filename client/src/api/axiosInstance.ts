@@ -4,7 +4,7 @@ import config from "../configs";
 import { AuthContext } from "../context/AuthContext";
 
 const api = axios.create({
-	baseURL: config.api_app,
+	baseURL: config.api_url,
 	withCredentials: true,
 });
 
@@ -28,7 +28,7 @@ api.interceptors.response.use(
 			originalRequest._retry = true;
 			try {
 				const { data } = await axios.post(
-					`${config.api_app}/auth/refresh-token`,
+					`${config.api_url}/auth/refresh-token`,
 					{ refresh_token: state.user?.refresh_token },
 				);
 				dispatch({

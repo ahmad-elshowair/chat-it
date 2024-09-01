@@ -109,7 +109,10 @@ const refreshToken = async (req: Request, res: Response) => {
 			secure: true,
 			maxAge: 15 * 60 * 1000, // 15 minutes
 		});
-		res.json({ message: "Access Token Refreshed" });
+		res.json({
+			message: "Access Token Refreshed",
+			access_token: newAccessToken,
+		});
 	} catch (error) {
 		return res.status(403).json({ message: "Invalid Refresh Token!" });
 	}
