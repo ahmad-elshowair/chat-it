@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useContext, useEffect, useState } from "react";
 import {
 	FaCalendarCheck,
@@ -8,6 +7,8 @@ import {
 	FaUsers,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import api from "../../api/axiosInstance";
+import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import { TUser } from "../../types/user";
 import { Friend } from "../friend/Friend";
@@ -20,21 +21,16 @@ export const LeftBar = () => {
 	useEffect(() => {
 		const fetchUsers = async () => {
 			try {
-				const response = await axios.get(
-					"http://localhost:5000/api/users/unknowns",
-					{
-						headers: { authorization: `Bearer ${currentUser?.token}` },
-					},
-				);
+				const response = await api.get(`/users/unknowns`, {
+					headers: { authorization: `Bearer ${currentUser?.access_token}` },
+				});
 				setUsers(response.data);
 			} catch (error) {
 				console.error(error);
 			}
 		};
 		fetchUsers();
-	}, [currentUser?.token]);
-	const localFolder =
-		process.env.REACT_APP_IMAGES_API || "http://localhost:5000/api/images";
+	}, [currentUser?.access_token]);
 
 	return (
 		<aside className="sidebar">
@@ -74,8 +70,8 @@ export const LeftBar = () => {
 								name={`${user.first_name}  ${user.last_name}`}
 								picture={
 									user.picture
-										? `${localFolder}/avatars/${user.picture}`
-										: `${localFolder}/no-avatar.png`
+										? `${config.api_app}/images/avatars/${user.picture}`
+										: `${config.api_app}/images/no-avatar.png`
 								}
 							/>
 						))}

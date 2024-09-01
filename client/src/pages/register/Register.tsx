@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import { registerUser } from "../../services/authService";
 import { RegisterCredentials } from "../../types";
@@ -35,7 +36,7 @@ export const Register = () => {
 	return (
 		<section className="register-page">
 			<header className="register-form-header">
-				<img src="http://localhost:5000/api/images/chat-it-0.png" alt="logo" />
+				<img src={`${config.api_app}/images/chat-it-0.png`} alt="logo" />
 				<h1>Chat it with Concern !</h1>
 			</header>
 			<form

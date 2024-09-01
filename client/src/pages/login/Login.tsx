@@ -2,6 +2,7 @@ import { CircularProgress } from "@mui/material";
 import { useContext } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../services/authService";
 import { LoginCredentials } from "../../types";
@@ -30,7 +31,7 @@ export const Login = () => {
 	return (
 		<section className="login-page">
 			<header className="login-form-header">
-				<img src="http://localhost:5000/api/images/chat_it.png" alt="logo" />
+				<img src={`${config.api_app}/images/chat_it.png`} alt="logo" />
 				<h1>A warm Welcome Back !</h1>
 			</header>
 			<form action="" onSubmit={handleSubmit(onSubmit)} className="login-form">

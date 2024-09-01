@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Dispatch } from "react";
+import api from "../api/axiosInstance";
 import { AuthAction, LoginCredentials, RegisterCredentials } from "../types";
 
 export const registerUser = async (
@@ -8,10 +9,7 @@ export const registerUser = async (
 ) => {
 	dispatch({ type: "START" });
 	try {
-		const response = await axios.post(
-			`http://localhost:5000/api/users/register`,
-			userData,
-		);
+		const response = await api.post(`/auth/register`, userData);
 		dispatch({ type: "SUCCEEDED", payload: response.data });
 		// return response.data;
 	} catch (error) {
@@ -41,10 +39,7 @@ export const loginUser = async (
 ) => {
 	dispatch({ type: "START" });
 	try {
-		const response = await axios.post(
-			`http://localhost:5000/api/users/login`,
-			userCredentials,
-		);
+		const response = await api.post(`/auth/login`, userCredentials);
 
 		dispatch({ type: "SUCCEEDED", payload: response.data });
 	} catch (error) {

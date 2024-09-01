@@ -3,6 +3,7 @@ import { FaLaugh, FaPhotoVideo, FaVideo } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
+import config from "../../configs";
 import { ModalPost } from "../modalPost/ModalPost";
 import "./share.css";
 export const Share = () => {
@@ -13,9 +14,6 @@ export const Share = () => {
 	const handleClose = () => setShow(false);
 	const handleShow = () => setShow(true);
 
-	const localFolder =
-		process.env.REACT_APP_IMAGES_API || "http://localhost:5000/api/images";
-
 	return (
 		<aside className="share-post">
 			<section className="input-bar">
@@ -23,8 +21,8 @@ export const Share = () => {
 					<img
 						src={
 							user?.picture
-								? `${localFolder}/avatars/${user.picture}`
-								: `${localFolder}/no-avatar.png`
+								? `${config.api_app}/images/avatars/${user.picture}`
+								: `${config.api_app}/images/no-avatar.png`
 						}
 						alt="profile"
 						className="rounded-circle"
@@ -52,7 +50,7 @@ export const Share = () => {
 				handleClose={handleClose}
 				show={show}
 				user_id={user?.user_id}
-				token={user?.token}
+				token={user?.access_token}
 			/>
 		</aside>
 	);

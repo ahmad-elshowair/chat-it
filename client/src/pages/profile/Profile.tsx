@@ -1,16 +1,15 @@
-import axios from "axios";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import api from "../../api/axiosInstance";
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/leftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
+import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import { TUser } from "../../types/user";
 import "./profile.css";
 
-const localApi =
-	process.env.REACT_APP_API_URL || "http://localhost:5000/api/images";
 export const Profile = () => {
 	const { user_name } = useParams<{ user_name: string }>();
 
@@ -20,9 +19,7 @@ export const Profile = () => {
 
 	const fetchAUser = useCallback(async () => {
 		try {
-			const response = await axios.get(
-				`http://localhost:5000/api/users/${user_name}`,
-			);
+			const response = await api.get(`/users/${user_name}`);
 			setUser(response.data);
 		} catch (error) {
 			console.error(`Error Fetching user: ${error}`);
@@ -31,10 +28,10 @@ export const Profile = () => {
 
 	const checkIsFollowed = useCallback(async () => {
 		try {
-			if (currentUser?.token && user?.user_id) {
-				const response = await axios.get(
-					`http://localhost:5000/api/follows/is-followed/${user?.user_id}`,
-					{ headers: { Authorization: `Bearer ${currentUser?.token}` } },
+			if (currentUser?.access_token && user?.user_id) {
+				const response = await api.get(
+					`/follows/is-followed/${user?.user_id}`,
+					{ headers: { Authorization: `Bearer ${currentUser?.access_token}` } },
 				);
 				setIsFollowed(response.data);
 				console.log(response.data);
@@ -42,29 +39,29 @@ export const Profile = () => {
 		} catch (error) {
 			console.error(error);
 		}
-	}, [currentUser?.token, user?.user_id]);
+	}, [currentUser?.access_token, user?.user_id]);
 
 	const handleFollow = useCallback(async () => {
 		try {
 			if (isFollowed) {
-				await axios.delete("http://localhost:5000/api/follows/unfollow", {
+				await api.delete("/follows/unfollow", {
 					data: { user_id_followed: user?.user_id },
-					headers: { authorization: `Bearer ${currentUser?.token}` },
+					headers: { authorization: `Bearer ${currentUser?.access_token}` },
 				});
 
 				setIsFollowed(false);
 			} else {
-				await axios.post(
-					"http://localhost:5000/api/follows/follow",
+				await api.post(
+					"/follows/follow",
 					{ user_id_followed: user?.user_id },
-					{ headers: { authorization: `Bearer ${currentUser?.token}` } },
+					{ headers: { authorization: `Bearer ${currentUser?.access_token}` } },
 				);
 				setIsFollowed(true);
 			}
 		} catch (error) {
 			console.error(`Error updating follow status: ${error}`);
 		}
-	}, [currentUser?.token, isFollowed, user?.user_id]);
+	}, [currentUser?.access_token, isFollowed, user?.user_id]);
 
 	useEffect(() => {
 		fetchAUser();
@@ -76,14 +73,14 @@ export const Profile = () => {
 
 	const profileImageSrc = useMemo(() => {
 		return user?.picture
-			? `${localApi}/avatars/${user?.picture}`
-			: `${localApi}/no-avatar.png`;
+			? `${config.api_app}/images/avatars/${user?.picture}`
+			: `${config.api_app}/images/no-avatar.png`;
 	}, [user?.picture]);
 
 	const CoverImageSrc = useMemo(() => {
 		return user?.cover
-			? `${localApi}/avatars/${user?.cover}`
-			: `${localApi}/noCover.png`;
+			? `${config.api_app}/images/avatars/${user?.cover}`
+			: `${config.api_app}/images/noCover.png`;
 	}, [user?.cover]);
 
 	return (

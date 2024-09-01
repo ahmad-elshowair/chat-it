@@ -1,16 +1,15 @@
+import config from "../../../configs";
 import { Users } from "../../../dummyData";
 import { OnlineFriend } from "../../online/OnlineFriend";
 import "./homeRightBar.css";
 
-const localFolder =
-	process.env.REACT_APP_IMAGES_API || "http://localhost:5000/api/images";
 export const HomeRightBar = () => {
 	const users = Users.filter((user) => user.isOnline);
 	return (
 		<aside className="home-right-bar pe-4">
 			<article className="right-bar-events">
 				<img
-					src={`${localFolder}/gift.png`}
+					src={`${config.api_app}/images/gift.png`}
 					alt="gift"
 					className="right-bar-events-image"
 				/>
@@ -20,7 +19,7 @@ export const HomeRightBar = () => {
 			</article>
 			<figure className="right-bar-ads mt-3">
 				<img
-					src={`${localFolder}/ad.png`}
+					src={`${config.api_app}/images/ad.png`}
 					alt="ads"
 					className="right-bar-ads-img"
 				/>

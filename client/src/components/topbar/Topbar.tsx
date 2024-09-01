@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { FaBell, FaComment, FaHome, FaSearch } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import "./topbar.css";
 export const Topbar = () => {
@@ -8,15 +9,12 @@ export const Topbar = () => {
 	console.log(state); // Logging the state.
 	const { user } = state;
 
-	const localFolder =
-		process.env.REACT_APP_IMAGES_API || "http://localhost:5000/api/images";
-
 	return (
 		<nav className="navbar fixed-top">
 			<section className="container-fluid">
 				<Link className="navbar-brand" to="/">
 					<img
-						src={`${localFolder}/chat_it.png`}
+						src={`${config.api_app}/images/chat_it.png`}
 						alt="lgo chat it"
 						height={60}
 					/>
@@ -58,8 +56,8 @@ export const Topbar = () => {
 							alt="avatar"
 							src={
 								user?.picture
-									? `${localFolder}/avatars/${user.picture}`
-									: `${localFolder}/no-avatar.png`
+									? `${config.api_app}/images/avatars/${user.picture}`
+									: `${config.api_app}/images/no-avatar.png`
 							}
 							className="rounded-circle"
 						/>

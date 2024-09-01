@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import config from "../../../../configs";
 import "./friendCard.css";
 
 export const FriendCard = ({
@@ -18,8 +19,8 @@ export const FriendCard = ({
 						className="img-thumbnail"
 						src={
 							picture
-								? `http://localhost:5000/api/images/avatars/${picture}`
-								: `http://localhost:5000/api/images/no-avatar.png`
+								? `${config.api_app}/images/avatars/${picture}`
+								: `${config.api_app}/images/no-avatar.png`
 						}
 						alt="avatar"
 						height={80}

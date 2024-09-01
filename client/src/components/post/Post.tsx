@@ -1,9 +1,11 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useContext, useEffect, useState } from "react";
 import { AiFillLike } from "react-icons/ai";
 import { BiLike, BiShare, BiSolidLike } from "react-icons/bi";
 import { FaComments, FaEllipsisH, FaRegComment, FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import api from "../../api/axiosInstance";
+import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import { TPost } from "../../types/post";
 import { TUser } from "../../types/user";
@@ -21,14 +23,12 @@ export const Post = ({
 	const { state } = useContext(AuthContext);
 	const [user, setUser] = useState<TUser | null>(null);
 
-	const token = state.user?.token;
+	const token = state.user?.access_token;
 
 	useEffect(() => {
 		const fetchAUser = async () => {
 			try {
-				const response = await axios.get(
-					`http://localhost:5000/api/users/${user_name}`,
-				);
+				const response = await api.get(`/users/${user_name}`);
 				setUser(response.data);
 			} catch (error) {
 				console.error(`Failed to fetch user: ${error}`);
@@ -60,8 +60,8 @@ export const Post = ({
 		}));
 
 		try {
-			await axios.post(
-				`http://localhost:5000/api/posts/like/${post_id}`,
+			await api.post(
+				`/posts/like/${post_id}`,
 				{},
 				{
 					headers: {
@@ -82,8 +82,6 @@ export const Post = ({
 			}));
 		}
 	};
-	const localFolder =
-		process.env.REACT_APP_IMAGES_API || "http://localhost:5000/api/images";
 
 	return (
 		<section className="post card mt-2 mb-3">
@@ -96,8 +94,8 @@ export const Post = ({
 									className="post-header-img-user"
 									src={
 										user?.picture
-											? `${localFolder}/avatars/${user.picture}`
-											: `${localFolder}/no-avatar.png`
+											? `${config.api_app}/images/avatars/${user.picture}`
+											: `${config.api_app}/images/no-avatar.png`
 									}
 									alt="profile"
 								/>

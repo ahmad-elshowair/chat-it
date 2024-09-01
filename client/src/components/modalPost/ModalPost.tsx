@@ -1,9 +1,10 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { Button, Card, FloatingLabel, Form, Modal } from "react-bootstrap";
 import { FaPhotoVideo } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/axiosInstance";
 import { TPost } from "../../types/post";
 import "./modalPost.css";
 
@@ -35,15 +36,11 @@ export const ModalPost = ({
 	};
 	const createPost = async (post: TPost) => {
 		try {
-			const response = await axios.post(
-				"http://localhost:5000/api/posts/create",
-				post,
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
+			const response = await api.post("/posts/create", post, {
+				headers: {
+					Authorization: `Bearer ${token}`,
 				},
-			);
+			});
 			console.log(response.data);
 		} catch (error) {
 			const axiosError = error as AxiosError;
@@ -64,10 +61,7 @@ export const ModalPost = ({
 			formDate.append("file", file);
 			formDate.append("folder", folder);
 
-			const uploadResponse = await axios.post(
-				"http://localhost:5000/api/upload",
-				formDate,
-			);
+			const uploadResponse = await api.post("/upload", formDate);
 
 			imageUrl = `http://localhost:5000/${uploadResponse.data.filePath}`;
 			if (!imageUrl) {

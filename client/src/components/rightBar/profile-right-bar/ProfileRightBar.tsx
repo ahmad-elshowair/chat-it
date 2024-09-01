@@ -1,6 +1,6 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { FaHome, FaMapMarkerAlt, FaRegGrinHearts } from "react-icons/fa";
+import api from "../../../api/axiosInstance";
 import { TUser } from "../../../types/user";
 import { FriendCard } from "./friendCard/FriendCard";
 import "./profileRightBar.css";
@@ -23,9 +23,7 @@ export const ProfileRightBar = ({
 	useEffect(() => {
 		const getFriends = async () => {
 			try {
-				const response = await axios.get(
-					`http://localhost:5000/api/follows/friends/${user_id}`,
-				);
+				const response = await api.get(`/follows/friends/${user_id}`);
 				setFriends(response.data);
 			} catch (error) {
 				console.error(error);
