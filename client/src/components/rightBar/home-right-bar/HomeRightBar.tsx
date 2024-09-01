@@ -9,7 +9,7 @@ export const HomeRightBar = () => {
 		<aside className="home-right-bar pe-4">
 			<article className="right-bar-events">
 				<img
-					src={`${config.api_app}/images/gift.png`}
+					src={`${config.api_url}/images/gift.png`}
 					alt="gift"
 					className="right-bar-events-image"
 				/>
@@ -19,7 +19,7 @@ export const HomeRightBar = () => {
 			</article>
 			<figure className="right-bar-ads mt-3">
 				<img
-					src={`${config.api_app}/images/ad.png`}
+					src={`${config.api_url}/images/ad.png`}
 					alt="ads"
 					className="right-bar-ads-img"
 				/>

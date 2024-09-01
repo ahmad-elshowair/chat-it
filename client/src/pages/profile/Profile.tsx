@@ -73,14 +73,14 @@ export const Profile = () => {
 
 	const profileImageSrc = useMemo(() => {
 		return user?.picture
-			? `${config.api_app}/images/avatars/${user?.picture}`
-			: `${config.api_app}/images/no-avatar.png`;
+			? `${config.api_url}/images/avatars/${user?.picture}`
+			: `${config.api_url}/images/no-avatar.png`;
 	}, [user?.picture]);
 
 	const CoverImageSrc = useMemo(() => {
 		return user?.cover
-			? `${config.api_app}/images/avatars/${user?.cover}`
-			: `${config.api_app}/images/noCover.png`;
+			? `${config.api_url}/images/avatars/${user?.cover}`
+			: `${config.api_url}/images/noCover.png`;
 	}, [user?.cover]);
 
 	return (

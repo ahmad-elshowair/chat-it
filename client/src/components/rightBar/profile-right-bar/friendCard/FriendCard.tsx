@@ -19,8 +19,8 @@ export const FriendCard = ({
 						className="img-thumbnail"
 						src={
 							picture
-								? `${config.api_app}/images/avatars/${picture}`
-								: `${config.api_app}/images/no-avatar.png`
+								? `${config.api_url}/images/avatars/${picture}`
+								: `${config.api_url}/images/no-avatar.png`
 						}
 						alt="avatar"
 						height={80}

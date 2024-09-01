@@ -94,8 +94,8 @@ export const Post = ({
 									className="post-header-img-user"
 									src={
 										user?.picture
-											? `${config.api_app}/images/avatars/${user.picture}`
-											: `${config.api_app}/images/no-avatar.png`
+											? `${config.api_url}/images/avatars/${user.picture}`
+											: `${config.api_url}/images/no-avatar.png`
 									}
 									alt="profile"
 								/>

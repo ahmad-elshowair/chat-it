@@ -14,7 +14,7 @@ export const Topbar = () => {
 			<section className="container-fluid">
 				<Link className="navbar-brand" to="/">
 					<img
-						src={`${config.api_app}/images/chat_it.png`}
+						src={`${config.api_url}/images/chat_it.png`}
 						alt="lgo chat it"
 						height={60}
 					/>
@@ -56,8 +56,8 @@ export const Topbar = () => {
 							alt="avatar"
 							src={
 								user?.picture
-									? `${config.api_app}/images/avatars/${user.picture}`
-									: `${config.api_app}/images/no-avatar.png`
+									? `${config.api_url}/images/avatars/${user.picture}`
+									: `${config.api_url}/images/no-avatar.png`
 							}
 							className="rounded-circle"
 						/>

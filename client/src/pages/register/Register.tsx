@@ -36,7 +36,7 @@ export const Register = () => {
 	return (
 		<section className="register-page">
 			<header className="register-form-header">
-				<img src={`${config.api_app}/images/chat-it-0.png`} alt="logo" />
+				<img src={`${config.api_url}/images/chat-it-0.png`} alt="logo" />
 				<h1>Chat it with Concern !</h1>
 			</header>
 			<form

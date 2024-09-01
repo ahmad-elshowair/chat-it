@@ -70,8 +70,8 @@ export const LeftBar = () => {
 								name={`${user.first_name}  ${user.last_name}`}
 								picture={
 									user.picture
-										? `${config.api_app}/images/avatars/${user.picture}`
-										: `${config.api_app}/images/no-avatar.png`
+										? `${config.api_url}/images/avatars/${user.picture}`
+										: `${config.api_url}/images/no-avatar.png`
 								}
 							/>
 						))}

@@ -31,7 +31,7 @@ export const Login = () => {
 	return (
 		<section className="login-page">
 			<header className="login-form-header">
-				<img src={`${config.api_app}/images/chat_it.png`} alt="logo" />
+				<img src={`${config.api_url}/images/chat_it.png`} alt="logo" />
 				<h1>A warm Welcome Back !</h1>
 			</header>
 			<form action="" onSubmit={handleSubmit(onSubmit)} className="login-form">
