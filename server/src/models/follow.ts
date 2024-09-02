@@ -22,9 +22,13 @@ export default class FollowService {
 
 			// COMMIT TRANSACTION
 			await connection.query("COMMIT");
+			const user = result.rows[0];
 
-			// RETURN RESULT
-			return result.rowCount > 0;
+			if (user) {
+				return true;
+			}
+
+			return false;
 		} catch (error) {
 			// ROLLBACK TRANSACTION ON ERROR.
 			await connection.query("ROLLBACK");

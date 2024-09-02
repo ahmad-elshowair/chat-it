@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { Error } from "../interfaces/IError";
+import { IError } from "../interfaces/IError";
 const errorMiddleware = (
-	error: Error,
+	error: IError,
 	_req: Request,
 	res: Response,
 	next: NextFunction,

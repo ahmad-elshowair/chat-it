@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Application, Request, Response } from "express";
 import helmet from "helmet";
@@ -6,6 +7,7 @@ import path from "path";
 import config from "./configs/config";
 import errorMiddleware from "./middlewares/error";
 import routes from "./routes";
+
 // create an instance of app
 const app: Application = express();
 
@@ -22,6 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(morgan("dev"));
+app.use(cookieParser());
 
 // use the cors
 app.use(cors());

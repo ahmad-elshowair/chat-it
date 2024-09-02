@@ -1,13 +1,12 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import {
 	Navigate,
 	Route,
 	BrowserRouter as Router,
 	Routes,
 } from "react-router-dom";
-import { setUpInterceptors } from "./api/axiosInstance";
 import "./App.css";
 import { AuthContext } from "./context/AuthContext";
 import { Home } from "./pages/home/Home";
@@ -16,10 +15,7 @@ import { Profile } from "./pages/profile/Profile";
 import { Register } from "./pages/register/Register";
 
 function App() {
-	const { state, dispatch } = useContext(AuthContext);
-	useEffect(() => {
-		setUpInterceptors(state, dispatch);
-	}, [state, dispatch]);
+	const { state } = useContext(AuthContext);
 
 	return (
 		<Router>

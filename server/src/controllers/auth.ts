@@ -1,42 +1,39 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../configs/config";
-import { UserPayload } from "../interfaces/IUserPayload";
+import { IUserPayload } from "../interfaces/IUserPayload";
 import AuthModel from "../models/auth";
-import { generateToken } from "../utilities/generateToken";
+import { generateToken, setTokensInCookies } from "../utilities/generateToken";
 const user_model = new AuthModel();
 
 const register = async (req: Request, res: Response, next: NextFunction) => {
 	try {
 		const user = await user_model.register(req.body);
-		const payload: UserPayload = {
+		const payload: IUserPayload = {
 			id: user.user_id,
 			is_admin: user.is_admin,
 		};
 		// generate access token
-		const accessToken = generateToken(payload, config.jwt_secret, "15m");
+		const access_token = generateToken(payload, config.jwt_secret, "15m");
 		// generate access token
-		const refreshToken = generateToken(
+		const refresh_token = generateToken(
 			payload,
 			config.jwt_refresh_secret,
 			"7d",
 		);
 
-		res.cookie("access_token", accessToken, {
-			httpOnly: true,
-			sameSite: "strict",
-			secure: true,
-			maxAge: 15 * 60 * 1000,
-		});
+		setTokensInCookies(res, access_token, refresh_token);
 
-		res.cookie("refresh_token", refreshToken, {
-			httpOnly: true,
-			sameSite: "strict",
-			secure: true,
-			maxAge: 7 * 24 * 60 * 60 * 1000,
+		res.status(201).json({
+			message: "Registered Successfully",
+			user: {
+				user_id: user.user_id,
+				email: user.email,
+				is_admin: user.is_admin,
+			},
+			access_token,
+			refresh_token,
 		});
-
-		res.status(201).json({ message: "Register Successfully", user });
 	} catch (error) {
 		next(error);
 	}
@@ -52,31 +49,28 @@ const login = async (
 	try {
 		const user = await user_model.login(email, password);
 
-		const payload: UserPayload = {
+		const payload: IUserPayload = {
 			id: user.user_id,
 			is_admin: user.is_admin,
 		};
 
 		// generate access token
-		const accessToken = generateToken(payload, config.jwt_secret, "15m");
+		const access_token = generateToken(payload, config.jwt_secret, "15m");
 		// generate access token
-		const refreshToken = generateToken(payload, config.jwt_secret, "7d");
+		const refresh_token = generateToken(payload, config.jwt_secret, "7d");
 
-		res.cookie("access_token", accessToken, {
-			httpOnly: true,
-			sameSite: "strict",
-			secure: true,
-			maxAge: 15 * 60 * 1000,
+		setTokensInCookies(res, access_token, refresh_token);
+
+		res.status(201).json({
+			message: "Login Successfully",
+			user: {
+				user_id: user.user_id,
+				email: user.email,
+				is_admin: user.is_admin,
+			},
+			access_token,
+			refresh_token,
 		});
-
-		res.cookie("refresh_token", refreshToken, {
-			httpOnly: true,
-			sameSite: "strict",
-			secure: true,
-			maxAge: 7 * 24 * 60 * 60 * 1000,
-		});
-
-		res.status(201).json({ message: "Login Successfully", user });
 	} catch (error) {
 		next(error);
 	}
@@ -98,7 +92,10 @@ const refreshToken = async (req: Request, res: Response) => {
 			return res.status(403).json({ message: "token is invalid!" });
 		}
 
-		const payload: UserPayload = { id: decoded.id, is_admin: decoded.is_admin };
+		const payload: IUserPayload = {
+			id: decoded.id,
+			is_admin: decoded.is_admin,
+		};
 
 		// Generate new Access Token.
 		const newAccessToken = generateToken(payload, config.jwt_secret, "15m");

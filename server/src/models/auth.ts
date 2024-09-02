@@ -9,13 +9,13 @@ class AuthModel {
 		const connection = await db.connect();
 		try {
 			// MAKE SURE THE EMAIL IS NOT EXIST.
-			const checKUserResult = await connection.query<User>(
+			const result = await connection.query<User>(
 				"SELECT * FROM users WHERE email=$1",
 				[registerCredentials.email],
 			);
-			const existingUser = checKUserResult.rows[0];
+			const user = result.rows[0];
 
-			if (existingUser) {
+			if (user) {
 				throw new Error(`Email is already in user !`);
 			}
 
@@ -26,13 +26,13 @@ class AuthModel {
 				values,
 			);
 
-			const registerUser = registerUserResult.rows[0];
+			const registeredUser = registerUserResult.rows[0];
 
 			// Commit the transaction
 			await connection.query("COMMIT");
 
 			// RETURN THE INSERTED USER.
-			return registerUser;
+			return registeredUser;
 		} catch (error) {
 			// Rollback the transaction on error
 			await connection.query("ROLLBACK");

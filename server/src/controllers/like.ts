@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { CustomRequest } from "../interfaces/ICustomRequest";
+import { ICustomRequest } from "../interfaces/ICustomRequest";
 import LikeModel from "../models/like";
 import { Like } from "../types/like";
 
@@ -7,7 +7,7 @@ import { Like } from "../types/like";
 const likeService = new LikeModel();
 
 // like post arrow function
-const handleLike = async (req: CustomRequest, res: Response) => {
+const handleLike = async (req: ICustomRequest, res: Response) => {
 	try {
 		const like: Like = {
 			user_id: req.user.id,

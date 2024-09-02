@@ -8,10 +8,15 @@ class PostModel {
 		// CONNECT TO THE DATABASE.
 		const connection = await pool.connect();
 		try {
-			const postExist: QueryResult<Post> = await connection.query(
+			const post: QueryResult<Post> = await connection.query(
 				`SELECT * FROM posts WHERE post_id = $1, [id]`,
 			);
-			return postExist.rowCount > 0;
+			if (post) {
+				return true;
+			}
+			return false;
+		} catch (error) {
+			throw error;
 		} finally {
 			// RELEASE DATABASE CONNECTION.
 			connection.release();

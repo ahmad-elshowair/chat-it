@@ -16,7 +16,7 @@ class UserModel {
 				[user_id],
 			);
 			// if there are not users return a message
-			if (getUsers.rowCount < 1) {
+			if (!getUsers.rows) {
 				throw new Error("NO USERS FOND!");
 			}
 			const users = getUsers.rows;
@@ -41,7 +41,7 @@ class UserModel {
 			]);
 
 			// if there is not user return a message
-			if (result.rowCount < 1) {
+			if (!result.rows[0]) {
 				throw new Error("NO USER FOUND!");
 			}
 			await connection.query("COMMIT");

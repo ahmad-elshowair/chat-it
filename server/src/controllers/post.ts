@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CustomRequest } from "../interfaces/ICustomRequest";
+import { ICustomRequest } from "../interfaces/ICustomRequest";
 import PostModel from "../models/post";
 import { Post } from "../types/post";
 
@@ -7,7 +7,7 @@ import { Post } from "../types/post";
 const postService = new PostModel();
 
 // create a post
-const create = async (req: CustomRequest, res: Response) => {
+const create = async (req: ICustomRequest, res: Response) => {
 	try {
 		const post: Post = {
 			user_id: req.user.id,
@@ -21,7 +21,7 @@ const create = async (req: CustomRequest, res: Response) => {
 	}
 };
 // update a post
-const update = async (req: CustomRequest, res: Response) => {
+const update = async (req: ICustomRequest, res: Response) => {
 	try {
 		// check if the user is the owner of this post
 		const post = req.body;
@@ -58,7 +58,7 @@ const index = async (req: Request, res: Response) => {
 };
 
 // delete post
-const deletePost = async (req: CustomRequest, res: Response) => {
+const deletePost = async (req: ICustomRequest, res: Response) => {
 	try {
 		const post = await postService.fetchPostById(req.params.post_id);
 		if (post.user_id === req.user.id) {
@@ -85,7 +85,7 @@ const userPosts = async (req: Request, res: Response) => {
 };
 
 // GET ALL POSTS OF A USER AND HIS FOLLOWINGS
-const feed = async (req: CustomRequest, res: Response) => {
+const feed = async (req: ICustomRequest, res: Response) => {
 	try {
 		const posts: Post[] = await postService.feed(req.user.id);
 

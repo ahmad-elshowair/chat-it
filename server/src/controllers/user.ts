@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { CustomRequest } from "../interfaces/ICustomRequest";
+import { ICustomRequest } from "../interfaces/ICustomRequest";
 import UserModel from "../models/user";
 
 const user_model = new UserModel();
 
-const index = async (req: CustomRequest, res: Response) => {
+const fetchAllUsers = async (req: ICustomRequest, res: Response) => {
 	const user_id = req.user.id;
 	try {
 		const users = await user_model.getAll(user_id);
@@ -25,7 +25,7 @@ const getUser = async (req: Request, res: Response) => {
 };
 
 // update a user
-const update = async (req: CustomRequest, res: Response) => {
+const update = async (req: ICustomRequest, res: Response) => {
 	try {
 		const { id } = req.params;
 
@@ -46,7 +46,7 @@ const update = async (req: CustomRequest, res: Response) => {
 };
 
 // delete a user
-const deleteUser = async (req: CustomRequest, res: Response) => {
+const deleteUser = async (req: ICustomRequest, res: Response) => {
 	try {
 		const { id } = req.params;
 		// check of the user has the same id or it is admin
@@ -66,7 +66,7 @@ const deleteUser = async (req: CustomRequest, res: Response) => {
 };
 
 // GET ALL OTHER USERS
-const getUnknownUsers = async (req: CustomRequest, res: Response) => {
+const getUnknownUsers = async (req: ICustomRequest, res: Response) => {
 	const user_id = req.user.id;
 	try {
 		const unknowns = await user_model.getUnknowns(user_id);
@@ -77,7 +77,7 @@ const getUnknownUsers = async (req: CustomRequest, res: Response) => {
 };
 
 export default {
-	index,
+	fetchAllUsers,
 	update,
 	getUser,
 	deleteUser,

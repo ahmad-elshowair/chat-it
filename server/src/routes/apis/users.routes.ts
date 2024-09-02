@@ -1,14 +1,14 @@
 import { Router } from "express";
 import userController from "../../controllers/user";
-import authorize_user from "../../middlewares/auth";
+import authorizeUser from "../../middlewares/auth";
 const userRoute: Router = Router();
 
-userRoute.get("/unknowns", authorize_user, userController.getUnknownUsers);
-userRoute.get("/", authorize_user, userController.index);
+userRoute.get("/unknowns", authorizeUser, userController.getUnknownUsers);
+userRoute.get("/", authorizeUser, userController.fetchAllUsers);
 userRoute.get("/:user_name", userController.getUser);
 
-userRoute.put("/update/:id", authorize_user, userController.update);
+userRoute.put("/update/:id", authorizeUser, userController.update);
 
-userRoute.delete("/delete/:id", authorize_user, userController.deleteUser);
+userRoute.delete("/delete/:id", authorizeUser, userController.deleteUser);
 
 export default userRoute;

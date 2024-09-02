@@ -1,11 +1,11 @@
 import { Response } from "express";
-import { CustomRequest } from "../interfaces/ICustomRequest";
+import { ICustomRequest } from "../interfaces/ICustomRequest";
 import FollowService from "../models/follow";
 
 const followService = new FollowService();
 
 // follow function
-const follow = async (req: CustomRequest, res: Response) => {
+const follow = async (req: ICustomRequest, res: Response) => {
 	try {
 		const user_id_following: string = req.user.id;
 		const user_id_followed: string = req.body.user_id_followed;
@@ -27,7 +27,7 @@ const follow = async (req: CustomRequest, res: Response) => {
 };
 
 // follow function
-const unFollow = async (req: CustomRequest, res: Response) => {
+const unFollow = async (req: ICustomRequest, res: Response) => {
 	try {
 		const user_id_following: string = req.user.id;
 		const user_id_followed: string = req.body.user_id_followed;
@@ -49,7 +49,7 @@ const unFollow = async (req: CustomRequest, res: Response) => {
 };
 
 // get followings of a user
-const getNumberOfFollowings = async (req: CustomRequest, res: Response) => {
+const getNumberOfFollowings = async (req: ICustomRequest, res: Response) => {
 	try {
 		const user_id: string = req.user.id;
 		// get the followings from the database
@@ -63,7 +63,7 @@ const getNumberOfFollowings = async (req: CustomRequest, res: Response) => {
 };
 
 // get all the followers of a user
-const getNumberOfFollowers = async (req: CustomRequest, res: Response) => {
+const getNumberOfFollowers = async (req: ICustomRequest, res: Response) => {
 	const user_id: string = req.user.id;
 	try {
 		const numFollowers = await followService.getNumberOfFollowers(user_id);
@@ -75,7 +75,7 @@ const getNumberOfFollowers = async (req: CustomRequest, res: Response) => {
 	}
 };
 
-const getFriends = async (req: CustomRequest, res: Response) => {
+const getFriends = async (req: ICustomRequest, res: Response) => {
 	const user_id = req.params.user_id;
 	try {
 		const friends = await followService.getFriends(user_id);
@@ -87,7 +87,7 @@ const getFriends = async (req: CustomRequest, res: Response) => {
 	}
 };
 
-const getFollowings = async (req: CustomRequest, res: Response) => {
+const getFollowings = async (req: ICustomRequest, res: Response) => {
 	const user_id = req.user.id;
 	try {
 		const followings = await followService.getFollowings(user_id);
@@ -97,7 +97,7 @@ const getFollowings = async (req: CustomRequest, res: Response) => {
 	}
 };
 
-const getFollowers = async (req: CustomRequest, res: Response) => {
+const getFollowers = async (req: ICustomRequest, res: Response) => {
 	const user_id = req.user.id;
 	try {
 		const followers = await followService.getFollowers(user_id);
@@ -107,7 +107,7 @@ const getFollowers = async (req: CustomRequest, res: Response) => {
 	}
 };
 
-const isFollowed = async (req: CustomRequest, res: Response) => {
+const isFollowed = async (req: ICustomRequest, res: Response) => {
 	const following_id: string = req.user.id;
 	const followed_id = req.params.followed_id;
 	try {
