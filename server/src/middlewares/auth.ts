@@ -10,8 +10,6 @@ const authorizeUser = (
 ) => {
 	const token = req.cookies.access_token;
 
-	console.log("cookies in req: ", req.cookies);
-
 	console.log("access token from authorize function: ", token);
 
 	if (!token) {
