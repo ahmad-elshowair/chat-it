@@ -15,7 +15,7 @@ export const HomeRightBar = () => {
   useEffect(() => {
     const fetchOnlineUsers = async () => {
       try {
-        const response = await api.get(`/api/users/online`, {
+        const response = await api.get(`/users/online`, {
           headers: {
             authorization: `Bearer ${token}`,
           },
