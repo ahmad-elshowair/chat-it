@@ -20,6 +20,7 @@ CREATE TABLE users (
     marital_status VARCHAR(100) DEFAULT '',
     number_of_followers INTEGER DEFAULT 0,
     number_of_followings INTEGER DEFAULT 0,
+    is_online BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

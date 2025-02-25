@@ -15,8 +15,8 @@ const app: Application = express();
 const port: number = config.port;
 
 app.use(
-	"/api/images",
-	express.static(path.join(__dirname, "../public/images")),
+  "/api/images",
+  express.static(path.join(__dirname, "../public/images"))
 );
 
 // use the middleware of express.json and helmet and morgan
@@ -27,11 +27,16 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 
 // use the cors
-app.use(cors());
+app.use(
+  cors({
+    origin: config.client_url || "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 // create a get request of home endpoint
 app.get("/", (_req: Request, res: Response) => {
-	res.send("Hello World!");
+  res.send("Hello World!");
 });
 
 // use all routes
@@ -41,10 +46,10 @@ app.use("/api", routes);
 app.use(errorMiddleware);
 
 app.use((_req: Request, res: Response) => {
-	res.status(404).json("YOU HAVE GOT LOST !");
+  res.status(404).json("YOU HAVE GOT LOST !");
 });
 
 // add listen to the app
 app.listen(port, () => {
-	console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });

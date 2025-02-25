@@ -11,4 +11,6 @@ userRoute.put("/update/:id", authorizeUser, userController.update);
 
 userRoute.delete("/delete/:id", authorizeUser, userController.deleteUser);
 
+userRoute.get("/online", authorizeUser, userController.getOnlineUsers);
+
 export default userRoute;
