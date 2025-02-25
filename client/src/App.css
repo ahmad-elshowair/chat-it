@@ -1,36 +1,39 @@
 :root {
-	--gray-color-0: rgb(110, 110, 118);
-	--green-color-0: #058d05;
-	--gray-color-1: #f8f9fa;
-	--gray-color-2: #e9ecef;
-	--main-color: #b5bd3d;
-	--bg-color: rgba(233, 224, 233, 0.2);
-	--font-text: 15px;
-	--font-sub-text: 12px;
+  --gray-color-0: rgb(110, 110, 118);
+  --green-color-0: #058d05;
+  --gray-color-1: #f8f9fa;
+  --gray-color-2: #e9ecef;
+  --main-color: #b5bd3d;
+  --bg-color: rgba(233, 224, 233, 0.2);
+  --font-text: 15px;
+  --font-sub-text: 12px;
 }
 body {
-	background-color: var(--bg-color);
-	scroll-behavior: smooth;
+  background-color: var(--bg-color);
+  scroll-behavior: smooth;
 }
 
 ::-webkit-scrollbar {
-	width: 5px;
-	height: 5px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-	background: var(--gray-color-1);
+  background: var(--gray-color-1);
 }
 ::-webkit-scrollbar-thumb {
-	background: var(--main-color);
-	border-radius: 10px;
+  background: var(--main-color);
+  border-radius: 10px;
 }
 
 .btn-chat {
-	background-color: var(--main-color);
-	color: var(--gray-color-2);
-	font-weight: bolder;
-	transition: all ease-in-out 0.5s;
+  background-color: var(--main-color);
+  color: var(--gray-color-2);
+  font-weight: bolder;
+  opacity: 0.8;
+  transition: all ease-in-out 0.5s;
 }
 .btn-chat:hover {
-	box-shadow: 1px 4px 7px 5px #6a34345e;
+  box-shadow: 1px 4px 7px 5px #6a34345e;
+  background-color: var(--main-color);
+  opacity: 1;
 }

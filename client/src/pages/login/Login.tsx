@@ -1,6 +1,7 @@
 import { CircularProgress } from "@mui/material";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
@@ -27,32 +28,43 @@ export const Login = () => {
     }
   };
   console.log(state.errors);
-  const imageUrl = `${config.api_url}/api/images/chat_it.png`;
-  console.log("Image URL: ", imageUrl);
-  console.log("API: ", config.api_url);
+
+  const imageUrl = `${config.api_url}/images/chat_it.png`;
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
-    <section className="login-page">
-      <div className="login-page__container">
-        <header className="login-page__header">
+    <section className="vh-100 py-5">
+      <div className="container d-flex justify-content-center align-items-center h-100 gap-5">
+        <header className="login-page__header d-flex align-items-center justify-content-center flex-column gap-4">
           <img
             src={imageUrl}
+            className="w-75"
             alt="logo"
             onError={(e) => {
               console.error("Error loading image: ", e);
               console.log("current src: ", e.currentTarget.src);
             }}
           />
-          <h1 className="login-page__header-title">A warm Welcome Back !</h1>
+          <h1 className="login-page__header-title d-none d-lg-block fw-bold fs-2 text-uppercase">
+            A warm Welcome Back !
+          </h1>
         </header>
         <form
           action=""
           onSubmit={handleSubmit(onSubmit)}
-          className="login-page__form"
+          className="login-page__form px-2 py-5  d-flex flex-column gap-4 align-items-center justify-content-center"
         >
-          <div className="login-page__body">
-            <div className="login-page__body-input">
-              <label className="form-label" htmlFor="email">
+          <div className="login-page__body d-flex flex-column gap-4">
+            <div className="d-flex flex-column">
+              <label
+                className="form-label text-success fw-medium"
+                htmlFor="email"
+              >
                 Email
               </label>
               <input
@@ -76,23 +88,40 @@ export const Login = () => {
                 </span>
               )}
             </div>
-            <div className="login-page__body-input">
-              <label className="form-label" htmlFor="password">
+            <div className="d-flex flex-column">
+              <label
+                className="form-label text-success fw-medium"
+                htmlFor="password"
+              >
                 Password
               </label>
-              <input
-                className="form-control"
-                type="password"
-                id="password"
-                placeholder="***********"
-                {...register("password", {
-                  required: "PASSWORD IS REQUIRED!",
-                  minLength: {
-                    value: 8,
-                    message: "PASSWORD MUST BE AT LEAST 8 CHARACTERS LONG!",
-                  },
-                })}
-              />
+
+              <div className="relative d-flex justify-content-between form-control">
+                <input
+                  className="border-0 bg-transparent w-100"
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  placeholder="***********"
+                  {...register("password", {
+                    required: "PASSWORD IS REQUIRED!",
+                    minLength: {
+                      value: 8,
+                      message: "PASSWORD MUST BE AT LEAST 8 CHARACTERS LONG!",
+                    },
+                  })}
+                />
+                <button
+                  type="button"
+                  className="border-0 bg-transparent"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? (
+                    <FaEyeSlash className="text-success" />
+                  ) : (
+                    <FaEye className="text-success" />
+                  )}
+                </button>
+              </div>
               {errors.password && (
                 <span className="alert alert-warning p-2 text-danger text-center mt-1">
                   {errors.password.message}
@@ -102,7 +131,7 @@ export const Login = () => {
             <button className="btn btn-chat" type="submit">
               {state.loading ? <CircularProgress size={"20px"} /> : "Login"}
             </button>
-            <Link to="/register" className="btn btn-new">
+            <Link to="/register" className="btn-new fw-light text-center">
               I'm new Here!
             </Link>
           </div>

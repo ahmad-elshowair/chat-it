@@ -1,66 +1,41 @@
-.register-page {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 55px 0;
-	gap: 60px;
+.register-page__header {
+  width: 40%;
 }
 
-.register-form {
-	width: 30%;
-	padding: 60px 20px;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 20px;
-	border-radius: 50px;
-	background: #e0e0e0;
-	box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+.register-page__header h1 {
+  color: var(--gray-color-0);
 }
 
-.register-form-header {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	gap: 20px;
-}
-.register-form-header img {
-	width: 70%;
-}
-.register-form-header h1 {
-	color: var(--gray-color-0);
-	text-transform: uppercase;
-}
-.register-form-body {
-	display: flex;
-	flex-direction: column;
-	gap: 25px;
-	width: 90%;
+.register-page__form {
+  width: 50%;
+  border-radius: 50px;
+  background: #e0e0e0;
+  box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
 }
 
-.register-form-body-input {
-	display: flex;
-	flex-direction: column;
+.register-page__form__body {
+  width: 90%;
 }
+
 .btn-chat {
-	font-size: 18px;
+  font-size: 18px;
 }
 .btn-homie {
-	background-color: #e0e0e0;
-	color: var(--main-color);
-	border: 1px solid var(--main-color);
-	font-weight: bolder;
-	font-size: 18px;
+  color: var(--main-color);
+  font-size: 18px;
+  text-decoration: none;
 }
 
 .btn-homie:hover {
-	box-shadow: 0 0 10px #bebebe;
-	color: var(--gray-color-0);
+  color: var(--gray-color-0);
+  text-decoration: underline;
 }
 
-.register-page input::placeholder {
-	color: var(--gray-color-0);
-	font-size: 14px;
+.register-page__form input::placeholder {
+  color: var(--gray-color-0);
+  font-size: 14px;
+}
+
+.register-page__form input:focus {
+  outline: none;
 }
