@@ -1,63 +1,71 @@
 .login-page {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 100vh;
+  height: 100vh;
 }
 
-.login-form {
-	width: 30%;
-	padding: 60px 20px;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 20px;
-	border-radius: 50px;
-	background: #e0e0e0;
-	box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+.login-page__container {
+  max-width: 90%;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 100px;
 }
 
-.login-form-header {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-}
-.login-form-header img {
-	width: 60%;
-}
-.login-form-header h1 {
-	color: var(--gray-color-0);
-	text-transform: uppercase;
-}
-.login-form-body {
-	display: flex;
-	flex-direction: column;
-	gap: 25px;
-	width: 90%;
+.login-page__header {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.login-form-body-input {
-	display: flex;
-	flex-direction: column;
+.login-page__header-title {
+  font-size: 35px;
+  color: var(--gray-color-0);
+  text-transform: uppercase;
+}
+
+.login-page__form {
+  width: 40%;
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  border-radius: 50px;
+  background: #e0e0e0;
+  box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+}
+
+.login-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  width: 90%;
+}
+
+.login-page__body-input {
+  display: flex;
+  flex-direction: column;
 }
 .btn-chat {
-	font-size: 18px;
+  font-size: 18px;
 }
 .btn-new {
-	background-color: #e0e0e0;
-	color: var(--main-color);
-	border: 1px solid var(--main-color);
-	font-weight: bolder;
-	font-size: 18px;
+  background-color: #e0e0e0;
+  color: var(--main-color);
+  border: 1px solid var(--main-color);
+  font-weight: bolder;
+  font-size: 18px;
 }
 
 .btn-new:hover {
-	box-shadow: 0 0 10px #bebebe;
-	color: var(--gray-color-0);
+  box-shadow: 0 0 10px #bebebe;
+  color: var(--gray-color-0);
 }
 
 .login-page input::placeholder {
-	color: var(--gray-color-0);
-	font-size: 14px;
+  color: var(--gray-color-0);
+  font-size: 14px;
 }
