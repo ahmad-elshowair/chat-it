@@ -1,56 +1,57 @@
 .modal-header {
-	justify-content: center;
+  justify-content: center;
 }
 
 .modal-footer {
-	border: none;
+  border: none;
 }
 
 .modal-footer h6.m-0 {
-	color: var(--bs-gray-600);
+  color: var(--bs-gray-600);
 }
 .modal-body .icon {
-	color: var(--main-color);
-	font-size: 50px;
-	cursor: pointer;
-	padding: 5px;
-	border-radius: 5px;
-	transition: all ease-in-out 0.5s;
+  color: var(--main-color);
+  font-size: 50px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 5px;
+  transition: all ease-in-out 0.5s;
 }
 .modal-body .icon:hover {
-	background-color: var(--bs-gray-200);
+  background-color: var(--bs-gray-200);
 }
 .btn-close {
-	position: absolute;
-	right: 16px;
+  position: absolute;
+  right: 16px;
 }
 
 .no-focus:focus {
-	box-shadow: 0px 0px 2px 0.5px rgb(119 120 119 / 25%);
+  box-shadow: 0px 0px 2px 0.5px rgb(119 120 119 / 25%);
 }
 
 .modal-footer .btn:hover {
-	background-color: var(--main-color);
+  background-color: var(--main-color);
 }
 
 .post-image {
-	width: 465px;
-	height: 333px;
-	object-fit: contain;
+  width: 465px;
+  height: 333px;
+  object-fit: contain;
 }
 
 .close-image_btn {
-	top: -20px;
-	cursor: pointer;
-	font-size: 35px;
-	padding: 3px;
-	position: absolute;
-	border: 3px solid var(--main-color);
-	border-radius: 50%;
-	right: -10px;
-	transition: all ease-in-out 0.5s;
+  top: -20px;
+  cursor: pointer;
+  font-size: 30px;
+  font-weight: bolder;
+  padding: 5px;
+  position: absolute;
+  color: var(--main-color);
+  background-color: var(--bs-gray-200);
+  border-radius: 50%;
+  right: -10px;
+  transition: all ease-in-out 0.3s;
 }
 .close-image_btn:hover {
-	background-color: var(--bs-gray-200);
-	border-color: var(--bs-gray-200);
+  transform: scale(1.3);
 }
