@@ -2,6 +2,7 @@ import { QueryResult } from "pg";
 import db from "../database/pool";
 import { TRegisterCredentials, TUser } from "../types/users";
 import passwords from "../utilities/passwords";
+import UserModel from "./user";
 
 class AuthModel {
   //a method to create a new user
@@ -26,15 +27,16 @@ class AuthModel {
       );
 
       // INSERT THE USER INTO THE DATABASE
-      const queryInsert = `
+      const queryInsertUser = `
           INSERT INTO users (
             first_name,
             last_name,
             user_name,
             email,
-            password
+            password,
+            is_online
           ) 
-          VALUES ($1, $2, $3, $4, $5)
+          VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING *`;
       const values = [
         registerCredentials.first_name,
@@ -42,10 +44,11 @@ class AuthModel {
         registerCredentials.user_name,
         registerCredentials.email,
         hashedPassword,
+        true,
       ];
 
       const registerUserResult: QueryResult<TUser> = await connection.query(
-        queryInsert,
+        queryInsertUser,
         values
       );
 
@@ -76,6 +79,20 @@ class AuthModel {
       const user = result.rows[0];
       if (!user) {
         throw new Error(`user not found !`);
+      }
+
+      if (user.is_online === false) {
+        // UPDATED THE ONLINE STATUS TO TRUE.
+        const userModel = new UserModel();
+        await userModel.updateOnlineStatus(user.user_id as string, true);
+        // GET UPDATED USER DATA
+        const updatedUserResult = await db.query<TUser>(
+          "SELECT * FROM users WHERE user_id=$1",
+          [user.user_id]
+        );
+
+        // return the updated user
+        return updatedUserResult.rows[0];
       }
       // return the user
       return user;

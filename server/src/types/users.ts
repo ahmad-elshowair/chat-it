@@ -33,7 +33,6 @@ export type TRegisterCredentials = Omit<
   | "home_town"
   | "city"
   | "bio"
-  | "is_online"
 >;
 export type TOnlineUser = {
   user_id?: string;

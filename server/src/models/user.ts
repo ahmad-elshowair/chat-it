@@ -157,7 +157,7 @@ class UserModel {
   async updateOnlineStatus(
     user_id: string,
     is_online: boolean
-  ): Promise<TOnlineUser> {
+  ): Promise<TUser> {
     // connect to the database
     const connection = await db.connect();
     try {
@@ -171,8 +171,10 @@ class UserModel {
 		RETURNING *`;
 
       // execute the query
-      const updateOnlineStatus: QueryResult<TOnlineUser> =
-        await connection.query(updateOnlineStatusQuery, [is_online, user_id]);
+      const updateOnlineStatus: QueryResult<TUser> = await connection.query(
+        updateOnlineStatusQuery,
+        [is_online, user_id]
+      );
       if (updateOnlineStatus.rowCount === 0) {
         throw new Error("THIS USER IS NOT EXIST !");
       }
@@ -191,7 +193,7 @@ class UserModel {
   }
 
   // GET ALL ONLINE USERS
-  async getAllOnlineUsers(): Promise<TOnlineUser[]> {
+  async getAllOnlineUsers(loggedInUserId: string): Promise<TOnlineUser[]> {
     // connect to the database
     const connection = await db.connect();
     try {
@@ -201,19 +203,19 @@ class UserModel {
 		SELECT user_id, first_name, picture
 		FROM users
 		WHERE is_online = true
+    AND user_id != $1
 		ORDER BY updated_at DESC
 	  `;
       // execute the query
-      const getAllOnlineUsers: QueryResult<TOnlineUser> =
-        await connection.query(getAllOnlineUsersQuery);
-
+      const getAllOnlineUsersResult: QueryResult<TOnlineUser> =
+        await connection.query(getAllOnlineUsersQuery, [loggedInUserId]);
       // if there are not online users return a message
-      if (getAllOnlineUsers.rowCount === 0) {
+      if (getAllOnlineUsersResult.rowCount === 0) {
         throw new Error("NO ONLINE USERS!");
       }
       await connection.query("COMMIT");
       // return the users
-      return getAllOnlineUsers.rows;
+      return getAllOnlineUsersResult.rows;
     } catch (error) {
       await connection.query("ROLLBACK");
       throw new Error(
