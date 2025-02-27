@@ -6,9 +6,7 @@ import { AuthContext } from "../../context/AuthContext";
 import "./topbar.css";
 export const Topbar = () => {
   const { state } = useContext(AuthContext);
-  console.log(state); // Logging the state.
   const { user } = state;
-  console.log("the user", user?.user_name);
 
   return (
     <nav className="navbar fixed-top">

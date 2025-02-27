@@ -46,3 +46,11 @@ export type TOnlineFriendProps = {
   picture?: string;
   first_name?: string;
 };
+
+export type TProfileRightBarProps = {
+  bio?: string;
+  city?: string;
+  home_town?: string;
+  marital_status?: string;
+  user_id?: string;
+};
