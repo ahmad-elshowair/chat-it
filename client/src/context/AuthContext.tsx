@@ -1,32 +1,30 @@
 import { Dispatch, ReactNode, createContext, useReducer } from "react";
-import { AuthAction, AuthState } from "../types";
-import AuthReducer from "./AuthReducer";
+import { AuthAction, AuthState } from "../types/auth";
+import AuthReducer, { loadState } from "./AuthReducer";
 
-const initialState: AuthState = {
-	user: null,
-	loading: false,
-	errors: null,
-};
+// Initial state
+const initialState: AuthState = loadState();
 
 export const AuthContext = createContext<{
-	state: AuthState;
-	dispatch: Dispatch<AuthAction>;
+  state: AuthState;
+  dispatch: Dispatch<AuthAction>;
 }>({
-	state: initialState,
-	dispatch: () => null,
+  state: initialState,
+  dispatch: () => null,
 });
 
 function AuthProvider({ children }: { children: ReactNode }) {
-	const [state, dispatch] = useReducer(AuthReducer, initialState);
-	return (
-		<AuthContext.Provider
-			value={{
-				state,
-				dispatch,
-			}}>
-			{children}
-		</AuthContext.Provider>
-	);
+  const [state, dispatch] = useReducer(AuthReducer, initialState);
+  return (
+    <AuthContext.Provider
+      value={{
+        state,
+        dispatch,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export default AuthProvider;

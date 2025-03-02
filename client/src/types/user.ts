@@ -49,3 +49,20 @@ export type TProfileRightBarProps = {
   marital_status?: string;
   user_id?: string;
 };
+export type UserPayload = {
+  user_id?: string;
+  user_name: string;
+  email: string;
+  picture?: string;
+  cover?: string;
+  is_admin?: boolean;
+  bio?: string;
+  city?: string;
+  home_town?: string;
+  updated_at?: Date;
+  first_name: string;
+  last_name: string;
+  marital_status?: string;
+  access_token: string;
+  refresh_token: string;
+};

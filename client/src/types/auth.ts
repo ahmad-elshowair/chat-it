@@ -1,20 +1,5 @@
-export type UserPayload = {
-  user_id?: string;
-  user_name: string;
-  email: string;
-  picture?: string;
-  cover?: string;
-  is_admin?: boolean;
-  bio?: string;
-  city?: string;
-  home_town?: string;
-  updated_at?: Date;
-  first_name: string;
-  last_name: string;
-  marital_status?: string;
-  access_token: string;
-  refresh_token: string;
-};
+import { Dispatch } from "react";
+import { UserPayload } from "./user";
 
 export type AuthResponse = {
   message: string;
@@ -37,10 +22,22 @@ export type AuthAction =
   | { type: "START" }
   | { type: "SUCCEEDED"; payload: AuthResponse }
   | { type: "FAILURE"; payload: string[] }
-  | { type: "REFRESH_TOKEN"; payload: { access_token: string } };
+  | {
+      type: "REFRESH_TOKEN";
+      payload: {
+        user: UserPayload;
+        access_token: string;
+        refresh_token: string;
+      };
+    }
+  | { type: "LOGOUT" };
 
 export type AuthState = {
   user: UserPayload | null;
   loading: boolean;
   errors: string[] | null;
 };
+
+export interface Store {
+  dispatch: Dispatch<AuthAction>;
+}
