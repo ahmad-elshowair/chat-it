@@ -75,21 +75,10 @@ const getUnknownUsers = async (req: ICustomRequest, res: Response) => {
   }
 };
 
-// GET ALL ONLINE USERS
-const getOnlineUsers = async (req: ICustomRequest, res: Response) => {
-  try {
-    const onlineUsers = await user_model.getAllOnlineUsers(req.user.id);
-    res.status(200).json(onlineUsers);
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-};
-
 export default {
   fetchAllUsers,
   update,
   getUser,
   deleteUser,
   getUnknownUsers,
-  getOnlineUsers,
 };

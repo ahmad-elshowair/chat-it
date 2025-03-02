@@ -5,7 +5,6 @@ const userRoute: Router = Router();
 
 userRoute.get("/unknowns", authorizeUser, userController.getUnknownUsers);
 userRoute.get("/", authorizeUser, userController.fetchAllUsers);
-userRoute.get("/online", authorizeUser, userController.getOnlineUsers);
 userRoute.get("/:user_name", userController.getUser);
 
 userRoute.put("/update/:id", authorizeUser, userController.update);

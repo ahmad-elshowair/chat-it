@@ -1,10 +1,9 @@
 import { QueryResult } from "pg";
 import db from "../database/pool";
-import { TOnlineUser, TUser } from "../types/users";
+import { TUser } from "../types/users";
 import { buildUpdateQuery } from "../utilities/build-update-query";
 
 class UserModel {
-  // get all users
   async index(): Promise<TUser[]> {
     const connection = await db.connect();
     try {
@@ -29,7 +28,6 @@ class UserModel {
     }
   }
 
-  // get a user by username
   async getAUser(user_name: string): Promise<TUser> {
     // connect to the database
     const connection = await db.connect();
@@ -55,7 +53,6 @@ class UserModel {
     }
   }
 
-  // update the user
   async update(id: string, user: TUser): Promise<TUser> {
     // connect to the database
     const connection = await db.connect();
@@ -90,7 +87,6 @@ class UserModel {
     }
   }
 
-  // delete the user
   async delete(id: string): Promise<TUser> {
     // connect to the database
     const connection = await db.connect();
@@ -121,7 +117,6 @@ class UserModel {
     }
   }
 
-  // GET ALL USERS BUT LOGGED IN AND THE FOLLOWINGS
   async getUnknowns(user_id: string): Promise<TUser[]> {
     // connect to the database
     const connection = await db.connect();
@@ -153,7 +148,6 @@ class UserModel {
     }
   }
 
-  // UPDATE ONLINE STATUS
   async updateOnlineStatus(
     user_id: string,
     is_online: boolean
@@ -185,41 +179,6 @@ class UserModel {
       await connection.query("ROLLBACK");
       throw new Error(
         `cannot update online status due to ${(error as Error).message}`
-      );
-    } finally {
-      // release the connection
-      connection.release();
-    }
-  }
-
-  // GET ALL ONLINE USERS
-  async getAllOnlineUsers(loggedInUserId: string): Promise<TOnlineUser[]> {
-    // connect to the database
-    const connection = await db.connect();
-    try {
-      await connection.query("BEGIN");
-      // get all online users query
-      const getAllOnlineUsersQuery = `
-		SELECT user_id, first_name, picture
-		FROM users
-		WHERE is_online = true
-    AND user_id != $1
-		ORDER BY updated_at DESC
-	  `;
-      // execute the query
-      const getAllOnlineUsersResult: QueryResult<TOnlineUser> =
-        await connection.query(getAllOnlineUsersQuery, [loggedInUserId]);
-      // if there are not online users return a message
-      if (getAllOnlineUsersResult.rowCount === 0) {
-        throw new Error("NO ONLINE USERS!");
-      }
-      await connection.query("COMMIT");
-      // return the users
-      return getAllOnlineUsersResult.rows;
-    } catch (error) {
-      await connection.query("ROLLBACK");
-      throw new Error(
-        `cannot get all online users due to ${(error as Error).message}`
       );
     } finally {
       // release the connection

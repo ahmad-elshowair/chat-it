@@ -4,7 +4,6 @@ import FollowService from "../models/follow";
 
 const followService = new FollowService();
 
-// follow function
 const follow = async (req: ICustomRequest, res: Response) => {
   try {
     const user_id_following: string = req.user.id;
@@ -26,7 +25,6 @@ const follow = async (req: ICustomRequest, res: Response) => {
   }
 };
 
-// follow function
 const unFollow = async (req: ICustomRequest, res: Response) => {
   try {
     const user_id_following: string = req.user.id;
@@ -48,7 +46,6 @@ const unFollow = async (req: ICustomRequest, res: Response) => {
   }
 };
 
-// get followings of a user
 const getNumberOfFollowings = async (req: ICustomRequest, res: Response) => {
   try {
     const user_id: string = req.user.id;
@@ -62,7 +59,6 @@ const getNumberOfFollowings = async (req: ICustomRequest, res: Response) => {
   }
 };
 
-// get all the followers of a user
 const getNumberOfFollowers = async (req: ICustomRequest, res: Response) => {
   const user_id: string = req.user.id;
   try {

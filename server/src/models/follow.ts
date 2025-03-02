@@ -205,7 +205,8 @@ export default class FollowService {
 								u.bio,
 								u.marital_status,
 								u.number_of_followers,
-								u.number_of_followings
+								u.number_of_followings,
+                u.is_online
 							FROM
 								users u
 								JOIN follows f1 ON u.user_id = f1.user_id_followed
@@ -213,7 +214,9 @@ export default class FollowService {
 							WHERE
 								f1.user_id_following = ($1)
 								AND f2.user_id_following = u.user_id
-								AND u.user_id != ($1)`;
+								AND u.user_id != ($1)
+                AND u.is_online = true
+							ORDER BY u.updated_at DESC`;
 
       const result: QueryResult<TUser> = await connection.query(query, [
         user_id,
