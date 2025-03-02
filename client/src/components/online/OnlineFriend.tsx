@@ -1,15 +1,17 @@
 import { FC } from "react";
+import { Link } from "react-router-dom";
 import { TOnlineFriendProps } from "../../types/user";
 import "./onlineFriend.css";
 export const OnlineFriend: FC<TOnlineFriendProps> = ({
   first_name,
   picture,
+  user_name,
 }) => {
   return (
     <li className="my-3 online-friend">
-      <a
+      <Link
+        to={`/profile/${user_name}`}
         className="right-bar-friends-list-friend"
-        href="#profile"
         rel="noopener noreferrer"
       >
         <img
@@ -18,7 +20,7 @@ export const OnlineFriend: FC<TOnlineFriendProps> = ({
           className="right-bar-friends-list-img"
         />
         <h5 className="right-bar-friends-list-text">{first_name}</h5>
-      </a>
+      </Link>
     </li>
   );
 };

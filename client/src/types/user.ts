@@ -35,16 +35,11 @@ export type TRegisterCredentials = Omit<
   | "is_online"
 >;
 
-export type TOnlineUser = {
-  user_id?: string;
-  first_name?: string;
-  picture?: string;
-};
-
 export type TOnlineFriendProps = {
   user_id?: string;
   picture?: string;
   first_name?: string;
+  user_name?: string;
 };
 
 export type TProfileRightBarProps = {

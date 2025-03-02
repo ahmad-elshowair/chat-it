@@ -1,35 +1,35 @@
 .sidebar {
-	flex: 2.5;
-	height: calc(100vh - 50px);
-	overflow-y: scroll;
-	position: sticky;
-	top: 80px;
+  flex: 2.5;
+  height: calc(100vh - 80px);
+  overflow-y: scroll;
+  position: sticky;
+  top: 80px;
 }
 
 .sidebar-content {
-	padding-left: 12px;
+  padding-left: 12px;
 }
 
 .list-group-item {
-	border: none;
-	border-radius: 10px;
-	background-color: transparent;
+  border: none;
+  border-radius: 10px;
+  background-color: transparent;
 }
 
 .list-group-item:hover {
-	background-color: var(--bs-gray-200);
+  background-color: var(--bs-gray-200);
 }
 
 .list-item-icon {
-	font-size: 32px;
-	color: var(--main-color);
-	margin-right: 10px;
+  font-size: 32px;
+  color: var(--main-color);
+  margin-right: 10px;
 }
 svg.gradient {
-	background-image: linear-gradient(to right, #ff0000, #00ff00);
-	background-clip: text;
-	-webkit-text-fill-color: transparent;
+  background-image: linear-gradient(to right, #ff0000, #00ff00);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .list-item-text {
-	font-size: 14px;
+  font-size: 14px;
 }
