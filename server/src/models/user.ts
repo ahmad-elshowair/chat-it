@@ -28,6 +28,29 @@ class UserModel {
     }
   }
 
+  async getUserById(userId: string): Promise<TUser> {
+    // connect to the database
+    const connection = await db.connect();
+    try {
+      // get the user
+      const query = "SELECT * FROM users WHERE user_id = ($1)";
+      const result: QueryResult<TUser> = await connection.query(query, [
+        userId,
+      ]);
+      // if the user is not found return a message
+      if (result.rows.length === 0) {
+        throw new Error("THIS USER IS NOT EXIST!");
+      }
+      // return the user
+      return result.rows[0];
+    } catch (error) {
+      throw new Error(`model: ${(error as Error).message}`);
+    } finally {
+      // close the connection
+      connection.release();
+    }
+  }
+
   async getAUser(user_name: string): Promise<TUser> {
     // connect to the database
     const connection = await db.connect();

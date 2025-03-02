@@ -12,7 +12,7 @@ export default {
   jwt_secret: String(process.env.JWT_SECRET),
   salt: Number(process.env.SALT_ROUNDS),
   pepper: process.env.PEPPER,
-  node_env: process.env.NODE_ENV,
+  node_env: String(process.env.NODE_ENV),
   jwt_refresh_secret: String(process.env.JWT_REFRESH_SECRET),
   client_url: String(process.env.CLIENT_URL),
 };

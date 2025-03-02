@@ -1,5 +1,6 @@
 import { Response } from "express";
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
+import config from "../configs/config";
 import { IUserPayload } from "../interfaces/IUserPayload";
 
 export const generateToken = (
@@ -18,14 +19,14 @@ export const setTokensInCookies = (
   res.cookie("access_token", access_token, {
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: config.node_env === "production",
     maxAge: 15 * 60 * 1000,
   });
 
   res.cookie("refresh_token", refresh_token, {
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: config.node_env === "production",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
