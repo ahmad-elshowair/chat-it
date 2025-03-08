@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import config from "../configs/config";
+import { ICustomRequest } from "../interfaces/ICustomRequest";
 import { IUserPayload } from "../interfaces/IUserPayload";
 import AuthModel from "../models/auth";
 import UserModel from "../models/user";
@@ -143,10 +144,27 @@ const refreshToken = async (req: Request, res: Response) => {
   }
 };
 
-const logout = (req: Request, res: Response) => {
-  res.clearCookie("access_token");
-  res.clearCookie("refresh_token");
-  res.status(200).json({ message: "Logout Successfully!" });
+const logout = async (req: ICustomRequest, res: Response) => {
+  try {
+    // Get user ID from request
+    const userId = req.user?.id;
+    // Update online status to false if user ID is available
+    if (userId) {
+      const userModel = new UserModel();
+      await userModel.updateOnlineStatus(userId, false);
+    }
+
+    // Clear cookies
+    res.clearCookie("access_token");
+    res.clearCookie("refresh_token");
+    res.status(200).json({ message: "Logout Successfully!" });
+  } catch (error) {
+    console.error("Error during logout:", error);
+    res.status(500).json({
+      message: "Failed to logout",
+      error: (error as Error).message,
+    });
+  }
 };
 
 export default {
