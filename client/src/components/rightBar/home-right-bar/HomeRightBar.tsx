@@ -11,7 +11,6 @@ export const HomeRightBar = () => {
   const token = state.user?.access_token;
   const user_id = state.user?.user_id;
   const [onlineUsers, setOnlineUsers] = useState<TUser[]>([]);
-  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     const fetchOnlineFriends = async () => {
@@ -23,12 +22,11 @@ export const HomeRightBar = () => {
         });
         setOnlineUsers(response.data);
       } catch (error) {
-        setError("Failed to fetch online users");
-        console.error(error);
+        console.error("Failed to fetch online users", error);
       }
     };
     fetchOnlineFriends();
-  }, []);
+  }, [token, user_id]);
 
   return (
     <aside className="home-right-bar pe-4">

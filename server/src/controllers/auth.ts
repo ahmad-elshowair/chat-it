@@ -78,7 +78,6 @@ const login = async (
   }
 };
 
-// Refresh Token
 const refreshToken = async (req: Request, res: Response) => {
   // GET REFRESH TOKEN FROM COOKIES OR REQUEST BODY
   const refreshToken =
@@ -90,6 +89,7 @@ const refreshToken = async (req: Request, res: Response) => {
   }
 
   const decodedUser = verifyRefreshToken(refreshToken);
+
   if (!decodedUser) {
     return res.status(403).json({ message: "token is invalid!" });
   }
@@ -144,6 +144,7 @@ const logout = (req: Request, res: Response) => {
   res.clearCookie("refresh_token");
   res.status(200).json({ message: "Logout Successfully!" });
 };
+
 export default {
   register,
   login,

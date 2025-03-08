@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import { registerUser } from "../../services/authService";
-import { RegisterCredentials } from "../../types";
+import { RegisterCredentials } from "../../types/auth";
 import "./register.css";
 export const Register = () => {
   //EXTENT 'RegisterCredentials' TYPE ALIAS

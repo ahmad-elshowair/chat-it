@@ -24,7 +24,7 @@ export const PersistLogin = () => {
           },
         });
       } catch (error) {
-        console.error(error);
+        console.error("Failed to refresh the access token", error);
       } finally {
         isMounted && setIsLoading(false);
       }
@@ -40,7 +40,7 @@ export const PersistLogin = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [dispatch, user]);
 
   return <>{isLoading ? <h1>Loading...</h1> : <Outlet />}</>;
 };
