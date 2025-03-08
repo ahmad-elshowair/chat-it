@@ -69,6 +69,10 @@ const login = async (
         email: user.email,
         is_admin: user.is_admin,
         user_name: user.user_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        picture: user.picture,
+        cover: user.cover,
       },
       access_token,
       refresh_token,
@@ -128,13 +132,13 @@ const refreshToken = async (req: Request, res: Response) => {
         first_name: user.first_name,
         last_name: user.last_name,
         picture: user.picture,
+        cover: user.cover,
       },
     });
   } catch (error) {
-    res.json({
-      message: "Access Token Refreshed Successfully!",
-      access_token: newAccessToken,
-      refresh_token: newRefreshToken,
+    res.status(500).json({
+      message: "Failed to refresh tokens",
+      error: (error as Error).message,
     });
   }
 };

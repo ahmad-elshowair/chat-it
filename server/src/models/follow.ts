@@ -3,7 +3,6 @@ import db from "../database/pool";
 import { TUser } from "../types/users";
 
 export default class FollowService {
-  // CHECK IF A USER FOLLOWING A USER.
   async checkIfFollowing(
     following_id: string,
     followed_id: string
@@ -15,7 +14,7 @@ export default class FollowService {
       await connection.query("BEGIN");
 
       // CHECK IF A USER FOLLOWING A USER.
-      const result: QueryResult = await connection.query(
+      const result: QueryResult<TUser> = await connection.query(
         "SELECT * FROM follows WHERE user_id_following = ($1) AND user_id_followed = ($2)",
         [following_id, followed_id]
       );
@@ -40,7 +39,6 @@ export default class FollowService {
     }
   }
 
-  // FOLLOW USER.
   async follow(
     user_id_following: string,
     user_id_followed: string
@@ -88,7 +86,6 @@ export default class FollowService {
     }
   }
 
-  // UNFOLLOW USER.
   async unFollow(user_id_following: string, user_id_followed: string) {
     const connection: PoolClient = await db.connect();
     try {
@@ -133,7 +130,6 @@ export default class FollowService {
     }
   }
 
-  // get number followings for a user
   async getNumberOfFollowings(user_id: string): Promise<number> {
     const connection: PoolClient = await db.connect();
     try {
@@ -187,7 +183,6 @@ export default class FollowService {
     }
   }
 
-  // GET FRIENDS OF A USER
   async getFriends(user_id: string) {
     // CONNECT TO THE DATABASE.
     const connection: PoolClient = await db.connect();
@@ -236,7 +231,6 @@ export default class FollowService {
     }
   }
 
-  // GET FOLLOWINGS OF A USER.
   async getFollowings(user_id: string): Promise<TUser[]> {
     // CONNECT TO THE DATABASE.
     const connection: PoolClient = await db.connect();
@@ -277,7 +271,6 @@ export default class FollowService {
     }
   }
 
-  // GET FOLLOWINGS OF A USER.
   async getFollowers(user_id: string): Promise<TUser[]> {
     // CONNECT TO THE DATABASE.
     const connection: PoolClient = await db.connect();

@@ -1,5 +1,3 @@
-// Load state from local storage
-
 import { AuthAction, AuthState } from "../types/auth";
 
 export const loadState = (): AuthState => {
@@ -38,7 +36,11 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
       newState = {
         ...state,
         loading: false,
-        user: action.payload.user,
+        user: {
+          ...action.payload.user,
+          access_token: action.payload.access_token,
+          refresh_token: action.payload.refresh_token,
+        },
         errors: null,
       };
       break;

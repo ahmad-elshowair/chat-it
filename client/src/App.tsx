@@ -23,7 +23,6 @@ function App() {
     <Router>
       <Routes>
         {/* PUBLIC ROUTES  */}
-
         <Route
           path="/login"
           element={state.user ? <Navigate to="/" replace /> : <Login />}
