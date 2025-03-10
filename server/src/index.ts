@@ -7,6 +7,7 @@ import path from "path";
 import config from "./configs/config";
 import errorMiddleware from "./middlewares/error";
 import routes from "./routes";
+import { scheduledTokenCleanup } from "./utilities/scheduledTasks";
 
 // create an instance of app
 const app: Application = express();
@@ -50,6 +51,9 @@ app.use(errorMiddleware);
 app.use((_req: Request, res: Response) => {
   res.status(404).json("YOU HAVE GOT LOST !");
 });
+
+// Start the scheduled token cleanup
+scheduledTokenCleanup();
 
 // add listen to the app
 app.listen(port, () => {
