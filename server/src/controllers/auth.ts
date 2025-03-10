@@ -1,31 +1,65 @@
 import { NextFunction, Request, Response } from "express";
+import { nanoid } from "nanoid";
 import config from "../configs/config";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
 import { IUserPayload } from "../interfaces/IUserPayload";
 import AuthModel from "../models/auth";
+import RefreshTokenModel from "../models/refreshToken";
 import UserModel from "../models/user";
-import { generateToken, setTokensInCookies } from "../utilities/generateToken";
-import { verifyRefreshToken } from "../utilities/verifyToken";
-const user_model = new AuthModel();
+import {
+  clearAuthCookies,
+  generateToken,
+  setTokensInCookies,
+  verifyRefreshToken,
+} from "../utilities/tokens";
+
+const auth_model = new AuthModel();
+const user_model = new UserModel();
+const refresh_token_model = new RefreshTokenModel();
 
 const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await user_model.register(req.body);
+    // Generate a fingerprint for additional security
+    const fingerprint = nanoid(32);
+    const fingerprintHash = require("crypto")
+      .createHash("sha256")
+      .update(fingerprint)
+      .digest("hex");
+
+    // Register the user.
+    const user = await auth_model.register(req.body);
+
     const payload: IUserPayload = {
       id: user.user_id,
       is_admin: user.is_admin,
+      fingerprint: fingerprintHash,
     };
-    // generate access token
+
+    // Generate access token - short lived (15 minutes)
     const access_token = generateToken(payload, config.jwt_secret, "15m");
-    // generate access token
+
+    // Generate refresh token - long lived (7 days)
     const refresh_token = generateToken(
       payload,
       config.jwt_refresh_secret,
       "7d"
     );
 
+    // calculate the expiration date
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // Create refresh token
+    await refresh_token_model.createToken(
+      user.user_id!,
+      fingerprintHash,
+      expiresAt
+    );
+
+    // Set tokens in HttpOnly cookies
     setTokensInCookies(res, access_token, refresh_token);
 
+    // Return minimal user info to client
     res.status(201).json({
       message: "Registered Successfully",
       user: {
@@ -33,9 +67,15 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
         email: user.email,
         is_admin: user.is_admin,
         user_name: user.user_name,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        picture: user.picture,
+        cover: user.cover,
       },
-      access_token,
-      refresh_token,
+      ...(config.csrf_protection_enabled && {
+        csrf: res.getHeader("X-CSRF-Token"),
+      }),
+      fingerprint: fingerprint,
     });
   } catch (error) {
     next(error);
@@ -49,20 +89,46 @@ const login = async (
 ): Promise<void> => {
   const { email, password } = req.body;
   try {
-    const user = await user_model.login(email, password);
+    // Generate a fingerprint for additional security
+    const fingerprint = nanoid(32);
+    const fingerprintHash = require("crypto")
+      .createHash("sha256")
+      .update(fingerprint)
+      .digest("hex");
 
+    // Authenticate user
+    const user = await auth_model.login(email, password);
+
+    // Create payload with minimal required data and fingerprint
     const payload: IUserPayload = {
       id: user.user_id,
       is_admin: user.is_admin,
+      fingerprint: fingerprintHash,
     };
 
-    // generate access token
+    // Generate access token - short lived (15 minutes)
     const access_token = generateToken(payload, config.jwt_secret, "15m");
-    // generate access token
+    // Generate refresh token - long lived (7 days)
     const refresh_token = generateToken(payload, config.jwt_secret, "7d");
 
+    // Calculate token expiration date (7 days from now)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // Revoke any existing refresh tokens for this user
+    await refresh_token_model.revokeAllUserTokens(user.user_id!);
+
+    // Create new refresh token
+    await refresh_token_model.createToken(
+      user.user_id!,
+      fingerprintHash,
+      expiresAt
+    );
+
+    // Set tokens in HttpOnly cookies
     setTokensInCookies(res, access_token, refresh_token);
 
+    // Return minimal user info to client
     res.status(201).json({
       message: "Login Successfully",
       user: {
@@ -75,8 +141,10 @@ const login = async (
         picture: user.picture,
         cover: user.cover,
       },
-      access_token,
-      refresh_token,
+      ...(config.csrf_protection_enabled && {
+        csrf: res.getHeader("X-CSRF-Token"),
+      }),
+      fingerprint: fingerprint,
     });
   } catch (error) {
     next(error);
@@ -84,24 +152,65 @@ const login = async (
 };
 
 const refreshToken = async (req: Request, res: Response) => {
-  // GET REFRESH TOKEN FROM COOKIES OR REQUEST BODY
-  const refreshToken =
-    req.cookies.refresh_token ||
-    (req.body.refresh_token && req.body.refresh_token);
+  // Get refresh token from cookie only (don't accept from body)
+  const refreshToken = req.cookies.refresh_token;
 
+  // Get fingerprint from the request headers
+  const fingerprint = req.headers["x-fingerprint"] as string;
+
+  // Reject if no refresh token in cookies
   if (!refreshToken) {
     return res.status(401).json({ message: "Refresh Token is Missing!" });
   }
 
+  // Reject if no fingerprint in request
+  if (!fingerprint) {
+    return res.status(401).json({ message: "Fingerprint is Missing!" });
+  }
+
+  // Verify refresh token
   const decodedUser = verifyRefreshToken(refreshToken);
 
   if (!decodedUser) {
-    return res.status(403).json({ message: "token is invalid!" });
+    // Clear cookies on invalid token
+    clearAuthCookies(res);
+    return res.status(403).json({ message: "Token is invalid or expired!" });
   }
 
+  // Hash the provided fingerprint
+  const fingerprintHash = require("crypto")
+    .createHash("sha256")
+    .update(fingerprint)
+    .digest("hex");
+
+  // Verify that fingerprint matches the one in the token
+  if (decodedUser.fingerprint !== fingerprintHash) {
+    // Clear cookies on invalid fingerprint
+    clearAuthCookies(res);
+
+    // Log potential token theft for security monitoring
+    console.warn(`Potential token theft detected for user ${decodedUser.id}`);
+
+    // Revoke all refresh tokens for this user
+    await refresh_token_model.revokeAllUserTokens(decodedUser.id!);
+
+    return res.status(403).json({ message: "Token validation failed!" });
+  }
+
+  // Verify that token exists in database and is not revoked.
+  if (
+    !(await refresh_token_model.verifyToken(decodedUser.id!, fingerprintHash))
+  ) {
+    // Clear cookies on invalid token
+    clearAuthCookies(res);
+    return res.status(403).json({ message: "Token has been revoked!" });
+  }
+
+  // Create payload for new tokens
   const payload: IUserPayload = {
     id: decodedUser.id,
     is_admin: decodedUser.is_admin,
+    fingerprint: fingerprintHash,
   };
 
   // Generate new Access Token.
@@ -114,17 +223,28 @@ const refreshToken = async (req: Request, res: Response) => {
     "7d"
   );
 
+  // Calculate token expiration date (7 days from now)
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  // Rotate the token in the database (revoke old, create new)
+  await refresh_token_model.rotateToken(
+    decodedUser.id!,
+    fingerprintHash,
+    fingerprintHash,
+    expiresAt
+  );
+
   // Set Cookies.
   setTokensInCookies(res, newAccessToken, newRefreshToken);
 
   try {
-    const userModel = new UserModel();
+    // Get user data
+    const user = await user_model.getUserById(decodedUser.id!);
 
-    const user = await userModel.getUserById(decodedUser.id!);
+    // Return minimal user info to client
     res.json({
       message: "Tokens Refreshed Successfully!",
-      access_token: newAccessToken,
-      refresh_token: newRefreshToken,
       user: {
         user_id: user.user_id,
         email: user.email,
@@ -135,8 +255,13 @@ const refreshToken = async (req: Request, res: Response) => {
         picture: user.picture,
         cover: user.cover,
       },
+      ...(config.csrf_protection_enabled && {
+        csrf: res.getHeader("X-CSRF-Token"),
+      }),
     });
   } catch (error) {
+    // Clear cookies on error
+    clearAuthCookies(res);
     res.status(500).json({
       message: "Failed to refresh tokens",
       error: (error as Error).message,
@@ -148,17 +273,21 @@ const logout = async (req: ICustomRequest, res: Response) => {
   try {
     // Get user ID from request
     const userId = req.user?.id;
-    // Update online status to false if user ID is available
     if (userId) {
-      const userModel = new UserModel();
-      await userModel.updateOnlineStatus(userId, false);
+      // Update online status to false if user ID is available
+      await user_model.updateOnlineStatus(userId, false);
+      // Revoke all refresh tokens for this user
+      await refresh_token_model.revokeAllUserTokens(userId!);
     }
 
-    // Clear cookies
-    res.clearCookie("access_token");
-    res.clearCookie("refresh_token");
+    // Clear all auth cookies
+    clearAuthCookies(res);
+    // Return success message
     res.status(200).json({ message: "Logout Successfully!" });
   } catch (error) {
+    // Clear cookies on error
+    clearAuthCookies(res);
+
     console.error("Error during logout:", error);
     res.status(500).json({
       message: "Failed to logout",
