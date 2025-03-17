@@ -1,7 +1,7 @@
 import { NextFunction, Response } from "express";
 import config from "../configs/config";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
-import { verifyAccessToken } from "../utilities/verifyToken";
+import { verifyAccessToken } from "../utilities/tokens";
 
 const authorizeUser = (
   req: ICustomRequest,
@@ -11,7 +11,7 @@ const authorizeUser = (
   try {
     // Get token from cookie first (preferred) or from Authorization header if not in cookie.
     const token =
-      req.cookies.access_token ||
+      req.cookies["__Host-access_token"] ||
       (req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer ")
         ? req.headers.authorization.split(" ")[1]
@@ -36,15 +36,49 @@ const authorizeUser = (
     }
 
     // CSRF Protection (if enabled)
-    if (config.csrf_protection_enabled) {
-      const csrfToken =
-        req.headers["x-csrf-token"] || req.headers["csrf-token"];
-      const storedCsrfToken = req.cookies.csrf_token;
 
-      if (!csrfToken || csrfToken !== storedCsrfToken) {
+    if (config.csrf_protection_enabled) {
+      // NORMALIZE AND CHECK FOR CSRF TOKEN IN VARIOUS HEADERS(case-insensitive).
+      const csrfToken = (req.headers["x-csrf-token"] ||
+        req.headers["csrf-token"] ||
+        req.headers["X-CSRF-Token"] ||
+        req.headers["CSRF-Token"]) as string;
+
+      const storedCsrfToken = req.cookies["__Secure-csrf_token"];
+
+      // PROPER VALIDATION OF TOKEN PRESENCE AND FORMAT.
+
+      if (!csrfToken || typeof csrfToken !== "string") {
         return res.status(403).json({
           message: "Authentication failed",
-          error: "CSRF token validation failed",
+          error: "Missing or Invalid CSRF token format!",
+        });
+      }
+
+      if (!storedCsrfToken) {
+        return res.status(403).json({
+          message: "Authentication failed",
+          error: "Missing CSRF cookie!",
+        });
+      }
+
+      // USE CONSTANT-TIME COMPARISON TO PREVENT TIMING ATTACKS.
+      const crypto = require("crypto");
+      try {
+        const tokenMatch = crypto.timingSafeEqual(
+          Buffer.from(csrfToken, "utf8"),
+          Buffer.from(storedCsrfToken, "utf8")
+        );
+        if (!tokenMatch) {
+          return res.status(403).json({
+            message: "Authentication failed",
+            error: "CSRF token mismatch!",
+          });
+        }
+      } catch (error) {
+        return res.status(403).json({
+          message: "Authentication failed",
+          error: "Failed to verify CSRF token!",
         });
       }
     }

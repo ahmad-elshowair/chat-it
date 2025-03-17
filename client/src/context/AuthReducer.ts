@@ -8,6 +8,8 @@ export const loadState = (): AuthState => {
         user: null,
         loading: false,
         errors: null,
+        fingerprint: undefined,
+        csrf: undefined,
       };
     }
     return JSON.parse(serializedState);
@@ -16,6 +18,8 @@ export const loadState = (): AuthState => {
       user: null,
       loading: false,
       errors: null,
+      fingerprint: undefined,
+      csrf: undefined,
     };
   }
 };
@@ -41,6 +45,8 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
           access_token: action.payload.access_token,
           refresh_token: action.payload.refresh_token,
         },
+        fingerprint: action.payload.fingerprint || state.fingerprint,
+        csrf: action.payload.csrf || state.csrf,
         errors: null,
       };
       break;
@@ -61,6 +67,8 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
             access_token: action.payload.access_token,
             refresh_token: action.payload.refresh_token,
           },
+          fingerprint: action.payload.fingerprint || state.fingerprint,
+          csrf: action.payload.csrf || state.csrf,
         };
       } else {
         newState = state;
@@ -71,15 +79,23 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
         user: null,
         loading: false,
         errors: null,
+        fingerprint: undefined,
+        csrf: undefined,
       };
-      break;
+      // CLEAR THE LOCALSTORAGE ON LOGOUT FOR SECURITY.
+      localStorage.removeItem("authState");
+      return newState;
 
     default:
       newState = { ...state };
   }
   try {
+    const storageState = {
+      ...newState,
+      fingerprint: undefined,
+    };
     // save to local storage
-    localStorage.setItem("authState", JSON.stringify(newState));
+    localStorage.setItem("authState", JSON.stringify(storageState));
   } catch (error) {
     console.error("could not save auth state:", error);
   }

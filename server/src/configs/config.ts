@@ -24,8 +24,8 @@ export default {
   pepper: process.env.PEPPER,
 
   // Token expiration settings (in minutes/days)
-  access_token_expiry: process.env.ACCESS_TOKEN_EXPIRY || "15m",
-  refresh_token_expiry: process.env.REFRESH_TOKEN_EXPIRY || "7d",
+  access_token_expiry: (process.env.ACCESS_TOKEN_EXPIRY || "15m") as "15m",
+  refresh_token_expiry: (process.env.REFRESH_TOKEN_EXPIRY || "7d") as "7d",
 
   // Enhanced security features
   csrf_protection_enabled:

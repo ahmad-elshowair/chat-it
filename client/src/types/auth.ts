@@ -4,6 +4,8 @@ import { UserPayload } from "./user";
 export type AuthResponse = {
   message: string;
   user: UserPayload;
+  fingerprint?: string;
+  csrf?: string;
   access_token: string;
   refresh_token: string;
 };
@@ -28,6 +30,8 @@ export type AuthAction =
         user: UserPayload;
         access_token: string;
         refresh_token: string;
+        fingerprint?: string;
+        csrf?: string;
       };
     }
   | { type: "LOGOUT" };
@@ -36,6 +40,8 @@ export type AuthState = {
   user: UserPayload | null;
   loading: boolean;
   errors: string[] | null;
+  fingerprint?: string;
+  csrf?: string;
 };
 
 export interface Store {

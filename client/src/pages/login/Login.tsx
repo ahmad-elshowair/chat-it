@@ -5,7 +5,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
-import { loginUser } from "../../services/authService";
+import { loginUser } from "../../services/auth";
 import { LoginCredentials } from "../../types/auth";
 import "./login.css";
 

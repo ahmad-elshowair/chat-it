@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import { nanoid } from "nanoid";
 import config from "../configs/config";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
 import { IUserPayload } from "../interfaces/IUserPayload";
@@ -7,8 +6,11 @@ import AuthModel from "../models/auth";
 import RefreshTokenModel from "../models/refreshToken";
 import UserModel from "../models/user";
 import {
+  calculateExpirationDate,
   clearAuthCookies,
+  generateFingerprint,
   generateToken,
+  hashFingerprint,
   setTokensInCookies,
   verifyRefreshToken,
 } from "../utilities/tokens";
@@ -20,39 +22,38 @@ const refresh_token_model = new RefreshTokenModel();
 const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Generate a fingerprint for additional security
-    const fingerprint = nanoid(32);
-    const fingerprintHash = require("crypto")
-      .createHash("sha256")
-      .update(fingerprint)
-      .digest("hex");
-
+    const fingerprint = generateFingerprint();
+    const hashedFingerprint = hashFingerprint(fingerprint);
     // Register the user.
     const user = await auth_model.register(req.body);
 
     const payload: IUserPayload = {
       id: user.user_id,
       is_admin: user.is_admin,
-      fingerprint: fingerprintHash,
+      fingerprint: hashedFingerprint,
     };
 
     // Generate access token - short lived (15 minutes)
-    const access_token = generateToken(payload, config.jwt_secret, "15m");
+    const access_token = generateToken(
+      payload,
+      config.jwt_secret,
+      config.access_token_expiry
+    );
 
     // Generate refresh token - long lived (7 days)
     const refresh_token = generateToken(
       payload,
       config.jwt_refresh_secret,
-      "7d"
+      config.refresh_token_expiry
     );
 
     // calculate the expiration date
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    const expiresAt = calculateExpirationDate(config.refresh_token_expiry);
 
     // Create refresh token
     await refresh_token_model.createToken(
       user.user_id!,
-      fingerprintHash,
+      hashedFingerprint,
       expiresAt
     );
 
@@ -90,11 +91,8 @@ const login = async (
   const { email, password } = req.body;
   try {
     // Generate a fingerprint for additional security
-    const fingerprint = nanoid(32);
-    const fingerprintHash = require("crypto")
-      .createHash("sha256")
-      .update(fingerprint)
-      .digest("hex");
+    const fingerprint = generateFingerprint();
+    const hashedFingerprint = hashFingerprint(fingerprint);
 
     // Authenticate user
     const user = await auth_model.login(email, password);
@@ -103,17 +101,24 @@ const login = async (
     const payload: IUserPayload = {
       id: user.user_id,
       is_admin: user.is_admin,
-      fingerprint: fingerprintHash,
+      fingerprint: hashedFingerprint,
     };
 
     // Generate access token - short lived (15 minutes)
-    const access_token = generateToken(payload, config.jwt_secret, "15m");
+    const access_token = generateToken(
+      payload,
+      config.jwt_secret,
+      config.access_token_expiry
+    );
     // Generate refresh token - long lived (7 days)
-    const refresh_token = generateToken(payload, config.jwt_secret, "7d");
+    const refresh_token = generateToken(
+      payload,
+      config.jwt_refresh_secret,
+      config.refresh_token_expiry
+    );
 
     // Calculate token expiration date (7 days from now)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    const expiresAt = calculateExpirationDate(config.refresh_token_expiry);
 
     // Revoke any existing refresh tokens for this user
     await refresh_token_model.revokeAllUserTokens(user.user_id!);
@@ -121,7 +126,7 @@ const login = async (
     // Create new refresh token
     await refresh_token_model.createToken(
       user.user_id!,
-      fingerprintHash,
+      hashedFingerprint,
       expiresAt
     );
 
@@ -153,7 +158,7 @@ const login = async (
 
 const refreshToken = async (req: Request, res: Response) => {
   // Get refresh token from cookie only (don't accept from body)
-  const refreshToken = req.cookies.refresh_token;
+  const refreshToken = req.cookies["__Host-refresh_token"];
 
   // Get fingerprint from the request headers
   const fingerprint = req.headers["x-fingerprint"] as string;
@@ -178,13 +183,10 @@ const refreshToken = async (req: Request, res: Response) => {
   }
 
   // Hash the provided fingerprint
-  const fingerprintHash = require("crypto")
-    .createHash("sha256")
-    .update(fingerprint)
-    .digest("hex");
+  const hashedFingerprint = hashFingerprint(fingerprint);
 
   // Verify that fingerprint matches the one in the token
-  if (decodedUser.fingerprint !== fingerprintHash) {
+  if (decodedUser.fingerprint !== hashedFingerprint) {
     // Clear cookies on invalid fingerprint
     clearAuthCookies(res);
 
@@ -199,7 +201,7 @@ const refreshToken = async (req: Request, res: Response) => {
 
   // Verify that token exists in database and is not revoked.
   if (
-    !(await refresh_token_model.verifyToken(decodedUser.id!, fingerprintHash))
+    !(await refresh_token_model.verifyToken(decodedUser.id!, hashedFingerprint))
   ) {
     // Clear cookies on invalid token
     clearAuthCookies(res);
@@ -210,28 +212,34 @@ const refreshToken = async (req: Request, res: Response) => {
   const payload: IUserPayload = {
     id: decodedUser.id,
     is_admin: decodedUser.is_admin,
-    fingerprint: fingerprintHash,
+    fingerprint: hashedFingerprint,
   };
 
   // Generate new Access Token.
-  const newAccessToken = generateToken(payload, config.jwt_secret, "15m");
+  const newAccessToken = generateToken(
+    payload,
+    config.jwt_secret,
+    config.access_token_expiry
+  );
 
   // Generate new Refresh Token.
   const newRefreshToken = generateToken(
     payload,
     config.jwt_refresh_secret,
-    "7d"
+    config.refresh_token_expiry
   );
 
   // Calculate token expiration date (7 days from now)
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
+  const expiresAt = calculateExpirationDate(config.refresh_token_expiry);
 
-  // Rotate the token in the database (revoke old, create new)
+  // Generate a new fingerprint for the new token
+  const newFingerprint = generateFingerprint();
+  const hashedNewFingerprint = hashFingerprint(newFingerprint);
+  // Revoke the old token and create a new one
   await refresh_token_model.rotateToken(
     decodedUser.id!,
-    fingerprintHash,
-    fingerprintHash,
+    hashedFingerprint,
+    hashedNewFingerprint,
     expiresAt
   );
 
@@ -258,6 +266,7 @@ const refreshToken = async (req: Request, res: Response) => {
       ...(config.csrf_protection_enabled && {
         csrf: res.getHeader("X-CSRF-Token"),
       }),
+      fingerprint: newFingerprint,
     });
   } catch (error) {
     // Clear cookies on error
