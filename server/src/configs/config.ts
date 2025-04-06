@@ -5,7 +5,8 @@ dotenv.config();
 export default {
   // Server configuration
   port: Number(process.env.PORT),
-  client_url: String(process.env.CLIENT_URL),
+  client_url_dev: String(process.env.CLIENT_URL_DEV),
+  client_url_prod: String(process.env.CLIENT_URL_PROD),
   node_env: String(process.env.NODE_ENV),
 
   // PostgreSQL database configuration
@@ -28,8 +29,7 @@ export default {
   refresh_token_expiry: (process.env.REFRESH_TOKEN_EXPIRY || "7d") as "7d",
 
   // Enhanced security features
-  csrf_protection_enabled:
-    process.env.CSRF_PROTECTION_ENABLED === "true" || false,
+  csrf_protection_enabled: process.env.CSRF_PROTECTION_ENABLED !== "false",
 
   // Cookie security settings
   cookie_secure:

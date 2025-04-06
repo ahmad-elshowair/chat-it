@@ -61,45 +61,91 @@ export const generateToken = (
 export const setTokensInCookies = (
   res: Response,
   access_token: string,
-  refresh_token: string
+  refresh_token: string,
+  fingerprint?: string
 ) => {
-  const secureCookiesOptions = {
+  const cookieConfigs = {
     httpOnly: true,
-    sameSite: "strict" as const,
+    sameSite:
+      config.node_env === "production" ? ("strict" as const) : ("lax" as const),
     secure: config.node_env === "production",
     path: "/",
-    domain: config.node_env === "production" ? "chat-it.com" : "localhost",
   };
 
-  // set access token as HttpOnly cookie
-  res.cookie("__Host-access_token", access_token, {
-    ...secureCookiesOptions,
-    // Short-lived access token (15 minutes)
-    maxAge: getDurationInMs(config.access_token_expiry),
-  });
-
-  // set refresh token as HttpOnly cookie
-  res.cookie("__Host-refresh_token", refresh_token, {
-    ...secureCookiesOptions,
-    // Long-lived refresh token (7 days)
-    maxAge: getDurationInMs(config.refresh_token_expiry),
-  });
-
-  // set a non-HttpOnly CSRF token if needed
-  if (config.csrf_protection_enabled) {
-    // GENERATE THE CSRF TOKEN.
-
-    const csrfToken = require("crypto").randomBytes(32).toString("hex");
-
-    // SET THE CSRF TOKEN IN COOKIES, ()
-    res.cookie("__Secure-csrf_token", csrfToken, {
-      ...secureCookiesOptions,
-      httpOnly: false,
+  // SET COOKIES BASED ON ENVIRONMENT.
+  if (config.node_env === "development") {
+    res.cookie("access_token", access_token, {
+      ...cookieConfigs,
+      // Short-lived access token (15 minutes)
       maxAge: getDurationInMs(config.access_token_expiry),
     });
 
-    // ALSO SET THE TOKEN IN THE RESPONSE HEADER FOR SPA FIRST LOAD.
-    res.setHeader("X-CSRF-Token", csrfToken);
+    res.cookie("refresh_token", refresh_token, {
+      ...cookieConfigs,
+      path: "/auth/refresh-token",
+      // Long-lived refresh token (7 days)
+      maxAge: getDurationInMs(config.refresh_token_expiry),
+    });
+
+    if (fingerprint) {
+      res.cookie("x-fingerprint", fingerprint, {
+        ...cookieConfigs,
+        httpOnly: false,
+        maxAge: getDurationInMs(config.access_token_expiry),
+      });
+    }
+
+    // SET A NON-HTTPONLY CSRF TOKEN IF NEEDED.
+    if (config.csrf_protection_enabled) {
+      // GENERATE THE CSRF TOKEN.
+      const csrfToken = require("crypto").randomBytes(32).toString("hex");
+
+      // SET THE CSRF TOKEN IN COOKIES.
+      res.cookie("csrf_token", csrfToken, {
+        ...cookieConfigs,
+        // Short-lived CSRF token (15 minutes)
+        maxAge: getDurationInMs(config.access_token_expiry),
+      });
+
+      // ALSO SET THE TOKEN IN THE RESPONSE HEADER FOR SPA FIRST LOAD.
+      res.setHeader("X-CSRF-Token", csrfToken);
+    }
+  } else {
+    res.cookie("__Host-access_token", access_token, {
+      ...cookieConfigs,
+      // Short-lived access token (15 minutes)
+      maxAge: getDurationInMs(config.access_token_expiry),
+    });
+
+    res.cookie("__Host-refresh_token", refresh_token, {
+      ...cookieConfigs,
+      path: "/auth/refresh-token",
+      // Long-lived refresh token (7 days)
+      maxAge: getDurationInMs(config.refresh_token_expiry),
+    });
+
+    if (fingerprint) {
+      res.cookie("__Host-x-fingerprint", fingerprint, {
+        ...cookieConfigs,
+        httpOnly: false,
+        maxAge: getDurationInMs(config.access_token_expiry),
+      });
+    }
+    // SET A NON-HTTPONLY CSRF TOKEN IF NEEDED.
+    if (config.csrf_protection_enabled) {
+      // GENERATE THE CSRF TOKEN.
+      const csrfToken = require("crypto").randomBytes(32).toString("hex");
+
+      // SET THE CSRF TOKEN IN COOKIES.
+      res.cookie("__Secure-csrf_token", csrfToken, {
+        ...cookieConfigs,
+        httpOnly: false,
+        maxAge: getDurationInMs(config.access_token_expiry),
+      });
+
+      // ALSO SET THE TOKEN IN THE RESPONSE HEADER FOR SPA FIRST LOAD.
+      res.setHeader("X-CSRF-Token", csrfToken);
+    }
   }
 };
 
@@ -108,40 +154,59 @@ export const clearAuthCookies = (res: Response) => {
     httpOnly: true,
     sameSite: "strict" as const,
     secure: config.node_env === "production",
-    domain: config.node_env === "production" ? "chat-it.com" : "localhost",
   };
 
-  // Clear access token cookie
-  res.clearCookie("__Host-access_token", {
-    ...cookiesOptions,
-    path: "/",
-  });
-
-  // clear the refresh token cookie
-  res.clearCookie("__Host-refresh_token", {
-    ...cookiesOptions,
-    path: "/",
-  });
-
-  // Clear CSRF token if it exists
-  if (config.csrf_protection_enabled) {
-    res.clearCookie("__Secure-csrf_token", {
+  // CLEAR COOKIES BASE ON ENVIRONMENT.
+  if (config.node_env === "development") {
+    res.clearCookie("access_token", { ...cookiesOptions, path: "/" });
+    res.clearCookie("refresh_token", { ...cookiesOptions, path: "/" });
+    // Clear CSRF token if it exists
+    if (config.csrf_protection_enabled) {
+      res.clearCookie("csrf_token", { ...cookiesOptions, path: "/" });
+    }
+  } else {
+    res.clearCookie("__Host-access_token", {
       ...cookiesOptions,
-      httpOnly: false,
+      secure: true,
       path: "/",
     });
+    res.clearCookie("__Host-refresh_token", {
+      ...cookiesOptions,
+      secure: true,
+      path: "/",
+    });
+    // Clear CSRF token if it exists
+    if (config.csrf_protection_enabled) {
+      res.clearCookie("__Secure-csrf_token", {
+        ...cookiesOptions,
+        httpOnly: false,
+        path: "/",
+      });
+    }
   }
 };
 
 export const verifyAccessToken = (token: string): IUserPayload | null => {
   try {
     const decoded = jwt.verify(token, config.jwt_secret) as JwtPayload;
+
+    // ADDITIONAL VALIDATION CHECKS.
+    if (!decoded.id || !decoded.fingerprint) {
+      console.warn("Token missing required fields!");
+      return null;
+    }
+
     return {
       id: decoded.id,
       is_admin: decoded.is_admin,
       fingerprint: decoded.fingerprint,
     };
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      console.error("Token expired");
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      console.error("Invalid token");
+    }
     return null;
   }
 };
@@ -149,12 +214,24 @@ export const verifyAccessToken = (token: string): IUserPayload | null => {
 export const verifyRefreshToken = (token: string): IUserPayload | null => {
   try {
     const decoded = jwt.verify(token, config.jwt_refresh_secret) as JwtPayload;
+
+    // ADDITIONAL VALIDATION CHECKS.
+    if (!decoded.id || !decoded.fingerprint) {
+      console.warn("Token missing required fields!");
+      return null;
+    }
+
     return {
       id: decoded.id,
       is_admin: decoded.is_admin,
       fingerprint: decoded.fingerprint,
     };
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      console.error("Token expired");
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      console.error("Invalid token");
+    }
     return null;
   }
 };

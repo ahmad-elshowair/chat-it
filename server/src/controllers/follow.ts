@@ -6,7 +6,7 @@ const followService = new FollowService();
 
 const follow = async (req: ICustomRequest, res: Response) => {
   try {
-    const user_id_following: string = req.user.id;
+    const user_id_following: string = req.user?.id!;
     const user_id_followed: string = req.body.user_id_followed;
     // check if the user different
     if (user_id_following !== user_id_followed) {
@@ -27,7 +27,7 @@ const follow = async (req: ICustomRequest, res: Response) => {
 
 const unFollow = async (req: ICustomRequest, res: Response) => {
   try {
-    const user_id_following: string = req.user.id;
+    const user_id_following: string = req.user?.id!;
     const user_id_followed: string = req.body.user_id_followed;
     // check if the user different
     if (user_id_following !== user_id_followed) {
@@ -48,7 +48,7 @@ const unFollow = async (req: ICustomRequest, res: Response) => {
 
 const getNumberOfFollowings = async (req: ICustomRequest, res: Response) => {
   try {
-    const user_id: string = req.user.id;
+    const user_id: string = req.user?.id!;
     // get the followings from the database
     const numFollowings = await followService.getNumberOfFollowings(user_id);
     res.status(200).json(numFollowings);
@@ -60,7 +60,7 @@ const getNumberOfFollowings = async (req: ICustomRequest, res: Response) => {
 };
 
 const getNumberOfFollowers = async (req: ICustomRequest, res: Response) => {
-  const user_id: string = req.user.id;
+  const user_id: string = req.user?.id!;
   try {
     const numFollowers = await followService.getNumberOfFollowers(user_id);
     res.status(200).json(numFollowers);
@@ -89,7 +89,7 @@ const getFriends = async (req: ICustomRequest, res: Response) => {
 };
 
 const getFollowings = async (req: ICustomRequest, res: Response) => {
-  const user_id = req.user.id;
+  const user_id = req.user?.id!;
   try {
     const followings = await followService.getFollowings(user_id);
     res.status(200).json(followings);
@@ -99,7 +99,7 @@ const getFollowings = async (req: ICustomRequest, res: Response) => {
 };
 
 const getFollowers = async (req: ICustomRequest, res: Response) => {
-  const user_id = req.user.id;
+  const user_id = req.user?.id!;
   try {
     const followers = await followService.getFollowers(user_id);
     res.status(200).json(followers);
@@ -109,8 +109,9 @@ const getFollowers = async (req: ICustomRequest, res: Response) => {
 };
 
 const isFollowed = async (req: ICustomRequest, res: Response) => {
-  const following_id: string = req.user.id;
+  const following_id: string = req.user?.id!;
   const followed_id = req.params.followed_id;
+
   try {
     const checkIsFollowed = await followService.checkIfFollowing(
       following_id,
@@ -118,6 +119,7 @@ const isFollowed = async (req: ICustomRequest, res: Response) => {
     );
     res.status(200).json(checkIsFollowed);
   } catch (error) {
+    console.error("Error checking follow status:", error);
     res.status(500).json({ error: (error as Error).message });
   }
 };

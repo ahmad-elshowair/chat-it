@@ -131,7 +131,7 @@ const login = async (
     );
 
     // Set tokens in HttpOnly cookies
-    setTokensInCookies(res, access_token, refresh_token);
+    setTokensInCookies(res, access_token, refresh_token, fingerprint);
 
     // Return minimal user info to client
     res.status(201).json({
@@ -158,7 +158,10 @@ const login = async (
 
 const refreshToken = async (req: Request, res: Response) => {
   // Get refresh token from cookie only (don't accept from body)
-  const refreshToken = req.cookies["__Host-refresh_token"];
+  const refreshToken =
+    config.node_env === "development"
+      ? req.cookies["__Host-refresh_token"]
+      : req.cookies["refresh_token"];
 
   // Get fingerprint from the request headers
   const fingerprint = req.headers["x-fingerprint"] as string;
@@ -244,7 +247,7 @@ const refreshToken = async (req: Request, res: Response) => {
   );
 
   // Set Cookies.
-  setTokensInCookies(res, newAccessToken, newRefreshToken);
+  setTokensInCookies(res, newAccessToken, newRefreshToken, newFingerprint);
 
   try {
     // Get user data
@@ -280,13 +283,11 @@ const refreshToken = async (req: Request, res: Response) => {
 
 const logout = async (req: ICustomRequest, res: Response) => {
   try {
-    // Get user ID from request
-    const userId = req.user?.id;
-    if (userId) {
+    if (req.user?.id) {
       // Update online status to false if user ID is available
-      await user_model.updateOnlineStatus(userId, false);
+      await user_model.updateOnlineStatus(req.user.id, false);
       // Revoke all refresh tokens for this user
-      await refresh_token_model.revokeAllUserTokens(userId!);
+      await refresh_token_model.revokeAllUserTokens(req.user.id);
     }
 
     // Clear all auth cookies
@@ -294,12 +295,191 @@ const logout = async (req: ICustomRequest, res: Response) => {
     // Return success message
     res.status(200).json({ message: "Logout Successfully!" });
   } catch (error) {
-    // Clear cookies on error
-    clearAuthCookies(res);
-
-    console.error("Error during logout:", error);
+    console.error("Logout Error:", error);
     res.status(500).json({
-      message: "Failed to logout",
+      message: "Error during logout",
+      error: (error as Error).message,
+    });
+  }
+};
+
+const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
+  try {
+    // IF USER IS ALREADY AUTHENTICATED VIA ACCESS TOKEN.
+    if (req.user) {
+      // FETCH USER DATA.
+      const user = await user_model.getUserById(req.user.id!);
+      return res.status(200).json({
+        message: "Auth Status checked Successfully!",
+        authenticated: true,
+        user: {
+          user_id: user.user_id,
+          email: user.email,
+          is_admin: user.is_admin,
+          user_name: user.user_name,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          picture: user.picture,
+          cover: user.cover,
+        },
+        ...(config.csrf_protection_enabled && {
+          csrf: res.getHeader("X-CSRF-Token"),
+        }),
+      });
+    }
+
+    const refreshTokenName =
+      config.node_env === "production"
+        ? "__Host-refresh_token"
+        : "refresh_token";
+    const refreshToken = req.cookies[refreshTokenName];
+
+    // IF NO REFRESH TOKEN, USER US NOT AUTHENTICATED.
+    if (!refreshToken) {
+      return res.status(200).json({
+        message: "Auth status checked successfully!",
+        authenticated: false,
+      });
+    }
+
+    // VERIFY REFRESH TOKEN.
+    const decodedUser = verifyRefreshToken(refreshToken);
+    if (!decodedUser) {
+      // CLEAR COOKIES ON INVALID TOKEN.
+      clearAuthCookies(res);
+      return res.status(200).json({
+        message: "Auth status checked successfully!",
+        authenticated: false,
+      });
+    }
+
+    // GET fingerprint  IF AVAILABLE.
+    const fingerprintName =
+      config.node_env === "production"
+        ? "__Host-x-fingerprint"
+        : "x-fingerprint";
+
+    const fingerprint =
+      req.cookies[fingerprintName] || (req.headers[fingerprintName] as string);
+
+    // IF WE HAVE fingerprint  IN TOKEN BUT IN REQUEST, SECURITY RISK.
+    if (decodedUser.fingerprint && !fingerprint) {
+      clearAuthCookies(res);
+      return res.status(200).json({
+        message: "Auth status checked successfully!",
+        authenticated: false,
+      });
+    }
+    // IF fingerprint AVAILABLE, VERIFY IT.
+    if (fingerprint) {
+      const hashedFingerprint = hashFingerprint(fingerprint);
+
+      // IF fingerprint DOESN'T MATCH, SECURITY RISK.
+      if (hashedFingerprint !== decodedUser.fingerprint) {
+        clearAuthCookies(res);
+        console.warn(
+          `Potential token theft detected for user ${decodedUser.id}`
+        );
+        await refresh_token_model.revokeAllUserTokens(decodedUser.id!);
+        return res.status(200).json({
+          message: "Auth status checked successfully!",
+          authenticated: false,
+        });
+      }
+
+      // VERIFY TOKEN EXISTS IN THE DATABASE AND IS NOT REVOKED.
+      if (
+        !(await refresh_token_model.verifyToken(
+          decodedUser.id!,
+          hashedFingerprint
+        ))
+      ) {
+        clearAuthCookies(res);
+        return res.status(200).json({
+          message: "Auth status checked successfully!",
+          authenticated: false,
+        });
+      }
+      // TOKEN IS VALID, GENERATE NEW TOKENS.
+      const payload: IUserPayload = {
+        id: decodedUser.id,
+        is_admin: decodedUser.is_admin,
+        fingerprint: hashedFingerprint,
+      };
+
+      // GENERATE NEW TOKEN.
+      const newAccessToken = generateToken(
+        payload,
+        config.jwt_secret,
+        config.access_token_expiry
+      );
+      const newRefreshToken = generateToken(
+        payload,
+        config.jwt_refresh_secret,
+        config.refresh_token_expiry
+      );
+
+      // CALCULATE TOKEN EXPIRATION.
+      const expireAt = calculateExpirationDate(config.refresh_token_expiry);
+
+      // GENERATE NEW fingerprint  FOR ENHANCED SECURITY.
+      const newFingerprint = generateFingerprint();
+      const hashedNewFingerprint = hashFingerprint(newFingerprint);
+
+      // ROTATE TOKEN IN DATABASE.
+      await refresh_token_model.rotateToken(
+        decodedUser.id!,
+        hashedFingerprint,
+        hashedNewFingerprint,
+        expireAt
+      );
+
+      // SET NEW TOKENS IN COOKIES.
+      setTokensInCookies(res, newAccessToken, newRefreshToken, newFingerprint);
+
+      // FETCH USER DATA.
+      try {
+        const user = await user_model.getUserById(decodedUser.id!);
+
+        // RETURN USER DATA.
+        return res.status(200).json({
+          message: "Auth status checked successfully!",
+          authenticated: true,
+          user: {
+            user_id: user.user_id,
+            email: user.email,
+            is_admin: user.is_admin,
+            user_name: user.user_name,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            picture: user.picture,
+            cover: user.cover,
+          },
+          ...(config.csrf_protection_enabled && {
+            csrf: res.getHeader("X-CSRF-Token"),
+          }),
+          fingerprint: newFingerprint,
+        });
+      } catch (error) {
+        //  IF ERROR FETCHING USER, AUTHENTICATION FAILED.
+        clearAuthCookies(res);
+        console.error("Error fetching user data: ", error);
+        return res.status(200).json({
+          message: "Auth status checked successfully!",
+          authenticated: false,
+        });
+      }
+    }
+
+    //  NO fingerprint BUT TOKEN IS VALID - UNUSUAL CASE.
+    return res.status(200).json({
+      message: "Auth status checked successfully!",
+      authenticated: false,
+    });
+  } catch (error) {
+    console.error("Check Auth Status Error:", error);
+    res.status(500).json({
+      message: "Error during check auth status",
       error: (error as Error).message,
     });
   }
@@ -310,4 +490,5 @@ export default {
   login,
   refreshToken,
   logout,
+  checkAuthStatus,
 };

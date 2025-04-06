@@ -29,7 +29,7 @@ const update = async (req: ICustomRequest, res: Response) => {
     const { id } = req.params;
 
     // check of the user has the same id or it is admin
-    if (req.user.id === id || req.user.is_admin) {
+    if (req.user?.id === id || req.user?.is_admin) {
       const updated_user = await user_model.update(id, req.body);
       res.status(200).json(updated_user);
     } else {
@@ -49,7 +49,7 @@ const deleteUser = async (req: ICustomRequest, res: Response) => {
   try {
     const { id } = req.params;
     // check of the user has the same id or it is admin
-    if (req.user.id === id || req.user.is_admin) {
+    if (req.user?.id === id || req.user?.is_admin) {
       const deleted_user = await user_model.delete(id);
       res
         .status(200)
@@ -66,9 +66,9 @@ const deleteUser = async (req: ICustomRequest, res: Response) => {
 
 // GET ALL OTHER USERS
 const getUnknownUsers = async (req: ICustomRequest, res: Response) => {
-  const user_id = req.user.id;
+  const user_id = req.user?.id;
   try {
-    const unknowns = await user_model.getUnknowns(user_id);
+    const unknowns = await user_model.getUnknowns(user_id!);
     res.status(200).json(unknowns);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
