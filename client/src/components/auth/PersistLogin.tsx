@@ -6,33 +6,54 @@ import { AuthContext } from "../../context/AuthContext";
 export const PersistLogin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { state, dispatch } = useContext(AuthContext);
-  const { user } = state;
+  const { authChecked } = state;
 
   useEffect(() => {
     let isMounted = true;
 
-    const verifyRefreshToken = async () => {
+    const verifyAuth = async () => {
       try {
-        // attempt to refresh the token
-        const response = await api.post("/auth/refresh-token");
-        dispatch({
-          type: "REFRESH_TOKEN",
-          payload: {
-            access_token: response.data.access_token,
-            refresh_token: response.data.refresh_token,
-            user: response.data.user,
-          },
-        });
+        // Check auth status with the server
+        const response = await api.get("/auth/is-authenticated");
+
+        // HANDLE THE ENHANCED RESPONSE FROM SERVER.
+        if (response.data.authenticated) {
+          // IF SERVER RETURNS USER DATA, UPDATE AUTH STATUS WITH COMPLETE USER INFO.
+          if (response.data.user) {
+            dispatch({
+              type: "SUCCEEDED",
+              payload: {
+                user: response.data.user,
+                fingerprint: response.data.fingerprint,
+                csrf: response.data.csrf,
+              },
+            });
+          } else {
+            // FALLBACK FOR BACKWARD COMPATIBILITY.
+            dispatch({
+              type: "CHECK_AUTH_STATUS",
+              payload: true,
+            });
+          }
+        } else {
+          // Update auth status based on server response
+          dispatch({
+            type: "CHECK_AUTH_STATUS",
+            payload: false,
+          });
+        }
       } catch (error) {
-        console.error("Failed to refresh the access token", error);
+        console.error("Failed to verify authentication status", error);
+        // If check fails, set auth status to false
+        dispatch({ type: "CHECK_AUTH_STATUS", payload: false });
       } finally {
         isMounted && setIsLoading(false);
       }
     };
 
-    // if we don't have a user state, attempt to verify the refresh token
-    if (!user) {
-      verifyRefreshToken();
+    // If auth hasn't been checked yet, verify with the server
+    if (!authChecked) {
+      verifyAuth();
     } else {
       setIsLoading(false);
     }
@@ -40,7 +61,7 @@ export const PersistLogin = () => {
     return () => {
       isMounted = false;
     };
-  }, [dispatch, user]);
+  }, [dispatch, authChecked]);
 
   return <>{isLoading ? <h1>Loading...</h1> : <Outlet />}</>;
 };

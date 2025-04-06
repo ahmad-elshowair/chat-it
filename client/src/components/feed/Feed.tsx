@@ -8,37 +8,34 @@ import { Share } from "../share/Share";
 import "./feed.css";
 
 export const Feed = ({ user_id }: { user_id?: string }) => {
-	const { state } = useContext(AuthContext);
-	const [posts, setPosts] = useState<TPost[]>([]);
+  const { state } = useContext(AuthContext);
+  const [posts, setPosts] = useState<TPost[]>([]);
 
-	const token = state.user?.access_token;
-	useEffect(() => {
-		const fetchFeed = async () => {
-			try {
-				const response = user_id
-					? await api.get(`/posts/user/${user_id}`)
-					: await api.get(`/posts/feed`, {
-							headers: {
-								authorization: `Bearer ${token}`,
-							},
-					  });
+  useEffect(() => {
+    if (!state.authChecked) return;
 
-				setPosts(response.data);
-			} catch (error: unknown) {
-				const axiosError = error as AxiosError;
-				if (axiosError.response) {
-					console.error("Error data:", axiosError.response.data);
-					console.error("Error status:", axiosError.response.status);
-				}
-			}
-		};
+    const fetchFeed = async () => {
+      try {
+        const response = user_id
+          ? await api.get(`/posts/user/${user_id}`)
+          : await api.get(`/posts/feed`);
 
-		fetchFeed();
-	}, [token, user_id]);
-	return (
-		<section className="feed">
-			{(!user_id || user_id === state.user?.user_id) && <Share />}
-			{posts && posts.map((post) => <Post key={post.post_id} {...post} />)}
-		</section>
-	);
+        setPosts(response.data);
+      } catch (error: unknown) {
+        const axiosError = error as AxiosError;
+        if (axiosError.response) {
+          console.error("Error data:", axiosError.response.data);
+          console.error("Error status:", axiosError.response.status);
+        }
+      }
+    };
+
+    fetchFeed();
+  }, [state.authChecked, user_id]);
+  return (
+    <section className="feed">
+      {(!user_id || user_id === state.user?.user_id) && <Share />}
+      {posts && posts.map((post) => <Post key={post.post_id} {...post} />)}
+    </section>
+  );
 };

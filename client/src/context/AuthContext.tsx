@@ -1,9 +1,6 @@
 import { Dispatch, ReactNode, createContext, useReducer } from "react";
 import { AuthAction, AuthState } from "../types/auth";
-import AuthReducer, { loadState } from "./AuthReducer";
-
-// Initial state
-const initialState: AuthState = loadState();
+import AuthReducer, { initialState } from "./AuthReducer";
 
 export const AuthContext = createContext<{
   state: AuthState;

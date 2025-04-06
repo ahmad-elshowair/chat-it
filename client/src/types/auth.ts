@@ -1,13 +1,21 @@
 import { Dispatch } from "react";
 import { UserPayload } from "./user";
 
+export type TAuth = {
+  user: UserPayload;
+  access_token: string;
+  refresh_token: string;
+  fingerprint?: string;
+  csrf?: string;
+};
+
 export type AuthResponse = {
-  message: string;
+  message?: string;
   user: UserPayload;
   fingerprint?: string;
   csrf?: string;
-  access_token: string;
-  refresh_token: string;
+  access_token?: string;
+  refresh_token?: string;
 };
 export type LoginCredentials = {
   email?: string;
@@ -28,13 +36,14 @@ export type AuthAction =
       type: "REFRESH_TOKEN";
       payload: {
         user: UserPayload;
-        access_token: string;
-        refresh_token: string;
+        access_token?: string;
+        refresh_token?: string;
         fingerprint?: string;
         csrf?: string;
       };
     }
-  | { type: "LOGOUT" };
+  | { type: "LOGOUT" }
+  | { type: "CHECK_AUTH_STATUS"; payload: boolean };
 
 export type AuthState = {
   user: UserPayload | null;
@@ -42,6 +51,7 @@ export type AuthState = {
   errors: string[] | null;
   fingerprint?: string;
   csrf?: string;
+  authChecked?: boolean;
 };
 
 export interface Store {

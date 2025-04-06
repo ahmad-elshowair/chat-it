@@ -1,30 +1,13 @@
 import { AuthAction, AuthState } from "../types/auth";
 
-export const loadState = (): AuthState => {
-  try {
-    const serializedState = localStorage.getItem("authState");
-    if (serializedState === null) {
-      return {
-        user: null,
-        loading: false,
-        errors: null,
-        fingerprint: undefined,
-        csrf: undefined,
-      };
-    }
-    return JSON.parse(serializedState);
-  } catch (error) {
-    return {
-      user: null,
-      loading: false,
-      errors: null,
-      fingerprint: undefined,
-      csrf: undefined,
-    };
-  }
+export const initialState: AuthState = {
+  user: null,
+  loading: false,
+  errors: null,
+  fingerprint: undefined,
+  csrf: undefined,
+  authChecked: false,
 };
-
-const initialState = loadState();
 const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
   let newState;
 
@@ -42,12 +25,11 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
         loading: false,
         user: {
           ...action.payload.user,
-          access_token: action.payload.access_token,
-          refresh_token: action.payload.refresh_token,
         },
         fingerprint: action.payload.fingerprint || state.fingerprint,
         csrf: action.payload.csrf || state.csrf,
         errors: null,
+        authChecked: true,
       };
       break;
     case "FAILURE":
@@ -64,11 +46,10 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
           user: {
             ...state.user,
             ...action.payload.user,
-            access_token: action.payload.access_token,
-            refresh_token: action.payload.refresh_token,
           },
           fingerprint: action.payload.fingerprint || state.fingerprint,
           csrf: action.payload.csrf || state.csrf,
+          authChecked: true,
         };
       } else {
         newState = state;
@@ -81,23 +62,19 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
         errors: null,
         fingerprint: undefined,
         csrf: undefined,
+        authChecked: true,
       };
-      // CLEAR THE LOCALSTORAGE ON LOGOUT FOR SECURITY.
-      localStorage.removeItem("authState");
       return newState;
+    case "CHECK_AUTH_STATUS":
+      newState = {
+        ...state,
+        authChecked: true,
+        ...(action.payload === false && state.user ? { user: null } : {}),
+      };
+      break;
 
     default:
       newState = { ...state };
-  }
-  try {
-    const storageState = {
-      ...newState,
-      fingerprint: undefined,
-    };
-    // save to local storage
-    localStorage.setItem("authState", JSON.stringify(storageState));
-  } catch (error) {
-    console.error("could not save auth state:", error);
   }
   return newState;
 };

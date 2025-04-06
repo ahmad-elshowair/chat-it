@@ -1,6 +1,7 @@
+import axios from "axios";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import api from "../../api/axiosInstance";
+import { useNavigate, useParams } from "react-router-dom";
+import api, { checkAuthStatus } from "../../api/axiosInstance";
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/LeftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
@@ -12,50 +13,83 @@ import "./profile.css";
 
 export const Profile = () => {
   const { user_name } = useParams<{ user_name: string }>();
+  const navigate = useNavigate();
 
   const { state } = useContext(AuthContext);
   const [user, setUser] = useState<TUser | null>(null);
   const [isFollowed, setIsFollowed] = useState<boolean>();
   const [isLoading, setIsLoading] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Access current user from auth state
   const currentUser = state.user;
 
+  // CHECK AUTHENTICATION STATUS BEFORE MAKING AUTHENTICATED REQUESTS.
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        const isAuthenticated = await checkAuthStatus();
+        setAuthChecked(true);
+
+        if (!isAuthenticated && !currentUser) {
+          console.warn(" User not Authenticated, redirecting to login");
+          navigate("/login");
+        }
+      } catch (error) {
+        console.error("Auth verification failed: ", error);
+        setAuthChecked(true);
+      }
+    };
+    verifyAuth();
+  }, [navigate, currentUser]);
+
   const fetchAUser = useCallback(async () => {
+    if (!authChecked) {
+      console.error("Waiting for auth check before fetching user data");
+      return;
+    }
+
     try {
+      setIsLoading(true);
       const response = await api.get(`/users/${user_name}`);
       setUser(response.data);
     } catch (error) {
       console.error(`Error Fetching user: ${error}`);
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        console.error(
+          "Unauthorized: User not authenticated - redirecting to login"
+        );
+      }
+    } finally {
+      setIsLoading(false);
     }
-  }, [user_name]);
+  }, [user_name, authChecked]);
 
   const checkIsFollowed = useCallback(async () => {
-    if (!currentUser?.access_token || !user?.user_id) {
-      console.log("Cannot check follow status - missing data:", {
-        hasToken: !!currentUser?.access_token,
-        hasUserId: !!user?.user_id,
+    if (!user?.user_id || !authChecked) {
+      console.error("Cannot check follow status - missing data:", {
+        hasAuthBeenVerified: authChecked,
+        hasUser: Boolean(user),
+        hasToken: Boolean(currentUser),
+        hasKeyId: Boolean(user?.user_id),
       });
       return;
     }
     try {
-      const response = await api.get(`/follows/is-followed/${user?.user_id}`, {
-        headers: { Authorization: `Bearer ${currentUser?.access_token}` },
+      // Make sure withCredentials is set to true to include cookies in the request
+      const response = await api.get(`/follows/is-followed/${user.user_id}`, {
+        withCredentials: true,
       });
-
       setIsFollowed(response.data);
     } catch (error) {
       console.error("Error checking follow status:", error);
       setIsFollowed(false);
     }
-  }, [currentUser?.access_token, user?.user_id]);
+  }, [currentUser, authChecked, user]);
 
   const handleFollow = useCallback(async () => {
-    if (!currentUser?.access_token || !user?.user_id) {
-      console.error("Cannot follow/unfollow: Missing information", {
-        hasToken: Boolean(currentUser?.access_token),
-        userId: user?.user_id || "missing",
-      });
+    if (!user?.user_id) {
+      console.error("Cannot follow/unfollow: Missing user ID");
       return;
     }
 
@@ -63,10 +97,9 @@ export const Profile = () => {
     try {
       if (isFollowed) {
         // Unfollow user
-
         await api.delete("/follows/unfollow", {
-          data: { user_id_followed: user?.user_id },
-          headers: { Authorization: `Bearer ${currentUser?.access_token}` },
+          data: { user_id_followed: user.user_id },
+          withCredentials: true,
         });
 
         setIsFollowed(false);
@@ -88,9 +121,10 @@ export const Profile = () => {
         // Follow user
         await api.post(
           "/follows/follow",
-          { user_id_followed: user?.user_id },
-          { headers: { authorization: `Bearer ${currentUser?.access_token}` } }
+          { user_id_followed: user.user_id },
+          { withCredentials: true }
         );
+
         setIsFollowed(true);
 
         // Update follower count ui
@@ -108,18 +142,20 @@ export const Profile = () => {
         });
       }
     } catch (error) {
-      console.error(`Error updating follow status: ${error}`);
+      console.error(`Error updating follow status:`, error);
       // Re-check follow status in case of error
       checkIsFollowed();
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser?.access_token, isFollowed, user?.user_id, checkIsFollowed]);
+  }, [isFollowed, user?.user_id, checkIsFollowed]);
 
   // Fetch user data when component mounts or user_name changes
   useEffect(() => {
-    fetchAUser();
-  }, [fetchAUser]);
+    if (authChecked) {
+      fetchAUser();
+    }
+  }, [fetchAUser, authChecked]);
 
   // Check follow status when user data is available
   useEffect(() => {
@@ -139,6 +175,22 @@ export const Profile = () => {
       ? `${config.api_url}/images/avatars/${user?.cover}`
       : `${config.api_url}/images/noCover.png`;
   }, [user?.cover]);
+
+  if (isLoading && !user) {
+    return (
+      <>
+        <Topbar />
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: "80vh" }}
+        >
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

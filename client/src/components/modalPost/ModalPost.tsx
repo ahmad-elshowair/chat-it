@@ -11,12 +11,10 @@ import "./modalPost.css";
 export const ModalPost = ({
   show,
   handleClose,
-  token,
   user_id,
 }: {
   show: boolean;
   handleClose(): void;
-  token?: string;
   user_id?: string;
 }) => {
   const navigate = useNavigate();
@@ -36,12 +34,9 @@ export const ModalPost = ({
   };
   const createPost = async (post: TPost) => {
     try {
-      const response = await api.post("/posts/create", post, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log(response.data);
+      const response = await api.post("/posts/create", post);
+
+      console.info(response.data);
     } catch (error) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {

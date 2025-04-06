@@ -7,10 +7,10 @@ import {
   RegisterCredentials,
 } from "../types/auth";
 import {
-  removeCsrfFromStorage,
-  removeFingerprintFromStorage,
-  setCsrfInStorage,
-  setFingerprintInStorage,
+  removeCsrfFromSessionStorage,
+  removeFingerprintFromSessionStorage,
+  setCsrfInSessionStorage,
+  setFingerprintInSessionStorage,
 } from "./session";
 
 export const registerUser = async (
@@ -34,14 +34,11 @@ export const registerUser = async (
       return;
     }
 
-    // STORE THE FINGERPRINT IN SESSION STORAGE.
-    setFingerprintInStorage(response.data.fingerprint);
+    // STORE TOKENS IN SESSION STORAGE.
+    setFingerprintInSessionStorage(response.data.fingerprint);
+    setCsrfInSessionStorage(response.data.csrf);
 
-    // STORE THE CSRF TOKEN IN SESSION STORAGE.
-    setCsrfInStorage(response.data.csrf);
-
-    dispatch({ type: "SUCCEEDED", payload: response.data });
-    // return response.data;
+    dispatch({ type: "SUCCEEDED", payload: { ...response.data } });
   } catch (error) {
     let errorMessage: string = "AN UNEXPECTED ERROR WITH REGISTRATION !";
     if (axios.isAxiosError(error) && error.response) {
@@ -49,8 +46,6 @@ export const registerUser = async (
         const validationErrors = error.response.data.errors.map(
           (err: { msg: string }) => err.msg
         );
-
-        console.log(validationErrors);
 
         dispatch({ type: "FAILURE", payload: validationErrors });
       } else {
@@ -84,11 +79,9 @@ export const loginUser = async (
       return;
     }
 
-    // STORE THE FINGERPRINT IN SESSION STORAGE.
-    setFingerprintInStorage(response.data.fingerprint);
-
-    // STORE THE CSRF TOKEN IN SESSION STORAGE.
-    setCsrfInStorage(response.data.csrf);
+    // STORE TOKENS IN SESSION STORAGE.
+    setFingerprintInSessionStorage(response.data.fingerprint);
+    setCsrfInSessionStorage(response.data.csrf);
 
     dispatch({ type: "SUCCEEDED", payload: response.data });
   } catch (error) {
@@ -98,9 +91,6 @@ export const loginUser = async (
         const validationErrors = error.response.data.errors.map(
           (err: { msg: string }) => err.msg
         );
-
-        console.log(validationErrors);
-
         dispatch({ type: "FAILURE", payload: validationErrors });
       } else {
         errorMessage = error.response.data;
@@ -116,19 +106,16 @@ export const logoutUser = async (dispatch: Dispatch<AuthAction>) => {
   try {
     await api.post("/auth/logout");
 
-    // REMOVE FINGERPRINT FROM SESSION STORAGE FOR SECURITY.
-    removeFingerprintFromStorage();
+    // REMOVE SECURITY TOKENS FROM SESSION STORAGE FOR SECURITY.
+    removeFingerprintFromSessionStorage();
+    removeCsrfFromSessionStorage();
 
-    // REMOVE CSRF TOKEN FROM SESSION STORAGE FOR SECURITY.
-    removeCsrfFromStorage();
     dispatch({ type: "LOGOUT" });
-    localStorage.removeItem("authState");
   } catch (error) {
     console.error("ERROR during logout", error);
     // STILL LOGOUT CLIENT-SIDE EVEN IF THE SERVER FAILS.
-    removeFingerprintFromStorage();
-    removeCsrfFromStorage();
+    removeFingerprintFromSessionStorage();
+    removeCsrfFromSessionStorage();
     dispatch({ type: "LOGOUT" });
-    localStorage.removeItem("authState");
   }
 };
