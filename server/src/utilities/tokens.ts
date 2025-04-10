@@ -67,8 +67,13 @@ export const setTokensInCookies = (
   const cookieConfigs = {
     httpOnly: true,
     sameSite:
-      config.node_env === "production" ? ("strict" as const) : ("lax" as const),
-    secure: config.node_env === "production",
+      config.node_env === "development"
+        ? ("none" as const)
+        : config.node_env === "production"
+        ? ("strict" as const)
+        : ("lax" as const),
+    secure:
+      config.node_env === "production" || config.node_env === "development",
     path: "/",
   };
 
@@ -76,14 +81,12 @@ export const setTokensInCookies = (
   if (config.node_env === "development") {
     res.cookie("access_token", access_token, {
       ...cookieConfigs,
-      // Short-lived access token (15 minutes)
       maxAge: getDurationInMs(config.access_token_expiry),
     });
 
     res.cookie("refresh_token", refresh_token, {
       ...cookieConfigs,
-      path: "/auth/refresh-token",
-      // Long-lived refresh token (7 days)
+      path: "/",
       maxAge: getDurationInMs(config.refresh_token_expiry),
     });
 
@@ -103,7 +106,6 @@ export const setTokensInCookies = (
       // SET THE CSRF TOKEN IN COOKIES.
       res.cookie("csrf_token", csrfToken, {
         ...cookieConfigs,
-        // Short-lived CSRF token (15 minutes)
         maxAge: getDurationInMs(config.access_token_expiry),
       });
 
@@ -113,14 +115,12 @@ export const setTokensInCookies = (
   } else {
     res.cookie("__Host-access_token", access_token, {
       ...cookieConfigs,
-      // Short-lived access token (15 minutes)
       maxAge: getDurationInMs(config.access_token_expiry),
     });
 
     res.cookie("__Host-refresh_token", refresh_token, {
       ...cookieConfigs,
-      path: "/auth/refresh-token",
-      // Long-lived refresh token (7 days)
+      path: "/",
       maxAge: getDurationInMs(config.refresh_token_expiry),
     });
 
@@ -164,6 +164,8 @@ export const clearAuthCookies = (res: Response) => {
     if (config.csrf_protection_enabled) {
       res.clearCookie("csrf_token", { ...cookiesOptions, path: "/" });
     }
+
+    res.clearCookie("x-fingerprint", { ...cookiesOptions, path: "/" });
   } else {
     res.clearCookie("__Host-access_token", {
       ...cookiesOptions,
@@ -183,6 +185,8 @@ export const clearAuthCookies = (res: Response) => {
         path: "/",
       });
     }
+
+    res.clearCookie("__Host-x-fingerprint", { ...cookiesOptions, path: "/" });
   }
 };
 

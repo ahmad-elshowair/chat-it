@@ -159,7 +159,7 @@ const login = async (
 const refreshToken = async (req: Request, res: Response) => {
   // Get refresh token from cookie only (don't accept from body)
   const refreshToken =
-    config.node_env === "development"
+    config.node_env === "production"
       ? req.cookies["__Host-refresh_token"]
       : req.cookies["refresh_token"];
 

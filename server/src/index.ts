@@ -29,21 +29,25 @@ app.use(cookieParser());
 
 const allowedOrigins =
   config.node_env === "development"
-    ? [config.client_url_dev]
+    ? ["http://localhost:3000", config.client_url_dev]
     : [config.client_url_prod];
 
 // use the cors
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // IN development MODE, ACCEPT REQUESTS FROM ANT ORIGIN.
+      if (config.node_env === "development") {
+        callback(null, true);
+      } else if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.warn("Block by CORS:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -51,6 +55,8 @@ app.use(
       "X-Fingerprint",
       "csrf-token",
       "CSRF-Token",
+      "Origin",
+      "Accept",
     ],
     exposedHeaders: ["X-CSRF-Token"],
   })
