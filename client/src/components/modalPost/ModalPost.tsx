@@ -1,10 +1,11 @@
 import { AxiosError } from "axios";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Button, Card, FloatingLabel, Form, Modal } from "react-bootstrap";
 import { FaPhotoVideo } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosInstance";
+import { getCsrfFromSessionStorage } from "../../services/session";
 import { TPost } from "../../types/post";
 import "./modalPost.css";
 
@@ -24,6 +25,20 @@ export const ModalPost = ({
   const [error, setError] = useState<string>("");
   const folder = "posts";
 
+  useEffect(() => {
+    if (show) {
+      // ENSURE AUTH US CHECKED AND CSRF TOKEN IS AVAILABLE WHEN MODAL OPENS.
+      const refreshAuthState = async () => {
+        try {
+          await api.get("/auth/is-authenticated");
+        } catch (error) {
+          console.error("Auth Verification failed: ", error);
+        }
+      };
+      refreshAuthState();
+    }
+  }, [show]);
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.target;
     const file = input.files?.[0];
@@ -34,7 +49,15 @@ export const ModalPost = ({
   };
   const createPost = async (post: TPost) => {
     try {
-      const response = await api.post("/posts/create", post);
+      // GET CSRF TOKEN IN REQUEST HEADERS.
+      const csrfToken = getCsrfFromSessionStorage();
+
+      // SET CSRF TOKEN IN REQUEST HEADERS.
+      const response = await api.post("/posts/create", post, {
+        headers: {
+          "X-CSRF-Token": csrfToken,
+        },
+      });
 
       console.info(response.data);
     } catch (error) {
@@ -52,7 +75,7 @@ export const ModalPost = ({
     try {
       let imageUrl: string | undefined = undefined;
 
-      // Handle file upload if exists
+      // HANDLE FILE UPLOAD IF AVAILABLE.
       if (file) {
         const formDate = new FormData();
         formDate.append("file", file);
@@ -72,13 +95,13 @@ export const ModalPost = ({
 
       await createPost(post);
 
-      // Reset form
+      // RESET FORM
       setDescription("");
       setFile(null);
       setFileName("");
       setError("");
 
-      // Close modal and navigate
+      // CLOSE MODAL AND NAVIGATE HOME.
       handleClose();
       navigate("/");
     } catch (error) {
@@ -156,7 +179,6 @@ export const ModalPost = ({
               className="btn-chat border-0"
               type="submit"
               value="Post"
-              onClick={() => console.log("Post")}
             />
           </div>
         </Modal.Footer>

@@ -68,6 +68,7 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
     case "CHECK_AUTH_STATUS":
       newState = {
         ...state,
+        loading: false,
         authChecked: true,
         ...(action.payload === false && state.user ? { user: null } : {}),
       };

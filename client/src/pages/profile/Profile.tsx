@@ -1,18 +1,20 @@
 import axios from "axios";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import api, { checkAuthStatus } from "../../api/axiosInstance";
+import api from "../../api/axiosInstance";
 import { Feed } from "../../components/feed/Feed";
 import { LeftBar } from "../../components/leftBar/LeftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
 import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
+import useAuthVerification from "../../hooks/useAuthVerification";
 import { TUser } from "../../types/user";
 import "./profile.css";
 
 export const Profile = () => {
   const { user_name } = useParams<{ user_name: string }>();
+  const { checkAuthStatus } = useAuthVerification();
   const navigate = useNavigate();
 
   const { state } = useContext(AuthContext);
@@ -20,6 +22,7 @@ export const Profile = () => {
   const [isFollowed, setIsFollowed] = useState<boolean>();
   const [isLoading, setIsLoading] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [followCheckDone, setFollowCheckDone] = useState(false);
 
   // Access current user from auth state
   const currentUser = state.user;
@@ -40,8 +43,10 @@ export const Profile = () => {
         setAuthChecked(true);
       }
     };
-    verifyAuth();
-  }, [navigate, currentUser]);
+    if (!authChecked) {
+      verifyAuth();
+    }
+  }, [navigate, currentUser, checkAuthStatus, authChecked]);
 
   const fetchAUser = useCallback(async () => {
     if (!authChecked) {
@@ -59,6 +64,8 @@ export const Profile = () => {
         console.error(
           "Unauthorized: User not authenticated - redirecting to login"
         );
+      } else {
+        console.error(`Error fetching user: ${(error as Error).message}`);
       }
     } finally {
       setIsLoading(false);
@@ -66,26 +73,29 @@ export const Profile = () => {
   }, [user_name, authChecked]);
 
   const checkIsFollowed = useCallback(async () => {
-    if (!user?.user_id || !authChecked) {
+    if (!user?.user_id || !authChecked || !currentUser || followCheckDone) {
       console.error("Cannot check follow status - missing data:", {
         hasAuthBeenVerified: authChecked,
         hasUser: Boolean(user),
         hasToken: Boolean(currentUser),
         hasKeyId: Boolean(user?.user_id),
+        alreadyChecked: followCheckDone,
       });
       return;
     }
     try {
-      // Make sure withCredentials is set to true to include cookies in the request
+      // MAKE SURE withCredentials IS SET TO TRUE TO INCLUDE COOKIES IN THE REQUEST.
       const response = await api.get(`/follows/is-followed/${user.user_id}`, {
         withCredentials: true,
       });
       setIsFollowed(response.data);
+      setFollowCheckDone(true);
     } catch (error) {
       console.error("Error checking follow status:", error);
       setIsFollowed(false);
+      setFollowCheckDone(true);
     }
-  }, [currentUser, authChecked, user]);
+  }, [currentUser, authChecked, user, followCheckDone]);
 
   const handleFollow = useCallback(async () => {
     if (!user?.user_id) {
@@ -96,7 +106,7 @@ export const Profile = () => {
     setIsLoading(true);
     try {
       if (isFollowed) {
-        // Unfollow user
+        // UNFOLLOW USER
         await api.delete("/follows/unfollow", {
           data: { user_id_followed: user.user_id },
           withCredentials: true,
@@ -104,7 +114,7 @@ export const Profile = () => {
 
         setIsFollowed(false);
 
-        // Update follower count ui
+        // UPDATE FOLLOWER COUNT UI
         setUser((prevUser) => {
           if (prevUser) {
             return {
@@ -118,7 +128,7 @@ export const Profile = () => {
           return prevUser;
         });
       } else {
-        // Follow user
+        // FOLLOW USER
         await api.post(
           "/follows/follow",
           { user_id_followed: user.user_id },
@@ -127,7 +137,7 @@ export const Profile = () => {
 
         setIsFollowed(true);
 
-        // Update follower count ui
+        // UPDATE FOLLOWER COUNT UI
         setUser((prevUser) => {
           if (prevUser) {
             return {
@@ -143,26 +153,26 @@ export const Profile = () => {
       }
     } catch (error) {
       console.error(`Error updating follow status:`, error);
-      // Re-check follow status in case of error
-      checkIsFollowed();
+      // RESET FOLLOW CHECK STATUS TO FORCE A RE-CHECK.
+      setFollowCheckDone(false);
     } finally {
       setIsLoading(false);
     }
-  }, [isFollowed, user?.user_id, checkIsFollowed]);
+  }, [isFollowed, user?.user_id]);
 
-  // Fetch user data when component mounts or user_name changes
+  // FETCH USER DATA WHEN COMPONENT MOUNTS OR USER_NAME CHANGES
   useEffect(() => {
     if (authChecked) {
       fetchAUser();
     }
   }, [fetchAUser, authChecked]);
 
-  // Check follow status when user data is available
+  // CHECK FOLLOW STATUS WHEN USER DATA IS AVAILABLE
   useEffect(() => {
-    if (currentUser && user) {
+    if (currentUser && user && authChecked && !followCheckDone) {
       checkIsFollowed();
     }
-  }, [checkIsFollowed, currentUser, user]);
+  }, [checkIsFollowed, currentUser, user, authChecked, followCheckDone]);
 
   const profileImageSrc = useMemo(() => {
     return user?.picture

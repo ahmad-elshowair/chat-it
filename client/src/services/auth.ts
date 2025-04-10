@@ -64,7 +64,10 @@ export const loginUser = async (
 ) => {
   dispatch({ type: "START" });
   try {
-    const response = await api.post(`/auth/login`, userCredentials);
+    // ENSURE WE'RE USING withCredentials FOR THIS CRITICAL REQUEST.
+    const response = await api.post(`/auth/login`, userCredentials, {
+      withCredentials: true,
+    });
 
     // CHECK IF SECURITY TOKENS ARE PRESENT WHEN THE RESPONSE IS RECEIVED.
     if (!response.data.csrf) {
@@ -104,15 +107,30 @@ export const loginUser = async (
 
 export const logoutUser = async (dispatch: Dispatch<AuthAction>) => {
   try {
-    await api.post("/auth/logout");
-
+    // ENSURE WE'RE USING withCredentials FOR THIS CRITICAL REQUEST.
+    dispatch({ type: "START" });
+    await api.post(
+      "/auth/logout",
+      {},
+      {
+        withCredentials: true,
+      }
+    );
     // REMOVE SECURITY TOKENS FROM SESSION STORAGE FOR SECURITY.
     removeFingerprintFromSessionStorage();
     removeCsrfFromSessionStorage();
 
     dispatch({ type: "LOGOUT" });
   } catch (error) {
-    console.error("ERROR during logout", error);
+    console.error("LOGOUT ERROR: ");
+    if (axios.isAxiosError(error)) {
+      console.error("Status: ", error.response?.status);
+      console.error("Data: ", error.response?.data);
+    } else if (error instanceof Error) {
+      console.error("Error message: ", error.message);
+    } else {
+      console.error("Unknown error type", error);
+    }
     // STILL LOGOUT CLIENT-SIDE EVEN IF THE SERVER FAILS.
     removeFingerprintFromSessionStorage();
     removeCsrfFromSessionStorage();

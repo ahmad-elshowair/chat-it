@@ -1,4 +1,11 @@
-import { Dispatch, ReactNode, createContext, useReducer } from "react";
+import {
+  Dispatch,
+  ReactNode,
+  createContext,
+  useEffect,
+  useReducer,
+} from "react";
+import { setUpInterceptors } from "../api/axiosInstance";
 import { AuthAction, AuthState } from "../types/auth";
 import AuthReducer, { initialState } from "./AuthReducer";
 
@@ -12,6 +19,13 @@ export const AuthContext = createContext<{
 
 function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(AuthReducer, initialState);
+
+  useEffect(() => {
+    const store = {
+      dispatch,
+    };
+    setUpInterceptors(store);
+  }, []);
   return (
     <AuthContext.Provider
       value={{
