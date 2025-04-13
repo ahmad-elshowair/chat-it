@@ -1,12 +1,23 @@
 import { useContext } from "react";
-import { FaBell, FaComment, FaHome, FaSearch } from "react-icons/fa";
+import {
+  FaBell,
+  FaComment,
+  FaHome,
+  FaSearch,
+  FaSignOutAlt,
+} from "react-icons/fa";
 import { Link } from "react-router-dom";
 import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
+import { logoutUser } from "../../services/auth";
 import "./topbar.css";
 export const Topbar = () => {
-  const { state } = useContext(AuthContext);
+  const { state, dispatch } = useContext(AuthContext);
   const { user } = state;
+
+  const handleLogout = () => {
+    logoutUser(dispatch);
+  };
 
   return (
     <nav className="navbar fixed-top">
@@ -47,8 +58,13 @@ export const Topbar = () => {
             <span className="icon-badge">1</span>
           </li>
         </ul>
-        <figure className="avatar">
-          <Link to={`/profile/${user?.user_name}`}>
+        <article className="dropdown">
+          <figure
+            className="avatar dropdown-toggle"
+            id="profileDropdown"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
             <img
               height={36}
               width={36}
@@ -60,8 +76,46 @@ export const Topbar = () => {
               }
               className="rounded-circle"
             />
-          </Link>
-        </figure>
+          </figure>
+          <ul
+            className="dropdown-menu dropdown-menu-end gap-1"
+            aria-labelledby="profileDropdown"
+          >
+            <li>
+              <Link
+                className="dropdown-item"
+                to={`/profile/${user?.user_name} `}
+              >
+                <div className="d-flex align-content-center">
+                  <img
+                    height={30}
+                    width={30}
+                    alt="avatar"
+                    src={
+                      user?.picture
+                        ? `${config.api_url}/images/avatars/${user.picture}`
+                        : `${config.api_url}/images/no-avatar.png`
+                    }
+                    className="rounded-circle me-2"
+                  />
+                  <span className="fw-bold text-capitalize">
+                    {user?.first_name} {user?.last_name}
+                  </span>
+                </div>
+              </Link>
+            </li>
+            <li className="">
+              <button
+                type="button"
+                className="dropdown-item d-flex justify-content-between"
+                onClick={handleLogout}
+              >
+                <span className="text-secondary fw-medium">Logout</span>
+                <FaSignOutAlt className="ms-2" />
+              </button>
+            </li>
+          </ul>
+        </article>
       </section>
     </nav>
   );

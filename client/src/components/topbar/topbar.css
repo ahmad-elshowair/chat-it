@@ -1,80 +1,88 @@
 .navbar {
-	padding: 0;
-	box-shadow: 0 0 2px var(--main-color);
-	backdrop-filter: blur(10px);
+  padding: 0;
+  box-shadow: 0 0 2px var(--main-color);
+  backdrop-filter: blur(10px);
 }
 .navbar-brand,
 .navbar-nav .nav-item,
 .avatar img {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 .navbar-brand {
-	flex: 3;
-	color: var(--main-color);
+  flex: 3;
+  color: var(--main-color);
 }
 
 .nav-search {
-	border-radius: 30px;
-	flex: 5;
-	display: flex;
-	align-items: center;
-	padding: 5px;
-	background-color: var(--gray-color-2);
+  border-radius: 30px;
+  flex: 5;
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  background-color: var(--gray-color-2);
 }
 
 .nav-search svg {
-	font-size: 20px;
-	margin-right: 20px;
-	color: #998e80;
+  font-size: 20px;
+  margin-right: 20px;
+  color: #998e80;
 }
 
 .nav-search .form-control {
-	border: none;
-	border-radius: 0;
-	background: transparent;
-	padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .nav-search .form-control:focus {
-	outline: none;
-	box-shadow: none;
+  outline: none;
+  box-shadow: none;
 }
 .navbar-nav {
-	flex: 2;
-	display: flex;
-	flex-direction: row;
-	justify-content: space-evenly;
-}
-
-.avatar {
-	flex: 2;
-	display: flex;
-	justify-content: flex-end;
-	margin: 0;
+  flex: 2;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
 }
 
 .avatar img {
-	border: 1px solid var(--main-color);
-	padding: 1px;
-	object-fit: cover;
+  border: 1px solid var(--main-color);
+  padding: 1px;
+  object-fit: cover;
 }
 
 .navbar-nav .nav-item {
-	position: relative;
+  position: relative;
 }
 .icon-badge {
-	font-size: 12px;
-	position: absolute;
-	top: 0;
-	left: 10px;
-	background-color: var(--main-color);
-	border-radius: 50%;
-	width: 15px;
-	height: 15px;
-	text-align: center;
+  font-size: 12px;
+  position: absolute;
+  top: 0;
+  left: 10px;
+  background-color: var(--main-color);
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  text-align: center;
 }
 
 .navbar-nav .nav-item svg {
-	font-size: 25px;
+  font-size: 25px;
+}
+
+.dropdown-menu {
+  border: 1px solid var(--main-color);
+}
+.dropdown-menu .dropdown-item {
+  padding: 10px 20px;
+}
+
+.dropdown-menu .dropdown-item svg {
+  color: var(--main-color);
+}
+
+.dropdown-toggle::after {
+  display: none;
 }

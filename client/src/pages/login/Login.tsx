@@ -27,10 +27,12 @@ export const Login = () => {
       console.log(error);
     }
   };
-  console.log(state.errors);
 
+  // IF ERROR EXISTS, LOG THEM TO THE CONSOLE.
+  if (state.errors) {
+    console.log(state.errors);
+  }
   const imageUrl = `${config.api_url}/images/chat_it.png`;
-
   const [showPassword, setShowPassword] = useState(false);
 
   const togglePasswordVisibility = () => {
