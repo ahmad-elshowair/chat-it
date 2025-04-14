@@ -17,7 +17,7 @@ export default {
   pg_database: process.env.PG_DATABASE,
 
   // Authentication security settings
-  jwt_secret: String(process.env.JWT_SECRET),
+  jwt_access_secret: String(process.env.JWT_ACCESS_SECRET),
   jwt_refresh_secret: String(process.env.JWT_REFRESH_SECRET),
 
   // Password hashing settings
@@ -25,8 +25,8 @@ export default {
   pepper: process.env.PEPPER,
 
   // Token expiration settings (in minutes/days)
-  access_token_expiry: (process.env.ACCESS_TOKEN_EXPIRY || "15m") as "15m",
-  refresh_token_expiry: (process.env.REFRESH_TOKEN_EXPIRY || "7d") as "7d",
+  access_token_expiry: process.env.ACCESS_TOKEN_EXPIRY as "15m",
+  refresh_token_expiry: process.env.REFRESH_TOKEN_EXPIRY as "7d",
 
   // Enhanced security features
   csrf_protection_enabled: process.env.CSRF_PROTECTION_ENABLED !== "false",

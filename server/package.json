@@ -17,17 +17,17 @@
 		"cors": "^2.8.5",
 		"db-migrate": "^0.11.14",
 		"db-migrate-pg": "^1.5.2",
-		"dotenv": "^16.4.7",
+		"dotenv": "^16.5.0",
 		"express": "^4.21.2",
 		"express-validator": "^7.2.1",
 		"helmet": "^7.2.0",
 		"jsonwebtoken": "^9.0.2",
 		"morgan": "^1.10.0",
 		"multer": "1.4.5-lts.1",
-		"nanoid": "^5.1.3",
+		"nanoid": "^5.1.5",
 		"node-cron": "^3.0.3",
-		"pg": "^8.13.3",
-		"validator": "^13.12.0"
+		"pg": "^8.14.1",
+		"validator": "^13.15.0"
 	},
 	"devDependencies": {
 		"@types/cookie-parser": "^1.4.8",
@@ -36,12 +36,12 @@
 		"@types/jsonwebtoken": "^9.0.9",
 		"@types/morgan": "^1.9.9",
 		"@types/multer": "^1.4.12",
-		"@types/node": "^20.17.19",
+		"@types/node": "^20.17.30",
 		"@types/node-cron": "^3.0.11",
-		"@types/pg": "^8.11.11",
-		"@types/validator": "^13.12.2",
+		"@types/pg": "^8.11.12",
+		"@types/validator": "^13.12.3",
 		"nodemon": "^3.1.9",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.7.3"
+		"typescript": "^5.8.3"
 	}
 }

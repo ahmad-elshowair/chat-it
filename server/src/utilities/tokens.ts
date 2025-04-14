@@ -192,7 +192,7 @@ export const clearAuthCookies = (res: Response) => {
 
 export const verifyAccessToken = (token: string): IUserPayload | null => {
   try {
-    const decoded = jwt.verify(token, config.jwt_secret) as JwtPayload;
+    const decoded = jwt.verify(token, config.jwt_access_secret) as JwtPayload;
 
     // ADDITIONAL VALIDATION CHECKS.
     if (!decoded.id || !decoded.fingerprint) {

@@ -65,7 +65,7 @@ const authorizeUser = (
         );
         return res.status(403).json({
           message: "Authentication Failed",
-          error: "Security validation failed. Please try logging in again.",
+          error: "Fingerprint Mismatch!",
         });
       }
     }

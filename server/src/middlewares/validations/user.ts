@@ -61,7 +61,7 @@ const checkPassword: ValidationChain = check("password").custom(
         error instanceof Error &&
         error.message !== " EMAIL DOES NOT EXIST !"
       ) {
-        throw new Error(`${(error as Error).message}!`);
+        throw new Error(`Check Password: ${(error as Error).message}!`);
       }
     } finally {
       connection.release();

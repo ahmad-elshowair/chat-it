@@ -36,7 +36,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
     // Generate access token - short lived (15 minutes)
     const access_token = generateToken(
       payload,
-      config.jwt_secret,
+      config.jwt_access_secret,
       config.access_token_expiry
     );
 
@@ -107,7 +107,7 @@ const login = async (
     // Generate access token - short lived (15 minutes)
     const access_token = generateToken(
       payload,
-      config.jwt_secret,
+      config.jwt_access_secret,
       config.access_token_expiry
     );
     // Generate refresh token - long lived (7 days)
@@ -168,11 +168,13 @@ const refreshToken = async (req: Request, res: Response) => {
 
   // Reject if no refresh token in cookies
   if (!refreshToken) {
+    console.error(`[AUTH] Refresh token missing - IP: ${req.ip}`);
     return res.status(401).json({ message: "Refresh Token is Missing!" });
   }
 
   // Reject if no fingerprint in request
-  if (!fingerprint) {
+  if (!fingerprint || typeof fingerprint !== "string") {
+    console.error(`[AUTH] Fingerprint missing or invalid - IP: ${req.ip}`);
     return res.status(401).json({ message: "Fingerprint is Missing!" });
   }
 
@@ -221,7 +223,7 @@ const refreshToken = async (req: Request, res: Response) => {
   // Generate new Access Token.
   const newAccessToken = generateToken(
     payload,
-    config.jwt_secret,
+    config.jwt_access_secret,
     config.access_token_expiry
   );
 
@@ -283,11 +285,17 @@ const refreshToken = async (req: Request, res: Response) => {
 
 const logout = async (req: ICustomRequest, res: Response) => {
   try {
-    if (req.user?.id) {
+    const userId = req.user?.id;
+    console.log(
+      `[AUTH] Logout attempt - User: ${userId || "unknown"}, IP: ${
+        req.ip
+      }, Time: ${new Date().toISOString()}`
+    );
+    if (userId) {
       // Update online status to false if user ID is available
-      await user_model.updateOnlineStatus(req.user.id, false);
+      await user_model.updateOnlineStatus(userId, false);
       // Revoke all refresh tokens for this user
-      await refresh_token_model.revokeAllUserTokens(req.user.id);
+      await refresh_token_model.revokeAllUserTokens(userId);
     }
 
     // Clear all auth cookies
@@ -410,7 +418,7 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
       // GENERATE NEW TOKEN.
       const newAccessToken = generateToken(
         payload,
-        config.jwt_secret,
+        config.jwt_access_secret,
         config.access_token_expiry
       );
       const newRefreshToken = generateToken(
