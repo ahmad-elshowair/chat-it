@@ -26,6 +26,12 @@ export const Profile = () => {
 
   // Access current user from auth state
   const currentUser = state.user;
+  const csrfToken = state.csrf;
+  const headers: Record<string, string> = useMemo(() => {
+    return {
+      "X-CSRF-Token": csrfToken!,
+    };
+  }, [csrfToken]);
 
   // CHECK AUTHENTICATION STATUS BEFORE MAKING AUTHENTICATED REQUESTS.
   useEffect(() => {
@@ -56,7 +62,9 @@ export const Profile = () => {
 
     try {
       setIsLoading(true);
-      const response = await api.get(`/users/${user_name}`);
+      const response = await api.get(`/users/${user_name}`, {
+        headers,
+      });
       setUser(response.data);
     } catch (error) {
       console.error(`Error Fetching user: ${error}`);
@@ -70,7 +78,7 @@ export const Profile = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user_name, authChecked]);
+  }, [user_name, authChecked, headers]);
 
   const checkIsFollowed = useCallback(async () => {
     if (!user?.user_id || !authChecked || !currentUser || followCheckDone) {
@@ -87,6 +95,7 @@ export const Profile = () => {
       // MAKE SURE withCredentials IS SET TO TRUE TO INCLUDE COOKIES IN THE REQUEST.
       const response = await api.get(`/follows/is-followed/${user.user_id}`, {
         withCredentials: true,
+        headers,
       });
       setIsFollowed(response.data);
       setFollowCheckDone(true);
@@ -95,7 +104,7 @@ export const Profile = () => {
       setIsFollowed(false);
       setFollowCheckDone(true);
     }
-  }, [currentUser, authChecked, user, followCheckDone]);
+  }, [currentUser, authChecked, user, followCheckDone, headers]);
 
   const handleFollow = useCallback(async () => {
     if (!user?.user_id) {
@@ -110,6 +119,7 @@ export const Profile = () => {
         await api.delete("/follows/unfollow", {
           data: { user_id_followed: user.user_id },
           withCredentials: true,
+          headers,
         });
 
         setIsFollowed(false);
@@ -132,7 +142,7 @@ export const Profile = () => {
         await api.post(
           "/follows/follow",
           { user_id_followed: user.user_id },
-          { withCredentials: true }
+          { withCredentials: true, headers }
         );
 
         setIsFollowed(true);
@@ -158,7 +168,7 @@ export const Profile = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isFollowed, user?.user_id]);
+  }, [isFollowed, user?.user_id, headers]);
 
   // FETCH USER DATA WHEN COMPONENT MOUNTS OR USER_NAME CHANGES
   useEffect(() => {
