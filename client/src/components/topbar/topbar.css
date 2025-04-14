@@ -79,6 +79,10 @@
   padding: 10px 20px;
 }
 
+.dropdown-menu .dropdown-item:hover {
+  background-color: var(--bs-gray-200);
+}
+
 .dropdown-menu .dropdown-item svg {
   color: var(--main-color);
 }

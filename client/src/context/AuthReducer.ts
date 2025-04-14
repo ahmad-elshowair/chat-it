@@ -16,7 +16,6 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
       newState = {
         ...state,
         loading: true,
-        errors: null,
       };
       break;
     case "SUCCEEDED":
@@ -28,7 +27,6 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
         },
         fingerprint: action.payload.fingerprint || state.fingerprint,
         csrf: action.payload.csrf || state.csrf,
-        errors: null,
         authChecked: true,
       };
       break;
@@ -57,18 +55,13 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
       break;
     case "LOGOUT":
       newState = {
-        user: null,
-        loading: false,
-        errors: null,
-        fingerprint: undefined,
-        csrf: undefined,
+        ...state,
         authChecked: true,
       };
       return newState;
     case "CHECK_AUTH_STATUS":
       newState = {
         ...state,
-        loading: false,
         authChecked: true,
         ...(action.payload === false && state.user ? { user: null } : {}),
       };

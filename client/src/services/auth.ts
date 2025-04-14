@@ -1,17 +1,19 @@
 import axios from "axios";
 import { Dispatch } from "react";
 import api from "../api/axiosInstance";
+import configs from "../configs";
 import {
   AuthAction,
   LoginCredentials,
   RegisterCredentials,
 } from "../types/auth";
 import {
-  removeCsrfFromSessionStorage,
-  removeFingerprintFromSessionStorage,
-  setCsrfInSessionStorage,
-  setFingerprintInSessionStorage,
-} from "./session";
+  clearAuthStorage,
+  getFingerprint,
+  setCsrf,
+  setFingerprint,
+  setTokenExpiration,
+} from "./storage";
 
 export const registerUser = async (
   userData: RegisterCredentials,
@@ -35,8 +37,9 @@ export const registerUser = async (
     }
 
     // STORE TOKENS IN SESSION STORAGE.
-    setFingerprintInSessionStorage(response.data.fingerprint);
-    setCsrfInSessionStorage(response.data.csrf);
+    setFingerprint(response.data.fingerprint);
+    setCsrf(response.data.csrf);
+    setTokenExpiration(configs.access_token_expiry);
 
     dispatch({ type: "SUCCEEDED", payload: { ...response.data } });
   } catch (error) {
@@ -69,26 +72,40 @@ export const loginUser = async (
       withCredentials: true,
     });
 
+    const { csrf, fingerprint, user } = response.data;
     // CHECK IF SECURITY TOKENS ARE PRESENT WHEN THE RESPONSE IS RECEIVED.
-    if (!response.data.csrf) {
+    if (!csrf) {
       console.error("CSRF TOKEN NOT FOUND IN LOGIN RESPONSE");
       dispatch({ type: "FAILURE", payload: ["CSRF TOKEN NOT FOUND"] });
       return;
     }
 
-    if (!response.data.fingerprint) {
+    if (!fingerprint) {
       console.error("FINGERPRINT NOT FOUND IN LOGIN RESPONSE");
       dispatch({ type: "FAILURE", payload: ["FINGERPRINT NOT FOUND"] });
       return;
     }
 
     // STORE TOKENS IN SESSION STORAGE.
-    setFingerprintInSessionStorage(response.data.fingerprint);
-    setCsrfInSessionStorage(response.data.csrf);
+    setFingerprint(fingerprint);
+    setCsrf(csrf);
+    setTokenExpiration(configs.access_token_expiry);
 
-    dispatch({ type: "SUCCEEDED", payload: response.data });
+    // Verify fingerprint was successfully stored
+    const storedFingerprint = getFingerprint();
+    if (!storedFingerprint) {
+      console.error("Failed to store fingerprint in localStorage");
+      dispatch({ type: "FAILURE", payload: ["Authentication error occurred"] });
+      return;
+    }
+    const payload = {
+      user,
+      csrf,
+      fingerprint,
+    };
+    dispatch({ type: "SUCCEEDED", payload });
   } catch (error) {
-    let errorMessage: string = "AN UNEXPECTED ERROR WITH LOGIN !";
+    let errorMessage: string = (error as Error).message;
     if (axios.isAxiosError(error) && error.response) {
       if (error.response.status === 400 && error.response.data.errors) {
         const validationErrors = error.response.data.errors.map(
@@ -117,8 +134,7 @@ export const logoutUser = async (dispatch: Dispatch<AuthAction>) => {
       }
     );
     // REMOVE SECURITY TOKENS FROM SESSION STORAGE FOR SECURITY.
-    removeFingerprintFromSessionStorage();
-    removeCsrfFromSessionStorage();
+    clearAuthStorage();
 
     dispatch({ type: "LOGOUT" });
   } catch (error) {
@@ -132,8 +148,7 @@ export const logoutUser = async (dispatch: Dispatch<AuthAction>) => {
       console.error("Unknown error type", error);
     }
     // STILL LOGOUT CLIENT-SIDE EVEN IF THE SERVER FAILS.
-    removeFingerprintFromSessionStorage();
-    removeCsrfFromSessionStorage();
+    clearAuthStorage();
     dispatch({ type: "LOGOUT" });
   }
 };

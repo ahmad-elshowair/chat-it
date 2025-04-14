@@ -1,13 +1,11 @@
 import axios from "axios";
-import config from "../configs";
-import {
-  getCsrfFromSessionStorage,
-  getFingerprintFromSessionStorage,
-} from "../services/session";
+
+import configs from "../configs";
+import { getCsrf, getFingerprint } from "../services/storage";
 import { Store } from "../types/auth";
 
 const api = axios.create({
-  baseURL: config.api_url,
+  baseURL: configs.api_url,
   withCredentials: true,
 });
 
@@ -31,7 +29,7 @@ export const setUpInterceptors = (store: Store) => {
             `Axios Interceptor: Attempting token refresh due to 401 on ${originalRequest.url}`
           );
 
-          const fingerprint = getFingerprintFromSessionStorage();
+          const fingerprint = getFingerprint();
           if (!fingerprint) {
             console.warn(
               "Axios Interceptor: No fingerprint found for refresh request. Logging out."
@@ -43,7 +41,7 @@ export const setUpInterceptors = (store: Store) => {
             "X-Fingerprint": fingerprint,
           };
 
-          const csrfToken = getCsrfFromSessionStorage();
+          const csrfToken = getCsrf();
           if (csrfToken) {
             headers["X-CSRF-Token"] = csrfToken;
           }
@@ -121,6 +119,7 @@ export const setUpInterceptors = (store: Store) => {
       return Promise.reject(error);
     }
   );
+
   return api;
 };
 export default api;

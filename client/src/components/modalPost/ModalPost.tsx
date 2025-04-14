@@ -5,7 +5,8 @@ import { FaPhotoVideo } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosInstance";
-import { getCsrfFromSessionStorage } from "../../services/session";
+import configs from "../../configs";
+import { getCsrf } from "../../services/storage";
 import { TPost } from "../../types/post";
 import "./modalPost.css";
 
@@ -50,7 +51,7 @@ export const ModalPost = ({
   const createPost = async (post: TPost) => {
     try {
       // GET CSRF TOKEN IN REQUEST HEADERS.
-      const csrfToken = getCsrfFromSessionStorage();
+      const csrfToken = getCsrf();
 
       // SET CSRF TOKEN IN REQUEST HEADERS.
       const response = await api.post("/posts/create", post, {
@@ -82,7 +83,9 @@ export const ModalPost = ({
         formDate.append("folder", folder);
 
         const uploadResponse = await api.post("/upload", formDate);
-        imageUrl = `http://localhost:5000/${uploadResponse.data.filePath}`;
+        imageUrl = `${configs.api_url.replace("/api", "")}/${
+          uploadResponse.data.filePath
+        }`;
       }
 
       const post: TPost = {

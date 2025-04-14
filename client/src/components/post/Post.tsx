@@ -6,7 +6,7 @@ import { FaComments, FaEllipsisH, FaRegComment, FaTimes } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import api from "../../api/axiosInstance";
 import config from "../../configs";
-import { getCsrfFromSessionStorage } from "../../services/session";
+import { getCsrf } from "../../services/storage";
 import { TPost } from "../../types/post";
 import { TUser } from "../../types/user";
 import "./post.css";
@@ -58,7 +58,7 @@ export const Post = ({
 
     try {
       // GET CSRF FROM SESSION STORAGE.
-      const csrfToken = getCsrfFromSessionStorage();
+      const csrfToken = getCsrf();
 
       await api.post(
         `/posts/like/${post_id}`,

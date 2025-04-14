@@ -1,8 +1,8 @@
 import { CircularProgress } from "@mui/material";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../services/auth";
@@ -11,6 +11,18 @@ import "./login.css";
 
 export const Login = () => {
   const { state, dispatch } = useContext(AuthContext);
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  useEffect(() => {
+    if (state.user) {
+      console.log("User authenticated, redirecting to home");
+      navigate("/");
+    }
+  }, [state.user, navigate]);
 
   const {
     register,
@@ -24,20 +36,14 @@ export const Login = () => {
     try {
       await loginUser(loginData, dispatch);
     } catch (error) {
-      console.log(error);
+      console.error("Login error:", error);
     }
   };
-
   // IF ERROR EXISTS, LOG THEM TO THE CONSOLE.
-  if (state.errors) {
-    console.log(state.errors);
-  }
+  // if (state.errors) {
+  //   console.error(state.errors);
+  // }
   const imageUrl = `${config.api_url}/images/chat_it.png`;
-  const [showPassword, setShowPassword] = useState(false);
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
 
   return (
     <section className="vh-100 py-5">
