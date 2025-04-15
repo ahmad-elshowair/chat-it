@@ -1,3 +1,5 @@
+import configs from "../configs";
+
 export const setFingerprint = (fingerprint: string): void => {
   if (fingerprint) {
     localStorage.setItem("fingerprint", fingerprint);
@@ -22,6 +24,62 @@ export const getCsrf = (): string | null => {
 
 export const removeCsrf = (): void => {
   localStorage.removeItem("csrf");
+};
+
+export const getFingerprintFromCookie = (): string | null => {
+  const cookieName =
+    configs.node_env === "development"
+      ? "x-fingerprint"
+      : "_Host-x-fingerprint";
+  const cookies = document.cookie.split("; ");
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split("=");
+    if (name === cookieName) {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+};
+
+export const getCsrfFromCookie = (): string | null => {
+  const cookieName =
+    configs.node_env === "development" ? "csrf_token" : "_Secure-csrf_token";
+  const cookies = document.cookie.split("; ");
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split("=");
+    if (name === cookieName) {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+};
+
+export const syncFingerprintFromCookies = (): boolean => {
+  const cookieFingerprint = getFingerprintFromCookie();
+  const localFingerprint = getFingerprint();
+  if (cookieFingerprint && cookieFingerprint !== localFingerprint) {
+    console.info("Synchronizing fingerprint from cookie to localStorage");
+    setFingerprint(cookieFingerprint);
+    return true;
+  }
+  return false;
+};
+
+export const syncCsrfFromCookies = (): boolean => {
+  const cookieCsrf = getCsrfFromCookie();
+  const localCsrf = getCsrf();
+  if (cookieCsrf && cookieCsrf !== localCsrf) {
+    console.info("Synchronizing CSRF from cookie to localStorage");
+    setCsrf(cookieCsrf);
+    return true;
+  }
+  return false;
+};
+
+export const syncAllAuthTokensFromCookies = (): boolean => {
+  const syncFingerprint = syncFingerprintFromCookies();
+  const syncCsrf = syncCsrfFromCookies();
+  return syncFingerprint || syncCsrf;
 };
 
 const parseExpiryTime = (expireString: string) => {

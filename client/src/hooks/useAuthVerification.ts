@@ -1,14 +1,16 @@
 import axios from "axios";
 import { useCallback, useContext } from "react";
 import api from "../api/axiosInstance";
-import config from "../configs";
+import configs from "../configs";
 import { AuthContext } from "../context/AuthContext";
 import {
+  clearAuthStorage,
   getCsrf,
   getFingerprint,
   isTokenExpired,
   setCsrf,
   setFingerprint,
+  syncAllAuthTokensFromCookies,
 } from "../services/storage";
 
 const useAuthVerification = () => {
@@ -16,18 +18,21 @@ const useAuthVerification = () => {
 
   const refreshTokens = useCallback(async () => {
     try {
+      // SYNC ALL AUTH TOKENS FROM COOKIES TO LOCAL STORAGE.
+      syncAllAuthTokensFromCookies();
+
       // GET fingerprint FROM SESSION STORAGE FOR TOKEN VALIDATION
-      const fingerprint = getFingerprint();
+      const storedFingerprint = getFingerprint();
 
       // IF NO fingerprint IS AVAILABLE, WE CAN'T REFRESH TOKENS.
-      if (!fingerprint) {
+      if (!storedFingerprint) {
         console.warn("No Fingerprint available for token refresh");
         return false;
       }
 
       // SET UP HEADER WITH fingerprint  CSRF TOKEN IF AVAILABLE.
       const headers: Record<string, string> = {
-        "X-Fingerprint": fingerprint,
+        "X-Fingerprint": storedFingerprint,
       };
 
       const csrfToken = getCsrf();
@@ -37,36 +42,52 @@ const useAuthVerification = () => {
 
       // MAKE A REFRESH TOKEN REQUEST WITH PROPER CREDENTIALS, AND HEADERS.
       console.log("Attempting to refresh auth tokens...");
-      const refreshResult = await api.post(
-        "/auth/refresh-token",
-        {},
-        { withCredentials: true, headers, timeout: 10000 }
-      );
+      try {
+        const refreshResult = await api.post(
+          "/auth/refresh-token",
+          {},
+          { withCredentials: true, headers, timeout: 10000 }
+        );
 
-      // IF WE GOT A VALID RESPONSE WITH USER DATA,
-      if (refreshResult?.data?.user) {
-        console.log("Token refresh successfully!");
-        // STORE SECURITY TOKENS IN SESSION STORAGE.
-        if (refreshResult.data.fingerprint) {
-          setFingerprint(refreshResult.data.fingerprint);
+        const { user, fingerprint, csrf } = refreshResult?.data || {};
+        // IF WE GOT A VALID RESPONSE WITH USER DATA,
+        if (user) {
+          console.log("Token refresh successfully!");
+          // STORE SECURITY TOKENS IN SESSION STORAGE.
+          if (fingerprint) {
+            setFingerprint(fingerprint);
+          }
+
+          if (csrf) {
+            setCsrf(csrf);
+          }
+
+          // UPDATE AUTH STATE WITH NEW USER INFO.
+          dispatch({
+            type: "SUCCEEDED",
+            payload: {
+              user,
+              fingerprint,
+              csrf,
+            },
+          });
+          return true;
         }
-
-        if (refreshResult.data.csrf) {
-          setCsrf(refreshResult.data.csrf);
+        return false;
+      } catch (refreshError) {
+        if (axios.isAxiosError(refreshError)) {
+          if (refreshError.response?.status === 403) {
+            console.error("Token validation failed clearing credentials");
+            clearAuthStorage();
+            dispatch({ type: "CHECK_AUTH_STATUS", payload: false });
+          }
+          console.error("Status code:", refreshError.response?.status);
+          console.error("Response data:", refreshError.response?.data);
+        } else {
+          console.error("Error message:", (refreshError as Error).message);
         }
-
-        // UPDATE AUTH STATE WITH NEW USER INFO.
-        dispatch({
-          type: "SUCCEEDED",
-          payload: {
-            user: refreshResult.data.user,
-            fingerprint: refreshResult.data.fingerprint,
-            csrf: refreshResult.data.csrf,
-          },
-        });
-        return true;
+        return false;
       }
-      return false;
     } catch (error) {
       // DETAILED ERROR LOGGING.
       if (axios.isAxiosError(error)) {
@@ -81,6 +102,9 @@ const useAuthVerification = () => {
 
   const checkAuthStatus = useCallback(async () => {
     try {
+      // SYNC ALL AUTH TOKENS FROM COOKIES TO LOCAL STORAGE.
+      syncAllAuthTokensFromCookies();
+
       console.log("Checking authentication status...");
       const response = await api.get("/auth/is-authenticated", {
         timeout: 10000,
@@ -151,59 +175,64 @@ const useAuthVerification = () => {
       dispatch({ type: "CHECK_AUTH_STATUS", payload: false });
     }, 10000);
     try {
+      // SYNC ALL AUTH TOKENS FROM COOKIES TO LOCAL STORAGE.
+      syncAllAuthTokensFromCookies();
+
       // CHECK IF fingerprint EXISTS.
-      let fingerprint = getFingerprint();
+      let storedFingerprint = getFingerprint();
       let retryCount = 0;
       const maxRetries = 3;
       const retryDelay = 300;
 
-      while (!fingerprint && retryCount < maxRetries) {
+      while (!storedFingerprint && retryCount < maxRetries) {
         console.warn(
           `Retry ${retryCount + 1}/${maxRetries} to get fingerprint...`
         );
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
-        fingerprint = getFingerprint();
+        storedFingerprint = getFingerprint();
         retryCount++;
       }
 
-      if (!fingerprint) {
+      if (!storedFingerprint) {
         console.error("Failed to retrieve fingerprint after retries");
+        clearAuthStorage();
         dispatch({ type: "CHECK_AUTH_STATUS", payload: false });
         return;
       }
 
+      try {
+        const authStatus = await checkAuthStatus().catch(() => false);
+        if (authStatus) {
+          return;
+        }
+      } catch (error) {
+        console.log(
+          "Direct auth check failed, attempting token refresh:",
+          error
+        );
+      }
+
       if (isTokenExpired()) {
-        // TOKEN EXPIRED, TRY REFRESH.
+        console.info("Token Expired, attempting refresh");
         const refreshResult = await refreshTokens();
         if (!refreshResult) {
+          clearAuthStorage();
           dispatch({ type: "CHECK_AUTH_STATUS", payload: false });
         }
         return;
       }
 
-      // TOKEN NOT EXPIRED, CHECK COOKIES BEFORE TRYING REFRESH.
       const accessTokenName =
-        config.node_env === "development"
+        configs.node_env === "development"
           ? "access_token"
-          : "__Host-access_token";
+          : "_Host-access_token";
 
       const accessToken = document.cookie.includes(accessTokenName);
-
-      if (accessToken) {
-        // TRY CHECK AUTH STATUS DIRECTLY FIRST.
-        const authStatus = await checkAuthStatus().catch(() => false);
-
-        // ONLY ATTEMPT REFRESH IF DIRECT CHECK FAILS.
-        if (!authStatus) {
-          const refreshResult = await refreshTokens();
-          if (!refreshResult) {
-            dispatch({ type: "CHECK_AUTH_STATUS", payload: false });
-          }
-        }
-      } else {
-        // NO ACCESS TOKE, TRY REFRESH DIRECTLY.
+      if (!accessToken) {
+        console.warn("Access token not found in cookies, attempting refresh");
         const refreshResult = await refreshTokens();
         if (!refreshResult) {
+          clearAuthStorage();
           dispatch({ type: "CHECK_AUTH_STATUS", payload: false });
         }
       }
