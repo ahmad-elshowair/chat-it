@@ -318,7 +318,7 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
       // FETCH USER DATA.
       const user = await user_model.getUserById(req.user.id!);
       return res.status(200).json({
-        message: "Auth Status checked Successfully!",
+        message: "User Successfully authenticated via access token",
         authenticated: true,
         user: {
           user_id: user.user_id,
@@ -345,7 +345,7 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
     // IF NO REFRESH TOKEN, USER US NOT AUTHENTICATED.
     if (!refreshToken) {
       return res.status(200).json({
-        message: "Auth status checked successfully!",
+        message: "Authentication failed: No refresh token found!",
         authenticated: false,
       });
     }
@@ -356,7 +356,7 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
       // CLEAR COOKIES ON INVALID TOKEN.
       clearAuthCookies(res);
       return res.status(200).json({
-        message: "Auth status checked successfully!",
+        message: "Authentication failed: Invalid or expired refresh token!",
         authenticated: false,
       });
     }
@@ -374,7 +374,7 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
     if (decodedUser.fingerprint && !fingerprint) {
       clearAuthCookies(res);
       return res.status(200).json({
-        message: "Auth status checked successfully!",
+        message: "Authentication failed: Missing fingerprint in request!",
         authenticated: false,
       });
     }
@@ -390,7 +390,7 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
         );
         await refresh_token_model.revokeAllUserTokens(decodedUser.id!);
         return res.status(200).json({
-          message: "Auth status checked successfully!",
+          message: "Authentication failed: Fingerprint does not match!",
           authenticated: false,
         });
       }
@@ -404,7 +404,8 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
       ) {
         clearAuthCookies(res);
         return res.status(200).json({
-          message: "Auth status checked successfully!",
+          message:
+            "Authentication failed: Token has been revoked or not found in database!",
           authenticated: false,
         });
       }
@@ -451,7 +452,7 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
 
         // RETURN USER DATA.
         return res.status(200).json({
-          message: "Auth status checked successfully!",
+          message: "Authentication successful: Tokens refreshed and rotated!",
           authenticated: true,
           user: {
             user_id: user.user_id,
@@ -473,7 +474,7 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
         clearAuthCookies(res);
         console.error("Error fetching user data: ", error);
         return res.status(200).json({
-          message: "Auth status checked successfully!",
+          message: "Authentication failed: Error fetching user data!",
           authenticated: false,
         });
       }
@@ -481,13 +482,13 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
 
     //  NO fingerprint BUT TOKEN IS VALID - UNUSUAL CASE.
     return res.status(200).json({
-      message: "Auth status checked successfully!",
+      message: "Authentication failed: Valid token but NO fingerprint found!",
       authenticated: false,
     });
   } catch (error) {
     console.error("Check Auth Status Error:", error);
     res.status(500).json({
-      message: "Error during check auth status",
+      message: "Server error during authentication check",
       error: (error as Error).message,
     });
   }
