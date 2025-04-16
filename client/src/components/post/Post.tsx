@@ -1,17 +1,19 @@
 import { AxiosError } from "axios";
-import { useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { AiFillLike } from "react-icons/ai";
 import { BiLike, BiSolidLike } from "react-icons/bi";
-import { FaComments, FaEllipsisH, FaRegComment, FaTimes } from "react-icons/fa";
+import { FaComments, FaRegComment, FaTrash } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import api from "../../api/axiosInstance";
 import config from "../../configs";
+import useAuthState from "../../hooks/useAuthState";
 import { getCsrf } from "../../services/storage";
 import { TPost } from "../../types/post";
 import { TUser } from "../../types/user";
+import DeletePostModal from "../deletePostModal/DeletePostModal";
 import "./post.css";
 
-export const Post = ({
+export const Post: FC<TPost> = ({
   user_name,
   description,
   image,
@@ -19,8 +21,14 @@ export const Post = ({
   number_of_likes,
   updated_at,
   post_id,
-}: TPost) => {
+}) => {
   const [user, setUser] = useState<TUser | null>(null);
+  const [likeState, setLikeState] = useState({
+    isLiked: false,
+    likes: number_of_likes,
+  });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { user: currentUser } = useAuthState();
 
   useEffect(() => {
     const fetchAUser = async () => {
@@ -42,11 +50,6 @@ export const Post = ({
     hour: "numeric",
     minute: "numeric",
     hour12: false,
-  });
-
-  const [likeState, setLikeState] = useState({
-    isLiked: false,
-    likes: number_of_likes,
   });
 
   const likeHandler = async () => {
@@ -115,8 +118,15 @@ export const Post = ({
             </div>
           </div>
           <div className="post-header-option-bars">
-            <FaEllipsisH className="post-header-option-bars-icon" />
-            <FaTimes className="post-header-option-bars-icon" />
+            {currentUser?.user_id === user?.user_id && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setShowDeleteModal(true)}
+              >
+                <FaTrash className="post-header-option-bars-icon text-warning" />
+              </button>
+            )}
           </div>
         </article>
         <article className="post-body">
@@ -160,6 +170,11 @@ export const Post = ({
           </div>
         </article>
       </div>
+      <DeletePostModal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        post_id={post_id}
+      />
     </section>
   );
 };

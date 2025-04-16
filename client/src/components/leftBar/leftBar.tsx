@@ -14,7 +14,7 @@ import { TUser } from "../../types/user";
 import { Friend } from "../friend/Friend";
 import "./leftBar.css";
 
-export const LeftBar = () => {
+const LeftBar = () => {
   const { user: currentUser } = useContext(AuthContext).state;
   const [users, setUsers] = useState<TUser[]>([]);
 
@@ -81,3 +81,4 @@ export const LeftBar = () => {
     </aside>
   );
 };
+export default LeftBar;
