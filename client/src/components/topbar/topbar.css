@@ -72,9 +72,6 @@
   font-size: 25px;
 }
 
-.dropdown-menu {
-  border: 1px solid var(--main-color);
-}
 .dropdown-menu .dropdown-item {
   padding: 10px 20px;
 }

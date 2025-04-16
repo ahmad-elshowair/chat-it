@@ -78,7 +78,7 @@ export const Topbar = () => {
             />
           </figure>
           <ul
-            className="dropdown-menu dropdown-menu-end gap-1"
+            className="dropdown-menu shadow-sm border-0 dropdown-menu-end gap-1"
             aria-labelledby="profileDropdown"
           >
             <li>
