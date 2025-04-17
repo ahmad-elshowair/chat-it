@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
 import FollowService from "../models/follow";
 
@@ -71,7 +71,7 @@ const getNumberOfFollowers = async (req: ICustomRequest, res: Response) => {
   }
 };
 
-const getFriends = async (req: ICustomRequest, res: Response) => {
+const getFriends = async (req: Request, res: Response) => {
   const user_id = req.params.user_id;
   if (!user_id) {
     return res.status(400).json({

@@ -184,8 +184,8 @@ class UserModel {
 	  	UPDATE users
 			SET is_online = ($1),
 			updated_at = NOW()
-		WHERE user_id = ($2)
-		RETURNING *`;
+		  WHERE user_id = ($2)
+		  RETURNING *`;
 
       // execute the query
       const updateOnlineStatus: QueryResult<TUser> = await connection.query(
@@ -196,6 +196,8 @@ class UserModel {
         throw new Error("THIS USER IS NOT EXIST !");
       }
       await connection.query("COMMIT");
+      console.log(`[AUTH] user: ${user_id} online status set to: ${is_online}`);
+
       // return the user
       return updateOnlineStatus.rows[0];
     } catch (error) {

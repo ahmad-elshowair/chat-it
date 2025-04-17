@@ -154,18 +154,19 @@ export const clearAuthCookies = (res: Response) => {
     httpOnly: true,
     sameSite: "strict" as const,
     secure: config.node_env === "production",
+    path: "/",
   };
 
   // CLEAR COOKIES BASE ON ENVIRONMENT.
   if (config.node_env === "development") {
-    res.clearCookie("access_token", { ...cookiesOptions, path: "/" });
-    res.clearCookie("refresh_token", { ...cookiesOptions, path: "/" });
+    res.clearCookie("access_token", { ...cookiesOptions });
+    res.clearCookie("refresh_token", { ...cookiesOptions });
     // Clear CSRF token if it exists
     if (config.csrf_protection_enabled) {
-      res.clearCookie("csrf_token", { ...cookiesOptions, path: "/" });
+      res.clearCookie("csrf_token", { ...cookiesOptions });
     }
 
-    res.clearCookie("x-fingerprint", { ...cookiesOptions, path: "/" });
+    res.clearCookie("x-fingerprint", { ...cookiesOptions });
   } else {
     res.clearCookie("__Host-access_token", {
       ...cookiesOptions,
@@ -186,7 +187,7 @@ export const clearAuthCookies = (res: Response) => {
       });
     }
 
-    res.clearCookie("__Host-x-fingerprint", { ...cookiesOptions, path: "/" });
+    res.clearCookie("__Host-x-fingerprint", { ...cookiesOptions });
   }
 };
 

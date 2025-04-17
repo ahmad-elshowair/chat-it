@@ -286,16 +286,30 @@ const refreshToken = async (req: Request, res: Response) => {
 const logout = async (req: ICustomRequest, res: Response) => {
   try {
     const userId = req.user?.id;
-    console.log(
-      `[AUTH] Logout attempt - User: ${userId || "unknown"}, IP: ${
-        req.ip
-      }, Time: ${new Date().toISOString()}`
-    );
-    if (userId) {
-      // Update online status to false if user ID is available
+
+    // CHECK IF userId EXISTS BEFORE PROCEEDING.
+    if (!userId) {
+      console.error("[AUTH]: User Id is MISSING!");
+      return res.status(401).json({
+        message: "Unauthorized: User ID is missing!",
+      });
+    }
+
+    // Update online status to false if user ID is available
+    try {
       await user_model.updateOnlineStatus(userId, false);
-      // Revoke all refresh tokens for this user
+    } catch (error) {
+      console.warn(`Failed to update online status for user: ${userId}`, error);
+    }
+
+    // Revoke all refresh tokens for this user
+    try {
       await refresh_token_model.revokeAllUserTokens(userId);
+    } catch (error) {
+      console.warn(
+        `Failed to revoke all refresh tokens for user: ${userId}`,
+        error
+      );
     }
 
     // Clear all auth cookies

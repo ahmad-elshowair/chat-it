@@ -9,6 +9,7 @@ import {
 } from "../types/auth";
 import {
   clearAuthStorage,
+  getCsrf,
   getFingerprint,
   setCsrf,
   setFingerprint,
@@ -123,20 +124,25 @@ export const loginUser = async (
 };
 
 export const logoutUser = async (dispatch: Dispatch<AuthAction>) => {
+  dispatch({ type: "START" });
   try {
+    const csrfToken = getCsrf();
     // ENSURE WE'RE USING withCredentials FOR THIS CRITICAL REQUEST.
-    dispatch({ type: "START" });
     await api.post(
       "/auth/logout",
       {},
       {
         withCredentials: true,
+        headers: {
+          "X-CSRF-Token": csrfToken,
+        },
       }
     );
     // REMOVE SECURITY TOKENS FROM SESSION STORAGE FOR SECURITY.
     clearAuthStorage();
 
     dispatch({ type: "LOGOUT" });
+    return true;
   } catch (error) {
     console.error("LOGOUT ERROR: ");
     if (axios.isAxiosError(error)) {
@@ -150,5 +156,6 @@ export const logoutUser = async (dispatch: Dispatch<AuthAction>) => {
     // STILL LOGOUT CLIENT-SIDE EVEN IF THE SERVER FAILS.
     clearAuthStorage();
     dispatch({ type: "LOGOUT" });
+    return false;
   }
 };

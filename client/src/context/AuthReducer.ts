@@ -55,7 +55,7 @@ const AuthReducer = (state: AuthState = initialState, action: AuthAction) => {
       break;
     case "LOGOUT":
       newState = {
-        ...state,
+        ...initialState,
         authChecked: true,
       };
       return newState;
