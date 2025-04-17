@@ -18,22 +18,6 @@ export type TUser = {
   number_of_followings?: number;
   number_of_followers?: number;
 };
-export type TRegisterCredentials = Omit<
-  TUser,
-  | "user_id"
-  | "created_at"
-  | "updated_at"
-  | "picture"
-  | "cover"
-  | "is_admin"
-  | "number_of_followers"
-  | "number_of_followings"
-  | "marital_status"
-  | "home_town"
-  | "city"
-  | "bio"
-  | "is_online"
->;
 
 export type TOnlineFriendProps = {
   user_id?: string;
@@ -49,7 +33,7 @@ export type TProfileRightBarProps = {
   marital_status?: string;
   user_id?: string;
 };
-export type UserPayload = {
+export type TUserPayload = {
   user_id?: string;
   user_name: string;
   email: string;
@@ -65,4 +49,12 @@ export type UserPayload = {
   marital_status?: string;
   access_token: string;
   refresh_token: string;
+};
+
+export type TFriendsCardProps = {
+  user_id?: string;
+  picture?: string;
+  first_name?: string;
+  user_name?: string;
+  is_online?: boolean;
 };

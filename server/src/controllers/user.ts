@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
+import FollowModel from "../models/follow";
 import UserModel from "../models/user";
 
 const user_model = new UserModel();
+const follow_model = new FollowModel();
 
 const fetchAllUsers = async (req: ICustomRequest, res: Response) => {
   try {
@@ -75,10 +77,29 @@ const getUnknownUsers = async (req: ICustomRequest, res: Response) => {
   }
 };
 
+const getFriends = async (req: Request, res: Response) => {
+  const user_id = req.params.user_id;
+  const is_online = req.query.is_online === "true";
+  if (!user_id) {
+    return res.status(400).json({
+      error: "User ID is required",
+    });
+  }
+  try {
+    const friends = await user_model.getFriends(user_id, is_online);
+    res.status(200).json(friends);
+  } catch (error) {
+    res.status(500).json({
+      error: (error as Error).message,
+    });
+  }
+};
+
 export default {
   fetchAllUsers,
   update,
   getUser,
   deleteUser,
   getUnknownUsers,
+  getFriends,
 };

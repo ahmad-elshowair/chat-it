@@ -1,4 +1,4 @@
-import { QueryResult } from "pg";
+import { PoolClient, QueryResult } from "pg";
 import db from "../database/pool";
 import { TUser } from "../types/users";
 import { buildUpdateQuery } from "../utilities/build-update-query";
@@ -175,11 +175,11 @@ class UserModel {
     user_id: string,
     is_online: boolean
   ): Promise<TUser> {
-    // connect to the database
-    const connection = await db.connect();
+    // connect to the database.
+    const connection: PoolClient = await db.connect();
     try {
       await connection.query("BEGIN");
-      // update the online status
+      // update the online status.
       const updateOnlineStatusQuery = `
 	  	UPDATE users
 			SET is_online = ($1),
@@ -207,6 +207,60 @@ class UserModel {
       );
     } finally {
       // release the connection
+      connection.release();
+    }
+  }
+
+  async getFriends(user_id: string, is_online: boolean = false) {
+    // CONNECT TO THE DATABASE.
+    const connection: PoolClient = await db.connect();
+    try {
+      // START TRANSACTION.
+      await connection.query("BEGIN");
+
+      let query = `SELECT 
+								u.user_id,
+								u.user_name,
+								u.first_name,
+								u.last_name,
+								u.picture,
+								u.cover,
+								u.bio,
+								u.marital_status,
+								u.number_of_followers,
+								u.number_of_followings,
+                u.is_online
+							FROM
+								users u
+								JOIN follows f1 ON u.user_id = f1.user_id_followed
+								JOIN follows f2 ON f1.user_id_following = f2.user_id_followed
+							WHERE
+								f1.user_id_following = ($1)
+								AND f2.user_id_following = u.user_id
+								AND u.user_id != ($1)`;
+
+      // CONDITIONALLY ADD ONLINE FILTER.
+      if (is_online) {
+        query += ` AND u.is_online = true`;
+      }
+
+      // ADD ORDERING - SHOW ONLINE FRIENDS FIRST THEN BY UPDATE TIME.
+      query += ` ORDER BY u.is_online DESC, u.updated_at DESC`;
+
+      const result: QueryResult<TUser> = await connection.query(query, [
+        user_id,
+      ]);
+      const friends = result.rows;
+      // COMMIT TRANSACTION.
+      await connection.query("COMMIT");
+
+      return friends;
+    } catch (error) {
+      // ROLLBACK TRANSACTION.
+      await connection.query("ROLLBACK");
+      throw new Error(`get friends model error: ${(error as Error).message}`);
+    } finally {
+      // RELEASE THE CONNECTION
       connection.release();
     }
   }

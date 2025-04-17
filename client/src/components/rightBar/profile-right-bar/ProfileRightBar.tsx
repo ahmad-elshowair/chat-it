@@ -1,7 +1,7 @@
 import { FC, useEffect, useState } from "react";
 import { FaHome, FaMapMarkerAlt, FaRegGrinHearts } from "react-icons/fa";
 import api from "../../../api/axiosInstance";
-import { TProfileRightBarProps, TUser } from "../../../types/user";
+import { TFriendsCardProps, TProfileRightBarProps } from "../../../types/user";
 import { FriendCard } from "./friendCard/FriendCard";
 import "./profileRightBar.css";
 
@@ -12,13 +12,15 @@ export const ProfileRightBar: FC<TProfileRightBarProps> = ({
   home_town,
   marital_status,
 }) => {
-  const [friends, setFriends] = useState<TUser[]>([]);
+  const [friends, setFriends] = useState<TFriendsCardProps[]>([]);
 
   useEffect(() => {
     const getFriends = async () => {
       if (!user_id) return;
       try {
-        const response = await api.get(`/follows/friends/${user_id}`);
+        const response = await api.get(
+          `/users/friends/${user_id}?is_online=false`
+        );
         setFriends(response.data);
       } catch (error) {
         console.error(error);

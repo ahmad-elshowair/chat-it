@@ -1,8 +1,8 @@
 import { Dispatch } from "react";
-import { UserPayload } from "./user";
+import { TUserPayload } from "./user";
 
 export type TAuth = {
-  user: UserPayload;
+  user: TUserPayload;
   access_token: string;
   refresh_token: string;
   fingerprint?: string;
@@ -11,7 +11,7 @@ export type TAuth = {
 
 export type AuthResponse = {
   message?: string;
-  user: UserPayload;
+  user: TUserPayload;
   fingerprint?: string;
   csrf?: string;
   access_token?: string;
@@ -35,7 +35,7 @@ export type AuthAction =
   | {
       type: "REFRESH_TOKEN";
       payload: {
-        user: UserPayload;
+        user: TUserPayload;
         access_token?: string;
         refresh_token?: string;
         fingerprint?: string;
@@ -46,7 +46,7 @@ export type AuthAction =
   | { type: "CHECK_AUTH_STATUS"; payload: boolean };
 
 export type AuthState = {
-  user: UserPayload | null;
+  user: TUserPayload | null;
   loading: boolean;
   errors: string[] | null;
   fingerprint?: string;
