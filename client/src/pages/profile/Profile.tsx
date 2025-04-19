@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axiosInstance";
 import { Feed } from "../../components/feed/Feed";
@@ -7,8 +7,9 @@ import LeftBar from "../../components/leftBar/leftBar";
 import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
 import config from "../../configs";
-import { AuthContext } from "../../context/AuthContext";
+import useAuthState from "../../hooks/useAuthState";
 import useAuthVerification from "../../hooks/useAuthVerification";
+import { getCsrf, syncAllAuthTokensFromCookies } from "../../services/storage";
 import { TUser } from "../../types/user";
 import "./profile.css";
 
@@ -17,16 +18,17 @@ export const Profile = () => {
   const { checkAuthStatus } = useAuthVerification();
   const navigate = useNavigate();
 
-  const { state } = useContext(AuthContext);
+  const { user: currentUser } = useAuthState();
   const [user, setUser] = useState<TUser | null>(null);
   const [isFollowed, setIsFollowed] = useState<boolean>();
   const [isLoading, setIsLoading] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [followCheckDone, setFollowCheckDone] = useState(false);
 
-  // Access current user from auth state
-  const currentUser = state.user;
-  const csrfToken = state.csrf;
+  syncAllAuthTokensFromCookies();
+
+  const csrfToken = getCsrf();
+
   const headers: Record<string, string> = useMemo(() => {
     return {
       "X-CSRF-Token": csrfToken!,
@@ -227,7 +229,7 @@ export const Profile = () => {
                 alt="cover"
               />
             </figure>
-            <div className="profile-info mb-3">
+            <article className="profile-info mb-3">
               <figure className="profile-image-container">
                 <img
                   className="profile-image"
@@ -235,13 +237,13 @@ export const Profile = () => {
                   alt="profile"
                 />
               </figure>
-              <div>
-                <h1 className="profile-info-name">{`${user?.first_name} ${user?.last_name}`}</h1>
+              <section className="d-flex flex-column">
+                <h1 className="profile-info-name m-0">{`${user?.first_name} ${user?.last_name}`}</h1>
                 <span className="profile-info-username">
                   @{user?.user_name}
                 </span>
-              </div>
-              <div className="d-flex gap-3 follow-box">
+              </section>
+              <article className="d-flex gap-3 follow-box">
                 <div className="d-flex flex-column align-items-center">
                   <h6 className="fst-italic fw-bold">followings</h6>
                   <span>{user?.number_of_followings}</span>
@@ -250,12 +252,10 @@ export const Profile = () => {
                   <h6 className="fst-italic fw-bold">followers</h6>
                   <span>{user?.number_of_followers}</span>
                 </div>
-              </div>
+              </article>
               {user?.user_name !== currentUser?.user_name && (
                 <button
-                  className={`btn ${
-                    isFollowed ? "btn-outline-warning fw-bold" : "btn-chat"
-                  }`}
+                  className={`${isFollowed ? "follow-btn" : "btn-chat"}`}
                   onClick={handleFollow}
                   disabled={isLoading}
                 >
@@ -266,7 +266,7 @@ export const Profile = () => {
                     : "Follow"}
                 </button>
               )}
-            </div>
+            </article>
           </section>
           <section className="profile-right-bottom d-flex">
             <Feed user_id={user?.user_id} />

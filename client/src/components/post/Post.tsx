@@ -7,7 +7,11 @@ import { Link } from "react-router-dom";
 import api from "../../api/axiosInstance";
 import config from "../../configs";
 import useAuthState from "../../hooks/useAuthState";
-import { getCsrf } from "../../services/storage";
+import {
+  getCsrf,
+  syncAllAuthTokensFromCookies,
+  syncCsrfFromCookies,
+} from "../../services/storage";
 import { TPost } from "../../types/post";
 import { TUser } from "../../types/user";
 import DeletePostModal from "../deletePostModal/DeletePostModal";
@@ -29,6 +33,38 @@ export const Post: FC<TPost> = ({
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { user: currentUser } = useAuthState();
+
+  useEffect(() => {
+    const checkIfLiked = async () => {
+      if (!currentUser?.user_id || !post_id) return;
+
+      try {
+        syncAllAuthTokensFromCookies();
+        const csrfToken = getCsrf();
+
+        if (!csrfToken) {
+          console.error("CSRF token not found when checking like status");
+          return;
+        }
+
+        const response = await api.get(`/posts/is-liked/${post_id}`, {
+          withCredentials: true,
+          headers: {
+            "X-CSRF-Token": csrfToken,
+          },
+        });
+        if (response.data.isLiked) {
+          setLikeState((prevState) => ({
+            ...prevState,
+            isLiked: true,
+          }));
+        }
+      } catch (error) {
+        console.error(`Failed to check if post is liked: ${error}`);
+      }
+    };
+    checkIfLiked();
+  }, [post_id, currentUser?.user_id]);
 
   useEffect(() => {
     const fetchAUser = async () => {
@@ -60,13 +96,19 @@ export const Post: FC<TPost> = ({
     }));
 
     try {
+      syncAllAuthTokensFromCookies();
       // GET CSRF FROM SESSION STORAGE.
       const csrfToken = getCsrf();
 
+      if (!csrfToken) {
+        console.error("CSRF token not found");
+        throw new Error("Missing CSRF token");
+      }
       await api.post(
         `/posts/like/${post_id}`,
         {},
         {
+          withCredentials: true,
           headers: {
             "X-CSRF-Token": csrfToken,
           },
@@ -78,6 +120,36 @@ export const Post: FC<TPost> = ({
         console.error("Error data:", axiosError.response.data);
         console.error("Error status:", axiosError.response.status);
       }
+
+      //IF IT'S A CSRF MISMATCH, TRY ONE MORE WITH SYNCING THE TOKENS FROM COOKIES
+      if (
+        axiosError.response?.status === 403 &&
+        typeof axiosError.response.data === "object" &&
+        axiosError.response.data &&
+        (axiosError.response.data as any).error === "CSRF token mismatch!"
+      ) {
+        try {
+          syncCsrfFromCookies();
+          const newCsrfToken = getCsrf();
+          if (newCsrfToken) {
+            await api.post(
+              `/posts/like/${post_id}`,
+              {},
+              {
+                withCredentials: true,
+                headers: {
+                  "X-CSRF-Token": newCsrfToken,
+                },
+              }
+            );
+          }
+          return;
+        } catch (retryError) {
+          console.error("Retry failed: ", retryError);
+        }
+      }
+
+      // IF IT'S NOT A CSRF MISMATCH, JUST TOGGLE THE LIKE
       setLikeState((prevState) => ({
         ...prevState,
         isLiked: !prevState.isLiked,
@@ -130,7 +202,7 @@ export const Post: FC<TPost> = ({
           </div>
         </article>
         <article className="post-body">
-          <p className="post-body-description p-3">{description}</p>
+          <p className="post-body-description">{description}</p>
           <figure className="post-body-images">
             {image && (
               <img className="post-body-images-image" src={image} alt="post" />
@@ -139,22 +211,31 @@ export const Post: FC<TPost> = ({
         </article>
         <article className="post-statistics">
           <span className="post-statistics-icon">
-            <BiSolidLike className="likes me-2" />
-            <span className="post-statistics-number">
-              {likeState.likes} people like it{" "}
-            </span>
+            {likeState.likes > 0 && (
+              <>
+                <BiSolidLike className="likes me-2" />
+                <span className="post-statistics-number">
+                  {likeState.likes} people like it{" "}
+                </span>
+              </>
+            )}
           </span>
           <span className="post-statistics-icon">
-            <span className="post-statistics-number">{number_of_comments}</span>
-            <FaComments className="comments ms-2" />
+            {number_of_comments > 0 && (
+              <>
+                <span className="post-statistics-number">
+                  {number_of_comments}
+                </span>
+                <FaComments className="comments ms-2" />
+              </>
+            )}
           </span>
         </article>
-        <hr />
-        <article className="post-footer">
+        <hr className="m-2" />
+        <article className="post-footer pb-1">
           <div className="post-footer-icons">
             <button
               type="button"
-              className="btn"
               onClick={likeHandler}
               aria-label={likeState.isLiked ? "Unlike Post" : "Like post"}
             >
@@ -164,7 +245,7 @@ export const Post: FC<TPost> = ({
                 <BiLike className="like" />
               )}
             </button>
-            <button type="button" className="btn">
+            <button type="button">
               <FaRegComment className="comment" />
             </button>
           </div>

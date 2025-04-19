@@ -6,7 +6,7 @@ import { GrClose } from "react-icons/gr";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosInstance";
 import configs from "../../configs";
-import { getCsrf } from "../../services/storage";
+import { getCsrf, syncAllAuthTokensFromCookies } from "../../services/storage";
 import { TPost } from "../../types/post";
 import "./modalPost.css";
 
@@ -28,7 +28,7 @@ export const ModalPost = ({
 
   useEffect(() => {
     if (show) {
-      // ENSURE AUTH US CHECKED AND CSRF TOKEN IS AVAILABLE WHEN MODAL OPENS.
+      // ENSURE AUTH IS CHECKED AND CSRF TOKEN IS AVAILABLE WHEN MODAL OPENS.
       const refreshAuthState = async () => {
         try {
           await api.get("/auth/is-authenticated");
@@ -50,8 +50,15 @@ export const ModalPost = ({
   };
   const createPost = async (post: TPost) => {
     try {
+      // ASYNC TOKENS FROM THE COOKIES
+      syncAllAuthTokensFromCookies();
+
       // GET CSRF TOKEN IN REQUEST HEADERS.
       const csrfToken = getCsrf();
+      if (!csrfToken) {
+        console.error("CSRF Token not found");
+        throw new Error("CSRF Token not found");
+      }
 
       // SET CSRF TOKEN IN REQUEST HEADERS.
       const response = await api.post("/posts/create", post, {
