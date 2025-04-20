@@ -1,44 +1,33 @@
 import { AxiosError } from "axios";
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FC, FormEvent, useEffect, useState } from "react";
 import { Button, Card, FloatingLabel, Form, Modal } from "react-bootstrap";
 import { FaPhotoVideo } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
-import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosInstance";
 import configs from "../../configs";
+import useAuthState from "../../hooks/useAuthState";
+import useAuthVerification from "../../hooks/useAuthVerification";
+import { usePost } from "../../hooks/usePost";
 import { getCsrf, syncAllAuthTokensFromCookies } from "../../services/storage";
-import { TPost } from "../../types/post";
+import { TModalPostProps, TPost } from "../../types/post";
 import "./modalPost.css";
 
-export const ModalPost = ({
-  show,
-  handleClose,
-  user_id,
-}: {
-  show: boolean;
-  handleClose(): void;
-  user_id?: string;
-}) => {
-  const navigate = useNavigate();
+export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
+  const { user: currentUser } = useAuthState();
   const [fileName, setFileName] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState<string>("");
   const [error, setError] = useState<string>("");
   const folder = "posts";
+  const { addPost } = usePost();
+  const { checkAuthStatus } = useAuthVerification();
 
   useEffect(() => {
     if (show) {
       // ENSURE AUTH IS CHECKED AND CSRF TOKEN IS AVAILABLE WHEN MODAL OPENS.
-      const refreshAuthState = async () => {
-        try {
-          await api.get("/auth/is-authenticated");
-        } catch (error) {
-          console.error("Auth Verification failed: ", error);
-        }
-      };
-      refreshAuthState();
+      checkAuthStatus();
     }
-  }, [show]);
+  }, [show, checkAuthStatus]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.target;
@@ -48,6 +37,7 @@ export const ModalPost = ({
       setFile(file);
     }
   };
+
   const createPost = async (post: TPost) => {
     try {
       // ASYNC TOKENS FROM THE COOKIES
@@ -57,17 +47,20 @@ export const ModalPost = ({
       const csrfToken = getCsrf();
       if (!csrfToken) {
         console.error("CSRF Token not found");
-        throw new Error("CSRF Token not found");
+        return;
       }
+      const headers: Record<string, string> = {
+        "X-CSRF-Token": csrfToken,
+      };
 
       // SET CSRF TOKEN IN REQUEST HEADERS.
       const response = await api.post("/posts/create", post, {
-        headers: {
-          "X-CSRF-Token": csrfToken,
-        },
+        headers,
+        withCredentials: true,
       });
 
       console.info(response.data);
+      return response.data;
     } catch (error) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {
@@ -96,14 +89,24 @@ export const ModalPost = ({
       }
 
       const post: TPost = {
-        user_id: user_id,
+        user_id: currentUser?.user_id,
         description: description,
         image: imageUrl,
         number_of_comments: 0,
         number_of_likes: 0,
       };
 
-      await createPost(post);
+      const response = await createPost(post);
+
+      const newPost = {
+        ...post,
+        post_id: response.post_id,
+        user_name: currentUser?.user_name,
+        created_at: response.created_at,
+        updated_at: response.updated_at,
+      };
+
+      addPost(newPost);
 
       // RESET FORM
       setDescription("");
@@ -111,9 +114,8 @@ export const ModalPost = ({
       setFileName("");
       setError("");
 
-      // CLOSE MODAL AND NAVIGATE HOME.
+      // CLOSE MODAL.
       handleClose();
-      navigate("/");
     } catch (error) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {

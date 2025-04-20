@@ -1,18 +1,19 @@
 import { AxiosError } from "axios";
-import { useContext, useEffect, useState } from "react";
+import { FC, useEffect } from "react";
 import api from "../../api/axiosInstance";
-import { AuthContext } from "../../context/AuthContext";
-import { TPost } from "../../types/post";
+import useAuthState from "../../hooks/useAuthState";
+import { usePost } from "../../hooks/usePost";
+import { TFeedProps } from "../../types/post";
 import { Post } from "../post/Post";
 import { Share } from "../share/Share";
 import "./feed.css";
 
-export const Feed = ({ user_id }: { user_id?: string }) => {
-  const { state } = useContext(AuthContext);
-  const [posts, setPosts] = useState<TPost[]>([]);
+export const Feed: FC<TFeedProps> = ({ user_id }) => {
+  const { isAuthChecked, user: currentUser } = useAuthState();
+  const { posts, setPosts } = usePost();
 
   useEffect(() => {
-    if (!state.authChecked) return;
+    if (!isAuthChecked) return;
 
     const fetchFeed = async () => {
       try {
@@ -31,11 +32,12 @@ export const Feed = ({ user_id }: { user_id?: string }) => {
     };
 
     fetchFeed();
-  }, [state.authChecked, user_id]);
+  }, [isAuthChecked, user_id, setPosts]);
   return (
     <section className="feed">
-      {(!user_id || user_id === state.user?.user_id) && <Share />}
-      {posts && posts.map((post) => <Post key={post.post_id} {...post} />)}
+      {(!user_id || user_id === currentUser?.user_id) && <Share />}
+      {posts.length > 0 &&
+        posts.map((post) => <Post key={post.post_id} {...post} />)}
     </section>
   );
 };

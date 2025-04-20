@@ -15,32 +15,21 @@ import "./profile.css";
 
 export const Profile = () => {
   const { user_name } = useParams<{ user_name: string }>();
-  const { checkAuthStatus } = useAuthVerification();
   const navigate = useNavigate();
 
+  const { checkAuthStatus } = useAuthVerification();
   const { user: currentUser } = useAuthState();
   const [user, setUser] = useState<TUser | null>(null);
-  const [isFollowed, setIsFollowed] = useState<boolean>();
+  const [isFollowed, setIsFollowed] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [followCheckDone, setFollowCheckDone] = useState(false);
 
-  syncAllAuthTokensFromCookies();
-
-  const csrfToken = getCsrf();
-
-  const headers: Record<string, string> = useMemo(() => {
-    return {
-      "X-CSRF-Token": csrfToken!,
-    };
-  }, [csrfToken]);
-
   // CHECK AUTHENTICATION STATUS BEFORE MAKING AUTHENTICATED REQUESTS.
   useEffect(() => {
-    const verifyAuth = async () => {
+    const verifyUserAuth = async () => {
       try {
         const isAuthenticated = await checkAuthStatus();
-        setAuthChecked(true);
 
         if (!isAuthenticated && !currentUser) {
           console.warn(" User not Authenticated, redirecting to login");
@@ -48,25 +37,25 @@ export const Profile = () => {
         }
       } catch (error) {
         console.error("Auth verification failed: ", error);
+      } finally {
         setAuthChecked(true);
       }
     };
+
     if (!authChecked) {
-      verifyAuth();
+      verifyUserAuth();
     }
   }, [navigate, currentUser, checkAuthStatus, authChecked]);
 
   const fetchAUser = useCallback(async () => {
-    if (!authChecked) {
-      console.error("Waiting for auth check before fetching user data");
+    if (!user_name || !authChecked) {
+      console.error("Missing user name or auth check not completed");
       return;
     }
 
     try {
       setIsLoading(true);
-      const response = await api.get(`/users/${user_name}`, {
-        headers,
-      });
+      const response = await api.get(`/users/${user_name}`);
       setUser(response.data);
     } catch (error) {
       console.error(`Error Fetching user: ${error}`);
@@ -77,10 +66,11 @@ export const Profile = () => {
       } else {
         console.error(`Error fetching user: ${(error as Error).message}`);
       }
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
-  }, [user_name, authChecked, headers]);
+  }, [user_name, authChecked]);
 
   const checkIsFollowed = useCallback(async () => {
     if (!user?.user_id || !authChecked || !currentUser || followCheckDone) {
@@ -93,12 +83,14 @@ export const Profile = () => {
       });
       return;
     }
+
+    // IF THE USER VIEWING THEIR PROFILE, SKIP THE FOLLOW CHECK.
+    if (currentUser.user_id === user.user_id) {
+      setFollowCheckDone(true);
+      return;
+    }
     try {
-      // MAKE SURE withCredentials IS SET TO TRUE TO INCLUDE COOKIES IN THE REQUEST.
-      const response = await api.get(`/follows/is-followed/${user.user_id}`, {
-        withCredentials: true,
-        headers,
-      });
+      const response = await api.get(`/follows/is-followed/${user.user_id}`);
       setIsFollowed(response.data);
       setFollowCheckDone(true);
     } catch (error) {
@@ -106,9 +98,19 @@ export const Profile = () => {
       setIsFollowed(false);
       setFollowCheckDone(true);
     }
-  }, [currentUser, authChecked, user, followCheckDone, headers]);
+  }, [currentUser, authChecked, user, followCheckDone]);
 
   const handleFollow = useCallback(async () => {
+    syncAllAuthTokensFromCookies();
+    const csrf = getCsrf();
+    if (!csrf) {
+      console.error("CSRF token not found");
+      return;
+    }
+    const headers: Record<string, string> = {
+      "X-CSRF-Token": csrf,
+    };
+
     if (!user?.user_id) {
       console.error("Cannot follow/unfollow: Missing user ID");
       return;
@@ -120,8 +122,8 @@ export const Profile = () => {
         // UNFOLLOW USER
         await api.delete("/follows/unfollow", {
           data: { user_id_followed: user.user_id },
-          withCredentials: true,
           headers,
+          withCredentials: true,
         });
 
         setIsFollowed(false);
@@ -170,16 +172,16 @@ export const Profile = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isFollowed, user?.user_id, headers]);
+  }, [isFollowed, user]);
 
-  // FETCH USER DATA WHEN COMPONENT MOUNTS OR USER_NAME CHANGES
+  // AUTOMATICALLY FETCH A USER WHEN AUTH IS CHECKED.
   useEffect(() => {
     if (authChecked) {
       fetchAUser();
     }
   }, [fetchAUser, authChecked]);
 
-  // CHECK FOLLOW STATUS WHEN USER DATA IS AVAILABLE
+  // AUTOMATICALLY CHECK IF THE USER IS FOLLOWED WHEN USER DATA IS AVAILABLE.
   useEffect(() => {
     if (currentUser && user && authChecked && !followCheckDone) {
       checkIsFollowed();
@@ -238,7 +240,7 @@ export const Profile = () => {
                 />
               </figure>
               <section className="d-flex flex-column">
-                <h1 className="profile-info-name m-0">{`${user?.first_name} ${user?.last_name}`}</h1>
+                <h1 className="profile-info-name m-0 text-capitalize">{`${user?.first_name} ${user?.last_name}`}</h1>
                 <span className="profile-info-username">
                   @{user?.user_name}
                 </span>
@@ -270,13 +272,7 @@ export const Profile = () => {
           </section>
           <section className="profile-right-bottom d-flex">
             <Feed user_id={user?.user_id} />
-            <ProfileRightBar
-              user_id={user?.user_id}
-              bio={user?.bio}
-              city={user?.city}
-              marital_status={user?.marital_status}
-              home_town={user?.home_town}
-            />
+            <ProfileRightBar {...user} />
           </section>
         </section>
       </section>

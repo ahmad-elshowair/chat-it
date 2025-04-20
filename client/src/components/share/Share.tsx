@@ -46,11 +46,7 @@ export const Share = () => {
           <FaLaugh className="icon" /> Feeling
         </button>
       </section>
-      <ModalPost
-        handleClose={handleClose}
-        show={show}
-        user_id={user?.user_id}
-      />
+      <ModalPost handleClose={handleClose} show={show} />
     </aside>
   );
 };

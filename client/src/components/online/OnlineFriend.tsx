@@ -19,7 +19,9 @@ export const OnlineFriend: FC<TOnlineFriendProps> = ({
           alt="profile"
           className="right-bar-friends-list-img"
         />
-        <h5 className="right-bar-friends-list-text">{first_name}</h5>
+        <h5 className="right-bar-friends-list-text text-capitalize">
+          {first_name}
+        </h5>
       </Link>
     </li>
   );

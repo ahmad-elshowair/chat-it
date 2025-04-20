@@ -49,7 +49,9 @@ export const HomeRightBar = () => {
               />
             ))
           ) : (
-            <li className="text-muted p-2">No friends online at the moment</li>
+            <li className="text-muted fst-italic p-2">
+              No friends online at the moment
+            </li>
           )}
         </ul>
       </section>

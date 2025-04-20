@@ -39,20 +39,7 @@ export const Post: FC<TPost> = ({
       if (!currentUser?.user_id || !post_id) return;
 
       try {
-        syncAllAuthTokensFromCookies();
-        const csrfToken = getCsrf();
-
-        if (!csrfToken) {
-          console.error("CSRF token not found when checking like status");
-          return;
-        }
-
-        const response = await api.get(`/posts/is-liked/${post_id}`, {
-          withCredentials: true,
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-        });
+        const response = await api.get(`/posts/is-liked/${post_id}`);
         if (response.data.isLiked) {
           setLikeState((prevState) => ({
             ...prevState,
@@ -178,7 +165,7 @@ export const Post: FC<TPost> = ({
             </figure>
             <div className="post-header-info-links">
               <Link
-                className="post-header-info-links-user"
+                className="post-header-info-links-user text-capitalize"
                 to={`/profile/${user?.user_name}`}
                 rel="noopener noreferrer"
               >
@@ -196,7 +183,7 @@ export const Post: FC<TPost> = ({
                 className="btn"
                 onClick={() => setShowDeleteModal(true)}
               >
-                <FaTrash className="post-header-option-bars-icon text-warning" />
+                <FaTrash className="post-header-option-bars-icon text-danger" />
               </button>
             )}
           </div>

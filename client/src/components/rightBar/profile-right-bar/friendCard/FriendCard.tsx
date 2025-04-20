@@ -38,7 +38,7 @@ export const FriendCard: FC<TFriendsCardProps> = ({
           )}
         </div>
         <div className="friend-card__info">
-          <h5 className="friend-card__name m-0 fs-6 text-uppercase">
+          <h5 className="friend-card__name m-0 fs-6 text-capitalize">
             {first_name}
           </h5>
         </div>
