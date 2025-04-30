@@ -1,5 +1,6 @@
 import { Router } from "express";
 import authentication from "./apis/auth.routes";
+import comments from "./apis/comments.routes";
 import follows from "./apis/follow.routes";
 import posts from "./apis/posts.routes";
 import uploadRouter from "./apis/upload.routes";
@@ -11,4 +12,5 @@ routes.use("/posts", posts);
 routes.use("/follows", follows);
 routes.use("/upload", uploadRouter);
 routes.use("/auth", authentication);
+routes.use("/comments", comments);
 export default routes;
