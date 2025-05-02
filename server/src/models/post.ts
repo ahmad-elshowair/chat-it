@@ -1,148 +1,223 @@
 import { QueryResult } from "pg";
 import pool from "../database/pool";
+import { IFeedPost } from "../interfaces/IPost";
 import { Post } from "../types/post";
 
 class PostModel {
-	// CHECK EXISTING OF A POST.
-	private async checkPostExist(id: string): Promise<boolean> {
-		// CONNECT TO THE DATABASE.
-		const connection = await pool.connect();
-		try {
-			const post: QueryResult<Post> = await connection.query(
-				`SELECT * FROM posts WHERE post_id = $1, [id]`,
-			);
-			if (post) {
-				return true;
-			}
-			return false;
-		} catch (error) {
-			throw error;
-		} finally {
-			// RELEASE DATABASE CONNECTION.
-			connection.release();
-		}
-	}
-	// create a post
-	async create(post: Post): Promise<Post> {
-		// connect to the database
-		const connection = await pool.connect();
-		try {
-			// create post query
-			const sql =
-				"INSERT INTO posts (user_id, description, image) VALUES($1, $2, $3) RETURNING *";
-			// insert post data
-			const insertPost: QueryResult<Post> = await connection.query(sql, [
-				post.user_id,
-				post.description,
-				post.image,
-			]);
-			// return post
-			return insertPost.rows[0];
-		} catch (error) {
-			throw new Error(`create post model: ${(error as Error).message}`);
-		} finally {
-			// release the the database
-			connection.release();
-		}
-	}
+  /**
+   * CHECK EXISTING OF A POST.
+   * @param id post id
+   * @returns boolean
+   */
+  private async checkPostExist(id: string): Promise<boolean> {
+    const connection = await pool.connect();
+    try {
+      await connection.query("BEGIN");
+      const post: QueryResult<Post> = await connection.query(
+        `SELECT * FROM posts WHERE post_id = $1`,
+        [id]
+      );
+      await connection.query("COMMIT");
+      if (post) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
 
-	// get a post by id
-	async fetchPostById(post_id: string): Promise<Post> {
-		// connect to the database
-		const connection = await pool.connect();
-		try {
-			// get post data
-			const post: QueryResult<Post> = await connection.query(
-				"SELECT * FROM posts WHERE post_id = $1",
-				[post_id],
-			);
-			// check if the post exist
-			if (post.rowCount === 0) {
-				throw new Error("Post not found");
-			}
-			// return post
-			return post.rows[0];
-		} catch (error) {
-			throw new Error(`fetch post by id model: ${(error as Error).message}`);
-		} finally {
-			// release the the database
-			connection.release();
-		}
-	}
+  /**
+   * CREATE A POST
+   * @param post post data
+   * @returns post
+   */
+  async create(post: Post): Promise<Post> {
+    const connection = await pool.connect();
+    try {
+      await connection.query("BEGIN");
+      const sql =
+        "INSERT INTO posts (user_id, description, image) VALUES($1, $2, $3) RETURNING *";
+      const insertPost: QueryResult<Post> = await connection.query(sql, [
+        post.user_id,
+        post.description,
+        post.image,
+      ]);
+      await connection.query("COMMIT");
+      return insertPost.rows[0];
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      throw new Error(`create post model: ${(error as Error).message}`);
+    } finally {
+      connection.release();
+    }
+  }
 
-	// get all posts
-	async index(): Promise<Post[]> {
-		// connect to the database
-		const connection = await pool.connect();
-		try {
-			// get all posts
-			const posts: QueryResult<Post> = await connection.query(
-				"SELECT * FROM posts ORDER BY updated_at DESC",
-			);
-			// return posts
-			return posts.rows;
-		} catch (error) {
-			throw new Error(`index model: ${(error as Error).message}`);
-		} finally {
-			// release the the database
-			connection.release();
-		}
-	}
+  /**
+   * GET A POST BY ID
+   * @param post_id post id
+   * @returns post
+   */
+  async fetchPostById(post_id: string): Promise<Post> {
+    const connection = await pool.connect();
+    try {
+      await connection.query("BEGIN");
+      const post: QueryResult<Post> = await connection.query(
+        "SELECT * FROM posts WHERE post_id = $1",
+        [post_id]
+      );
+      await connection.query("COMMIT");
+      if (post.rowCount === 0) {
+        throw new Error("Post not found");
+      }
+      return post.rows[0];
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      throw new Error(`fetch post by id model: ${(error as Error).message}`);
+    } finally {
+      connection.release();
+    }
+  }
 
-	// update a post
-	async update(id: string, post: Post): Promise<Post> {
-		// connect to the database
-		const connection = await pool.connect();
-		try {
-			// check if the post exist
-			if (!this.checkPostExist) {
-				throw new Error("Post not found");
-			}
-			// update the post
-			const updatePost: QueryResult<Post> = await connection.query(
-				"UPDATE posts SET description = $1, image = $2, updated_at = $3 WHERE post_id = $4 RETURNING *",
-				[post.description, post.image, post.updated_at, id],
-			);
-			// return post
-			return updatePost.rows[0];
-		} catch (error) {
-			throw new Error(`update model: ${(error as Error).message}`);
-		} finally {
-			// release the the database
-			connection.release();
-		}
-	}
+  /**
+   * GET ALL POSTS
+   * @returns posts
+   */
+  async index(
+    limit: number = 10,
+    cursor?: string,
+    direction: "next" | "previous" = "next"
+  ): Promise<{ posts: Post[]; totalCount: number }> {
+    const connection = await pool.connect();
+    try {
+      await connection.query("BEGIN");
+      const params: any[] = [];
+      let sql = `
+		SELECT 
+			p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, p.updated_at, u.picture, u.first_name, u.last_name
+		FROM 
+			posts p
+		JOIN 
+			users u 
+		ON 
+			p.user_id = u.user_id
+	`;
 
-	// delete a post
-	async delete(id: string): Promise<{ message: string }> {
-		// connect to the database
-		const connection = await pool.connect();
-		try {
-			// check if the post exist
-			if (!this.checkPostExist) {
-				throw new Error("Post not found");
-			}
+      if (cursor) {
+        if (direction === "next") {
+          sql +=
+            " AND p.updated_at < (SELECT updated_at FROM posts WHERE post_id = $1)";
+        } else {
+          sql +=
+            " AND p.updated_at > (SELECT updated_at FROM posts WHERE post_id = $1)";
+        }
+        params.push(cursor);
+      }
 
-			// delete the post
-			await connection.query("DELETE FROM posts WHERE post_id = $1", [id]);
-			// return a message
-			return { message: `POST: ${id} HAS BEEN DELETED !` };
-		} catch (error) {
-			throw new Error(`delete model: ${(error as Error).message}`);
-		} finally {
-			// release the the database
-			connection.release();
-		}
-	}
-	// get all post by user id
-	async userPosts(userId: string) {
-		// connect to the database
-		const connection = await pool.connect();
-		try {
-			// query of all post for a user
-			const userPostsQuery = `
+      sql +=
+        direction === "next"
+          ? " ORDER BY p.updated_at DESC"
+          : " ORDER BY p.updated_at ASC";
+
+      sql += `LIMIT $${params.length + 1}`;
+
+      params.push(limit);
+
+      const result = await connection.query(sql, params);
+
+      const posts =
+        direction === "previous" ? result.rows.reverse() : result.rows;
+
+      const resultCount = await connection.query(
+        "SELECT COUNT(*) AS total FROM posts"
+      );
+
+      const totalCount = parseInt(resultCount.rows[0].total);
+      await connection.query("COMMIT");
+      return { posts, totalCount };
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      throw new Error(`index model: ${(error as Error).message}`);
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
+   * UPDATE A POST
+   * @param id post id
+   * @param post post data
+   * @returns post
+   */
+  async update(id: string, post: Post): Promise<Post> {
+    const connection = await pool.connect();
+    try {
+      await connection.query("BEGIN");
+      if (!this.checkPostExist) {
+        throw new Error("Post not found");
+      }
+      const updatePost: QueryResult<Post> = await connection.query(
+        "UPDATE posts SET description = $1, image = $2, updated_at = $3 WHERE post_id = $4 RETURNING *",
+        [post.description, post.image, post.updated_at, id]
+      );
+      await connection.query("COMMIT");
+      return updatePost.rows[0];
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      throw new Error(`update model: ${(error as Error).message}`);
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
+   * DELETE A POST
+   * @param id post id
+   * @returns message
+   */
+  async delete(id: string): Promise<{ message: string }> {
+    const connection = await pool.connect();
+    try {
+      await connection.query("BEGIN");
+      if (!this.checkPostExist) {
+        throw new Error("Post not found");
+      }
+
+      await connection.query("DELETE FROM posts WHERE post_id = $1", [id]);
+      await connection.query("COMMIT");
+      return { message: `POST: ${id} HAS BEEN DELETED !` };
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      throw new Error(`delete model: ${(error as Error).message}`);
+    } finally {
+      connection.release();
+    }
+  }
+  /**
+   * GET ALL POSTS BY USER ID
+   * @param user_id user id
+   * @param limit limit
+   * @param cursor cursor
+   * @param direction direction
+   * @returns posts
+   */
+  async userPosts(
+    user_id: string,
+    limit: number = 10,
+    cursor?: string,
+    direction: "next" | "previous" = "next"
+  ) {
+    const connection = await pool.connect();
+    try {
+      await connection.query("BEGIN");
+      const params: any[] = [user_id];
+
+      let sql = `
         SELECT 
-          p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, p.updated_at, u.picture, u.first_name, u.last_name
+          p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name, u.last_name
         FROM
           users AS u
         LEFT JOIN 
@@ -150,64 +225,146 @@ class PostModel {
         ON
           u.user_id= p.user_id
         WHERE 
-          u.user_id = ($1)
-        ORDER BY 
-          p.updated_at DESC
+          u.user_id = $1
 	    `;
-			// get all posts of a user
-			const posts = await connection.query(userPostsQuery, [userId]);
 
-			// return posts
-			return posts.rows;
-		} catch (error) {
-			throw new Error(`userPosts model: ${(error as Error).message}`);
-		} finally {
-			// release the the database
-			connection.release();
-		}
-	}
+      if (cursor) {
+        if (direction === "next") {
+          sql += ` AND p.updated_at < (SELECT updated_at FROM posts WHERE post_id = $2)`;
+        } else {
+          sql += ` AND p.updated_at > (SELECT updated_at FROM posts WHERE post_id = $2)`;
+        }
+        params.push(cursor);
+      }
 
-	// get all the posts of a user and followings'
-	async feed(userId: string): Promise<Post[]> {
-		// connect to the database
-		const connection = await pool.connect();
-		try {
-			// get all posts
-			const posts: QueryResult<Post> = await connection.query(
-				`
-			SELECT 
-				p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, p.updated_at, u.picture, u.first_name, u.last_name
-			FROM 
+      sql +=
+        direction === "next"
+          ? " ORDER BY p.updated_at DESC"
+          : " ORDER BY p.updated_at ASC";
+
+      sql += `LIMIT $${params.length + 1}`;
+
+      params.push(limit);
+
+      const result: QueryResult<IFeedPost> = await connection.query(
+        sql,
+        params
+      );
+
+      const posts =
+        direction === "previous" ? result.rows.reverse() : result.rows;
+
+      const resultCount: QueryResult<{ total: string }> =
+        await connection.query(
+          `
+			SELECT
+				COUNT(*) AS total
+			FROM
 				posts p
-			JOIN 
-				users u 
-			ON 
-				p.user_id = u.user_id
-			WHERE 
-				u.user_id = ($1)
+			WHERE
+				p.user_id = $1
+			`,
+          [user_id]
+        );
+
+      const totalCount = parseInt(resultCount.rows[0].total);
+      await connection.query("COMMIT");
+      return { posts, totalCount };
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      throw new Error(`userPosts model: ${(error as Error).message}`);
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
+   * GET ALL POSTS OF A USER AND HIS FOLLOWINGS
+   * @param user_id user id
+   * @param limit limit
+   * @param cursor cursor
+   * @param direction direction
+   * @returns posts
+   */
+  async feed(
+    user_id: string,
+    limit: number = 10,
+    cursor?: string,
+    direction: "next" | "previous" = "next"
+  ): Promise<{ posts: IFeedPost[]; totalCount: number }> {
+    const connection = await pool.connect();
+    try {
+      await connection.query("BEGIN");
+      let params: (string | number)[] = [user_id];
+      let sql = `
+				SELECT 
+					p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name, u.last_name
+				FROM 
+					posts p
+				JOIN 
+					users u 
+				ON 
+					p.user_id = u.user_id
+				WHERE 
+					u.user_id = $1
    			OR 
-				u.user_id 
-			IN (
-      				SELECT 
+					u.user_id 
+				IN (
+					SELECT 
 						user_id_followed
-      				FROM 
+					FROM 
 						follows
-      				WHERE 
-						user_id_following = ($1)
-   				)
-			ORDER BY
-				p.updated_at DESC;`,
-				[userId],
-			);
-			// return posts
-			return posts.rows;
-		} catch (error) {
-			throw new Error(`feed model: ${(error as Error).message}`);
-		} finally {
-			// release the the database
-			connection.release();
-		}
-	}
+					WHERE 
+						user_id_following = $1
+					)
+			`;
+      if (cursor) {
+        if (direction === "next") {
+          sql += ` AND p.updated_at < (SELECT updated_at FROM posts WHERE post_id = $2)`;
+        } else {
+          sql += ` AND p.updated_at > (SELECT updated_at FROM posts WHERE post_id = $2)`;
+        }
+        params.push(cursor);
+      }
+
+      sql +=
+        direction === "next"
+          ? " ORDER BY p.updated_at DESC"
+          : " ORDER BY p.updated_at ASC";
+
+      sql += `LIMIT $${params.length + 1}`;
+
+      params.push(limit);
+
+      const result = await connection.query(sql, params);
+
+      const posts =
+        direction === "previous" ? result.rows.reverse() : result.rows;
+
+      const resultCount = await connection.query(
+        `
+			SELECT
+				COUNT(*) AS total
+			FROM
+				posts p
+			WHERE
+				p.user_id = $1
+			OR
+				p.user_id IN (SELECT user_id_followed FROM follows WHERE user_id_following = $1)
+		`,
+        [user_id]
+      );
+
+      const totalCount = resultCount.rows[0].total;
+      await connection.query("COMMIT");
+      return { posts, totalCount };
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      throw new Error(`feed model: ${(error as Error).message}`);
+    } finally {
+      connection.release();
+    }
+  }
 }
 
 export default PostModel;
