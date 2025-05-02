@@ -19,6 +19,26 @@ export type TUser = {
   marital_status?: string;
 };
 
+export type TLoginCredentials = Pick<TUser, "email" | "password">;
+
+export type TUnknownUser = Pick<
+  TUser,
+  "user_id" | "picture" | "first_name" | "last_name"
+>;
+
+export type TFriend = Pick<
+  TUser,
+  | "user_id"
+  | "picture"
+  | "first_name"
+  | "last_name"
+  | "is_online"
+  | "number_of_followers"
+  | "number_of_followings"
+  | "bio"
+  | "marital_status"
+>;
+
 export type TRegisterCredentials = Omit<
   TUser,
   | "user_id"

@@ -1,137 +1,88 @@
-import { ValidationChain, check } from "express-validator";
-import { QueryResult } from "pg";
-import db from "../../database/pool";
-import { TUser } from "../../types/users";
-import passwords from "../../utilities/passwords";
+import { body, param, query } from "express-validator";
+import { validateUUID } from "./common";
+import { paginationValidator } from "./pagination";
 
-// A helper function to check the length
-export const checkLength = (
-  field: string,
-  min: number,
-  message: string
-): ValidationChain => check(field).isLength({ min }).withMessage(message);
+export const validateGetUsers = paginationValidator;
 
-// CHECK IF THE USER NAME LENGTH IS AT LEAST 3 CHARACTERS.
-const checkUserNameLength: ValidationChain = checkLength(
-  "user_name",
-  6,
-  "USERNAME MUST BE AT LEAST 6 CHARACTERS LONG !"
-);
+export const validateUpdateUser = [
+  ...validateUUID("user_id", "User ID"),
 
-// CHECK IF THE FIRST NAME LENGTH IS AT LEAST 3 CHARACTER
-const checkFirstNameLength: ValidationChain = checkLength(
-  "first_name",
-  3,
-  "THE FIRST NAME MUST BE AT LEAST 3 CHARACTERS!"
-);
+  body("user_name")
+    .optional()
+    .isString()
+    .withMessage("Username must be a string")
+    .isLength({
+      min: 3,
+      max: 30,
+    })
+    .withMessage("Username must be between 3 and 30 characters long")
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage("Username must be alphanumeric with underscores only"),
 
-// CHECK IF THE FIRST NAME LENGTH IS AT LEAST 3 CHARACTER
-const checkLastNameLength: ValidationChain = checkLength(
-  "last_name",
-  3,
-  "THE LAST NAME MUST BE AT LEAST 3 CHARACTERS!"
-);
+  body("first_name")
+    .optional()
+    .isString()
+    .withMessage("First name must be a string")
+    .isLength({ min: 3, max: 50 })
+    .withMessage("First name must be between 3 and 50 characters long"),
 
-const checkPasswordLength: ValidationChain = checkLength(
-  "password",
-  6,
-  "PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG !"
-);
+  body("last_name")
+    .optional()
+    .isString()
+    .withMessage("Last name must be a string")
+    .isLength({ min: 3, max: 50 })
+    .withMessage("Last name must be between 3 and 50 characters long"),
 
-const checkIsEmail: ValidationChain = check("email")
-  .isEmail()
-  .withMessage("Invalid email format! Example: 'example@domain-name.com'");
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Email must be a valid email address"),
 
-// CHECK IF THE PASSWORD IS CORRECT.
-const checkPassword: ValidationChain = check("password").custom(
-  async (password: string, { req }) => {
-    const connection = await db.connect();
-    try {
-      const result: QueryResult<TUser> = await connection.query(
-        "SELECT * FROM users WHERE email = $1",
-        [req.body.email]
-      );
-      const user: TUser = result.rows[0];
+  body("bio")
+    .optional()
+    .trim()
+    .escape()
+    .isString()
+    .withMessage("Bio must be a string")
+    .isLength({ max: 500 })
+    .withMessage("Bio must be between 0 and 500 characters long"),
 
-      if (user && !passwords.checkPassword(password, user.password)) {
-        throw new Error("INCORRECT PASSWORD !");
-      }
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message !== " EMAIL DOES NOT EXIST !"
-      ) {
-        throw new Error(`Check Password: ${(error as Error).message}!`);
-      }
-    } finally {
-      connection.release();
-    }
-  }
-);
-
-// Check if the use name exists in the database
-const checkUserNameExists: ValidationChain = check("user_name").custom(
-  async (user_name: string) => {
-    const connection = await db.connect();
-    try {
-      const result: QueryResult<TUser> = await connection.query(
-        "SELECT * FROM users WHERE user_name = $1",
-        [user_name]
-      );
-      const user: TUser = result.rows[0];
-      if (user) {
-        throw new Error("USERNAME ALREADY EXISTS !");
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`${(error as Error).message}!`);
-      }
-    } finally {
-      connection.release();
-    }
-  }
-);
-
-//CHECK IF THE EMAIL EXISTS IN THE DATABASE.
-const isEmailExist = (context: "register" | "login"): ValidationChain =>
-  check("email").custom(async (email: string, { req }) => {
-    // connect to the database
-    const connection = await db.connect();
-    try {
-      // select the user from the database
-      const result: QueryResult<TUser> = await db.query(
-        "SELECT * FROM users WHERE email=$1",
-        [email]
-      );
-      const user: TUser = result.rows[0];
-
-      if (context === "login" && !user) {
-        throw new Error(`EMAIL DOES NOT EXIST !`);
-      }
-
-      if (context === "register" && user) {
-        throw new Error(`EMAIL ALREADY EXISTS !`);
-      }
-
-      req.user = user;
-    } catch (error) {
-      throw new Error(`${(error as Error).message}`);
-    } finally {
-      connection.release();
-    }
-  });
-export const registerValidation = [
-  checkIsEmail,
-  checkPasswordLength,
-  checkUserNameLength,
-  checkFirstNameLength,
-  checkLastNameLength,
-  isEmailExist("register"),
-  checkUserNameExists,
+  body("marital_status")
+    .optional()
+    .isIn(["single", "married", "divorced", "widowed", ""])
+    .withMessage("Invalid marital status"),
 ];
-export const loginValidation = [
-  checkIsEmail,
-  checkPasswordLength,
-  isEmailExist("login"),
-  checkPassword,
+
+export const validateDeleteUser = validateUUID("user_id", "User ID");
+
+export const validateGetUserById = validateUUID("user_id", "User ID");
+
+export const validateGetUserByUsername = [
+  param("user_name")
+    .notEmpty()
+    .withMessage("User name is required")
+    .isString()
+    .withMessage("User name must be a string")
+    .isLength({ min: 3, max: 30 })
+    .withMessage("User name must be between 3 and 30 characters long")
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage("User name must be alphanumeric with underscores only"),
+];
+
+export const validateGetFriends = [
+  ...validateUUID("user_id", "User ID"),
+
+  query("is_online")
+    .optional()
+    .custom((value) => {
+      if (
+        value === "true" ||
+        value === "false" ||
+        value === "1" ||
+        value === "0"
+      ) {
+        return true;
+      }
+      throw new Error("is_online must be a boolean value");
+    }),
 ];
