@@ -1,7 +1,10 @@
 import { Router } from "express";
-import followController from "../../controllers/follow";
+import followController from "../../controllers/follows.controller";
 import authorize_user from "../../middlewares/auth";
-import followValidation from "../../middlewares/validations/follow";
+import {
+  validateFollowAction,
+  validateIsFollowedAction,
+} from "../../middlewares/validations/follow";
 
 // create an instance of Router for follow
 
@@ -10,15 +13,15 @@ const followRouter = Router();
 followRouter.post(
   "/follow",
   authorize_user,
-  followValidation.checkFollow,
-  followController.follow
+  validateFollowAction,
+  followController.followUser
 );
 
 followRouter.delete(
   "/unfollow",
   authorize_user,
-  followValidation.checkFollow,
-  followController.unFollow
+  validateFollowAction,
+  followController.unFollowUser
 );
 
 followRouter.get(
@@ -40,6 +43,7 @@ followRouter.get("/followers", authorize_user, followController.getFollowers);
 followRouter.get(
   "/is-followed/:followed_id",
   authorize_user,
+  validateIsFollowedAction,
   followController.isFollowed
 );
 

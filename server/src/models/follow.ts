@@ -1,54 +1,77 @@
 import { PoolClient, QueryResult } from "pg";
 import db from "../database/pool";
+import { TFollowers, TFollowings } from "../types/follow";
 import { TUser } from "../types/users";
 
 export default class FollowModel {
+  /**
+   * Check if a user is following another user.
+   * @param {string} following_id
+   * @param {string} followed_id
+   * @returns {Promise<boolean>}
+   * @throws {Error} Error if required fields are missing or operation fails
+   */
   async checkIfFollowing(
     following_id: string,
     followed_id: string
   ): Promise<boolean> {
-    // CONNECT TO THE DATABASE
+    if (!following_id || !followed_id) {
+      throw new Error(
+        "Missing required fields: following_id and followed_id are required"
+      );
+    }
     const connection: PoolClient = await db.connect();
     try {
-      // BEGIN TRANSACTION
       await connection.query("BEGIN");
 
-      // CHECK IF A USER FOLLOWING A USER.
-      const result: QueryResult<TUser> = await connection.query(
-        "SELECT * FROM follows WHERE user_id_following = ($1) AND user_id_followed = ($2)",
-        [following_id, followed_id]
-      );
+      const sql = `
+        SELECT 1
+        FROM follows
+        WHERE user_id_following = $1 AND user_id_followed = $2
+      `;
+      const result: QueryResult<TUser> = await connection.query(sql, [
+        following_id,
+        followed_id,
+      ]);
 
-      // COMMIT TRANSACTION
       await connection.query("COMMIT");
-      const user = result.rows[0];
 
-      if (user) {
-        return true;
-      }
-
-      return false;
+      return result.rows.length > 0;
     } catch (error) {
-      // ROLLBACK TRANSACTION ON ERROR.
       await connection.query("ROLLBACK");
-      console.error(error);
+      console.error("[FOLLOW MODEL] checkIfFollowing error", error);
       throw new Error(`check follow model error: ${(error as Error).message}`);
     } finally {
-      // RELEASE THE CONNECTION.
       connection.release();
     }
   }
 
+  /**
+   * Follow a user.
+   * @param {string} user_id_following
+   * @param {string} user_id_followed
+   * @returns {Promise<{ message: string }>}
+   * @throws {Error} Error if required fields are missing or operation fails
+   */
   async follow(
     user_id_following: string,
     user_id_followed: string
   ): Promise<{ message: string }> {
+    if (!user_id_following || !user_id_followed) {
+      throw new Error(
+        "Missing required fields: user_id_following and user_id_followed are required"
+      );
+    }
     const connection: PoolClient = await db.connect();
     try {
-      // START TRANSACTION
       await connection.query("BEGIN");
 
-      if (!(await this.checkIfFollowing(user_id_following, user_id_followed))) {
+      const isFollowing = await this.checkIfFollowing(
+        user_id_following,
+        user_id_followed
+      );
+      if (!isFollowing) {
+        // FOLLOW THE USER.
         await connection.query(
           `INSERT INTO follows (user_id_following, user_id_followed) VALUES ($1, $2)`,
           [user_id_following, user_id_followed]
@@ -56,45 +79,59 @@ export default class FollowModel {
 
         // INCREMENT THE "number_of_followings" FOR THE FOLLOWING USER.
         await connection.query(
-          "UPDATE users SET number_of_followings = number_of_followings + 1 WHERE user_id = ($1)",
+          "UPDATE users SET number_of_followings = number_of_followings + 1 WHERE user_id = $1",
           [user_id_following]
         );
 
         // INCREMENT THE "number_of_followers" FOR THE FOLLOWED USER.
         await connection.query(
-          "UPDATE users SET number_of_followers = number_of_followers + 1 WHERE user_id = ($1)",
+          "UPDATE users SET number_of_followers = number_of_followers + 1 WHERE user_id = $1",
           [user_id_followed]
         );
 
-        // COMMIT TRANSACTION
         await connection.query("COMMIT");
 
-        return { message: `${user_id_followed} has been followed !` };
+        return { message: `Followed successfully!` };
       } else {
-        // ROLLBACK TRANSACTION ON MESSAGE.
         await connection.query("ROLLBACK");
-        return { message: `${user_id_followed} is already followed` };
+        return { message: `Already Following this User!` };
       }
     } catch (error) {
-      // ROLLBACK TRANSACTION ON ERROR.
       await connection.query("ROLLBACK");
-      console.error(error);
-      throw new Error(`Follow model error: ${(error as Error).message}`);
+      console.error("[FOLLOW MODEL] follow error", error);
+      throw new Error(`Failed to follow user: ${(error as Error).message}`);
     } finally {
-      // release the connection
       connection.release();
     }
   }
 
-  async unFollow(user_id_following: string, user_id_followed: string) {
+  /**
+   * Unfollow a user.
+   * @param {string} user_id_following
+   * @param {string} user_id_followed
+   * @returns {Promise<{ message: string }>}
+   * @throws {Error} Error if required fields are missing or operation fails
+   */
+  async unFollow(
+    user_id_following: string,
+    user_id_followed: string
+  ): Promise<{ message: string }> {
+    if (!user_id_following || !user_id_followed) {
+      throw new Error(
+        "Missing required fields: user_id_following and user_id_followed are required"
+      );
+    }
     const connection: PoolClient = await db.connect();
     try {
-      // START TRANSACTION
       await connection.query("BEGIN");
 
-      if (await this.checkIfFollowing(user_id_following, user_id_followed)) {
+      const isFollowing = await this.checkIfFollowing(
+        user_id_following,
+        user_id_followed
+      );
+      if (isFollowing) {
         await connection.query(
-          "DELETE FROM follows WHERE user_id_following = ($1) AND user_id_followed = ($2)",
+          "DELETE FROM follows WHERE user_id_following = $1 AND user_id_followed = $2",
           [user_id_following, user_id_followed]
         );
 
@@ -110,154 +147,257 @@ export default class FollowModel {
           [user_id_followed]
         );
 
-        // COMMIT TRANSACTION
         await connection.query("COMMIT");
 
-        return { message: `${user_id_followed} has been un followed` };
+        return { message: `Unfollowed successfully!` };
       } else {
-        // ROLLBACK TRANSACTION ON MESSAGE.
         await connection.query("ROLLBACK");
-        return { message: `${user_id_followed} is not currently followed` };
+        return { message: `Not currently following this user!` };
       }
     } catch (error) {
-      // ROLLBACK TRANSACTION ON ERROR.
       await connection.query("ROLLBACK");
-      console.error(error);
-      throw new Error(`Unfollow model error: ${(error as Error).message}`);
+      console.error("[FOLLOW MODEL] unFollow error", error);
+      throw new Error(`Failed to unfollow user: ${(error as Error).message}`);
     } finally {
-      // RELEASE THE CONNECTION
       connection.release();
     }
   }
 
+  /**
+   * Get the number of users a user is following.
+   * @param {string} user_id .
+   * @returns {Promise<number>}
+   * @throws {Error} Error if required fields are missing or operation fails
+   */
   async getNumberOfFollowings(user_id: string): Promise<number> {
+    if (!user_id) {
+      throw new Error("Missing required fields: user_id is required");
+    }
     const connection: PoolClient = await db.connect();
     try {
-      // get followings query
-      const query = `
+      await connection.query("BEGIN");
+
+      const sql = `
           SELECT
             COUNT(DISTINCT user_id_followed) AS "followings"
           FROM
             follows
           WHERE
-            user_id_following = ($1);
+            user_id_following = $1;
       `;
 
       // get the followings
-      const result = await connection.query(query, [user_id]);
-      const numOfFollowings: number = result.rows[0];
-      return numOfFollowings;
+      const result = await connection.query(sql, [user_id]);
+
+      await connection.query("COMMIT");
+      return parseInt(result.rows[0].followings);
     } catch (error) {
+      await connection.query("ROLLBACK");
+      console.error("[FOLLOW MODEL] getNumberOfFollowings error", error);
       throw new Error(
-        `get followings model error: ${(error as Error).message}`
+        `Failed to get number of followings: ${(error as Error).message}`
       );
     } finally {
-      // release the connection
       connection.release();
     }
   }
 
+  /**
+   * Get the number of followers for a user.
+   * @param {string} user_id .
+   * @returns {Promise<number>}
+   * @throws {Error} Error if required fields are missing or operation fails
+   */
   async getNumberOfFollowers(user_id: string): Promise<number> {
+    if (!user_id) {
+      throw new Error("Missing required fields: user_id is required");
+    }
     const connection: PoolClient = await db.connect();
     try {
-      // get the followers
-      const result = await connection.query(
-        `
+      await connection.query("BEGIN");
+      const sql = `
           SELECT
             COUNT(DISTINCT f.user_id_following) AS "followers"
           FROM
             follows AS f
           WHERE
-            f.user_id_followed = ($1)
-        `,
-        [user_id]
-      );
-      const numOfFollowers: number = result.rows[0];
-      return numOfFollowers;
+            f.user_id_followed = $1
+        `;
+      const result = await connection.query(sql, [user_id]);
+
+      await connection.query("COMMIT");
+      return parseInt(result.rows[0].followers);
     } catch (error) {
-      throw new Error(`get followers model error: ${(error as Error).message}`);
+      await connection.query("ROLLBACK");
+      console.error("[FOLLOW MODEL] getNumberOfFollowers error", error);
+      throw new Error(
+        `Failed to get number of followers: ${(error as Error).message}`
+      );
     } finally {
-      // release the connection
       connection.release();
     }
   }
 
-  async getFollowings(user_id: string): Promise<TUser[]> {
-    // CONNECT TO THE DATABASE.
+  /**
+   * Get users that a user is following.
+   * @param {string} user_id .
+   * @returns {Promise<TFollowings[]>}
+   * @throws {Error} Error if required fields are missing or operation fails
+   */
+  async getFollowings(
+    user_id: string,
+    limit: number = 10,
+    cursor?: string,
+    direction: "next" | "previous" = "next"
+  ): Promise<{ followings: TFollowings[]; totalCount: number }> {
+    if (!user_id) {
+      throw new Error("Missing required fields: user_id is required");
+    }
+
     const connection: PoolClient = await db.connect();
     try {
-      // START TRANSACTION.
       await connection.query("BEGIN");
-      const query = `SELECT
-			u.user_id,
-			u.user_name,
-			u.first_name,
-			u.last_name,
-			u.picture,
-			u.cover,
-			u.bio,
-			u.number_of_followers,
-			u.number_of_followings
+      const params: (string | number)[] = [user_id];
+
+      let sql = `
+      SELECT
+        u.user_id,
+        u.user_name,
+        u.first_name,
+        u.last_name,
+        u.picture,
+        u.cover,
+        u.bio,
+        u.number_of_followers,
+        u.number_of_followings
 			FROM
 			users u
 			JOIN follows f ON u.user_id = f.user_id_followed
-			WHERE f.user_id_following = ($1)
-			ORDER BY f.created_on DESC`;
-      const result: QueryResult<TUser> = await connection.query(query, [
-        user_id,
-      ]);
+			WHERE f.user_id_following = $1`;
+
+      if (cursor) {
+        if (direction === "next") {
+          sql += ` AND f.created_at < (SELECT created_at FROM follows WHERE user_id_following = $1 AND user_id_followed = $2)`;
+        } else {
+          sql += ` AND f.created_at > (SELECT created_at FROM follows WHERE user_id_following = $1 AND user_id_followed = $2)`;
+        }
+        params.push(cursor);
+      }
+      sql +=
+        direction === "next"
+          ? " ORDER BY f.created_at DESC"
+          : " ORDER BY f.created_at ASC";
+      sql += ` LIMIT $${params.length + 1}`;
+
+      params.push(limit);
+
+      const result: QueryResult<TFollowings> = await connection.query(
+        sql,
+        params
+      );
+
+      const countSql = `
+      SELECT COUNT(*) AS total
+      FROM follows
+      WHERE user_id_following = $1
+    `;
+      const countResult: QueryResult<{ total: number }> =
+        await connection.query(countSql, [user_id]);
+
+      const totalCount = countResult.rows[0].total;
+
       const followings = result.rows;
       // COMMIT TRANSACTION.
       await connection.query("COMMIT");
-      return followings;
+      return { followings, totalCount };
     } catch (error) {
-      // ROLLBACK TRANSACTION.
       await connection.query("ROLLBACK");
-      throw new Error(
-        `get followings model error: ${(error as Error).message}`
-      );
+      console.error("[FOLLOW MODEL] getFollowings error", error);
+      throw new Error(`Failed to get followings: ${(error as Error).message}`);
     } finally {
-      // RELEASE THE CONNECTION
       connection.release();
     }
   }
 
-  async getFollowers(user_id: string): Promise<TUser[]> {
-    // CONNECT TO THE DATABASE.
+  /**
+   * Get users that follow a user.
+   * @param {string} user_id .
+   * @param {number} limit .
+   * @param {string} cursor .
+   * @param {"next" | "previous"} direction .
+   * @returns {Promise<{ followers: TFollowers[]; totalCount: number }>}
+   * @throws {Error} Error if required fields are missing or operation fails
+   */
+  async getFollowers(
+    user_id: string,
+    limit: number = 10,
+    cursor?: string,
+    direction: "next" | "previous" = "next"
+  ): Promise<{ followers: TFollowers[]; totalCount: number }> {
+    if (!user_id) {
+      throw new Error("Missing required fields: user_id is required");
+    }
     const connection: PoolClient = await db.connect();
     try {
-      // START TRANSACTION.
       await connection.query("BEGIN");
-      const query = `SELECT
-			u.user_id,
-			u.user_name,
-			u.first_name,
-			u.last_name,
-			u.picture,
-			u.cover,
-			u.bio,
-			u.number_of_followers,
-			u.number_of_followings
-			FROM
-			users u
-			JOIN follows f ON u.user_id = f.user_id_following
-			WHERE f.user_id_followed = ($1)
-			ORDER BY f.created_on DESC`;
-      const result: QueryResult<TUser> = await connection.query(query, [
-        user_id,
-      ]);
-      const followers = result.rows;
-      // COMMIT TRANSACTION.
-      await connection.query("COMMIT");
-      return followers;
-    } catch (error) {
-      // ROLLBACK TRANSACTION.
-      await connection.query("ROLLBACK");
-      throw new Error(
-        `get followings model error: ${(error as Error).message}`
+      const params: (string | number)[] = [user_id];
+
+      let sql = `
+        SELECT
+          u.user_id,
+          u.user_name,
+          u.first_name,
+          u.last_name,
+          u.picture,
+          u.cover,
+          u.bio,
+          u.number_of_followers,
+          u.number_of_followings,
+          f.created_at 
+        FROM
+          users u
+        JOIN follows f ON u.user_id = f.user_id_following
+			WHERE f.user_id_followed = ($1)`;
+
+      if (cursor) {
+        if (direction === "next") {
+          sql += ` AND f.created_at < (SELECT created_at FROM follows WHERE user_id_followed = $1 AND user_id_following = $2)`;
+        } else {
+          sql += ` AND f.created_at > (SELECT created_at FROM follows WHERE user_id_followed = $1 AND user_id_following = $2)`;
+        }
+        params.push(cursor);
+      }
+      sql +=
+        direction === "next"
+          ? " ORDER BY f.created_at DESC"
+          : " ORDER BY f.created_at ASC";
+      sql += ` LIMIT $${params.length + 1}`;
+
+      params.push(limit);
+
+      const result: QueryResult<TFollowers> = await connection.query(
+        sql,
+        params
       );
+      const followers = result.rows;
+
+      const countSql = `
+      SELECT COUNT(*) AS total
+      FROM follows
+      WHERE user_id_followed = $1
+    `;
+      const countResult: QueryResult<{ total: number }> =
+        await connection.query(countSql, [user_id]);
+
+      const totalCount = countResult.rows[0].total;
+
+      await connection.query("COMMIT");
+      return { followers, totalCount };
+    } catch (error) {
+      await connection.query("ROLLBACK");
+      console.error("[FOLLOW MODEL] getFollowers error", error);
+      throw new Error(`Failed to get followers: ${(error as Error).message}`);
     } finally {
-      // RELEASE THE CONNECTION
       connection.release();
     }
   }
