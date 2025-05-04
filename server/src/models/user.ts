@@ -133,20 +133,19 @@ class UserModel {
   /**
    * Get user by user name.
    * @param {string} user_name - The user name of the user.
-   * @returns {Promise<{ email: string }>}
+   * @returns {Promise<TUser>}
    * @throws {Error} If the user is not found.
    */
-  async getUserByUsername(user_name: string): Promise<{ email: string }> {
+  async getUserByUsername(user_name: string): Promise<TUser> {
     // connect to the database
     const connection = await pool.connect();
     try {
       await connection.query("BEGIN");
 
-      const sql = `SELECT email FROM users WHERE user_name = $1`;
-      const result: QueryResult<{ email: string }> = await connection.query(
-        sql,
-        [user_name]
-      );
+      const sql = `SELECT * FROM users WHERE user_name = $1`;
+      const result: QueryResult<TUser> = await connection.query(sql, [
+        user_name,
+      ]);
 
       if (result.rowCount === 0) {
         throw new Error("User not found");
@@ -342,10 +341,11 @@ class UserModel {
 
       const params: any[] = [user_id];
 
-      let sql = `SELECT 
+      let sql = `SELECT
 								u.user_id,
 								u.first_name,
 								u.last_name,
+								u.user_name,
 								u.picture,
 								u.bio,
 								u.marital_status,

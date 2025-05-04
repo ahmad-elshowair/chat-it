@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaCalendarCheck,
   FaDesktop,
@@ -9,28 +9,25 @@ import {
 import { Link } from "react-router-dom";
 import api from "../../api/axiosInstance";
 import config from "../../configs";
-import { AuthContext } from "../../context/AuthContext";
 import { TUser } from "../../types/user";
 import { Friend } from "../friend/Friend";
 import "./leftBar.css";
 
 const LeftBar = () => {
-  const { user: currentUser } = useContext(AuthContext).state;
   const [users, setUsers] = useState<TUser[]>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await api.get(`/users/unknowns`, {
-          headers: { authorization: `Bearer ${currentUser?.access_token}` },
-        });
-        setUsers(response.data);
+        const response = await api.get(`/users/unknowns`);
+        const { data } = response.data;
+        setUsers(data);
       } catch (error) {
         console.error(error);
       }
     };
     fetchUsers();
-  }, [currentUser?.access_token]);
+  }, []);
 
   return (
     <aside className="sidebar">

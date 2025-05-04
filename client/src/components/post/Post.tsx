@@ -40,7 +40,8 @@ export const Post: FC<TPost> = ({
 
       try {
         const response = await api.get(`/posts/is-liked/${post_id}`);
-        if (response.data.isLiked) {
+        const { data } = response.data;
+        if (data.isLiked) {
           setLikeState((prevState) => ({
             ...prevState,
             isLiked: true,
@@ -57,7 +58,7 @@ export const Post: FC<TPost> = ({
     const fetchAUser = async () => {
       try {
         const response = await api.get(`/users/${user_name}`);
-        setUser(response.data);
+        setUser(response.data.data);
       } catch (error) {
         console.error(`Failed to fetch user: ${error}`);
       }

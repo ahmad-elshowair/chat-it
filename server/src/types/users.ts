@@ -29,6 +29,7 @@ export type TUnknownUser = Pick<
 export type TFriend = Pick<
   TUser,
   | "user_id"
+  | "user_name"
   | "picture"
   | "first_name"
   | "last_name"

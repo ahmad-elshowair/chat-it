@@ -36,7 +36,7 @@ export const PostProvider: FC<{ children: React.ReactNode }> = ({
             headers: { "X-CSRF-Token": csrf },
           });
 
-      setPosts(response.data);
+      setPosts(response.data.data);
     } catch (error: unknown) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {

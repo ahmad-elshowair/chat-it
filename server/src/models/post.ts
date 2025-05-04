@@ -239,8 +239,8 @@ class PostModel {
 
       sql +=
         direction === "next"
-          ? " ORDER BY p.updated_at DESC"
-          : " ORDER BY p.updated_at ASC";
+          ? " ORDER BY p.updated_at DESC "
+          : " ORDER BY p.updated_at ASC ";
 
       sql += `LIMIT $${params.length + 1}`;
 
@@ -329,8 +329,8 @@ class PostModel {
 
       sql +=
         direction === "next"
-          ? " ORDER BY p.updated_at DESC"
-          : " ORDER BY p.updated_at ASC";
+          ? " ORDER BY p.updated_at DESC "
+          : " ORDER BY p.updated_at ASC ";
 
       sql += `LIMIT $${params.length + 1}`;
 

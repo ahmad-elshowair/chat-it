@@ -24,7 +24,8 @@ export const HomeRightBar = () => {
             },
           }
         );
-        setOnlineFriends(response.data);
+        const { data } = response.data;
+        setOnlineFriends(data);
       } catch (error) {
         console.error("Failed to fetch online users", error);
       }

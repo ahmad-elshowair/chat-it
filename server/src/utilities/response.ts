@@ -7,6 +7,20 @@ export const sendResponse = {
     message = "Success",
     statusCode = 200
   ) => {
+    if (
+      data &&
+      typeof data === "object" &&
+      "data" in data &&
+      "pagination" in data
+    ) {
+      const { data: items, pagination } = data;
+      return res.status(statusCode).json({
+        success: true,
+        message,
+        data: items,
+        pagination,
+      });
+    }
     return res.status(statusCode).json({
       success: true,
       message,

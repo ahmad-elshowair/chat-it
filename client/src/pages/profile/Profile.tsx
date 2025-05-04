@@ -56,7 +56,8 @@ export const Profile = () => {
     try {
       setIsLoading(true);
       const response = await api.get(`/users/${user_name}`);
-      setUser(response.data);
+      const responseData = response.data;
+      setUser(responseData.data);
     } catch (error) {
       console.error(`Error Fetching user: ${error}`);
       if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -73,12 +74,13 @@ export const Profile = () => {
   }, [user_name, authChecked]);
 
   const checkIsFollowed = useCallback(async () => {
+    syncAllAuthTokensFromCookies();
     if (!user?.user_id || !authChecked || !currentUser || followCheckDone) {
       console.error("Cannot check follow status - missing data:", {
         hasAuthBeenVerified: authChecked,
         hasUser: Boolean(user),
         hasToken: Boolean(currentUser),
-        hasKeyId: Boolean(user?.user_id),
+        hasUserID: Boolean(user?.user_id),
         alreadyChecked: followCheckDone,
       });
       return;

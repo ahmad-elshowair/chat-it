@@ -16,8 +16,10 @@ export const validateUpdateUser = [
       max: 30,
     })
     .withMessage("Username must be between 3 and 30 characters long")
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage("Username must be alphanumeric with underscores only"),
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage(
+      "Username must be alphanumeric with underscores and hyphens only"
+    ),
 
   body("first_name")
     .optional()
@@ -65,8 +67,10 @@ export const validateGetUserByUsername = [
     .withMessage("User name must be a string")
     .isLength({ min: 3, max: 30 })
     .withMessage("User name must be between 3 and 30 characters long")
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage("User name must be alphanumeric with underscores only"),
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage(
+      "User name must be alphanumeric with underscores and hyphens only"
+    ),
 ];
 
 export const validateGetFriends = [
