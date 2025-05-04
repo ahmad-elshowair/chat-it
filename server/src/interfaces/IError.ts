@@ -1,6 +1,3 @@
-export interface IError {
-	stack?: string;
-	message: string;
-	name: string;
-	status?: number;
+export interface IError extends Error {
+  status?: number;
 }

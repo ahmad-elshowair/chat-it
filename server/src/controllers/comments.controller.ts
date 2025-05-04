@@ -88,6 +88,11 @@ const updateComment = async (req: ICustomRequest, res: Response) => {
 
 const deleteComment = async (req: ICustomRequest, res: Response) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const comment_id = req.params.comment_id;
     const user_id = req.user?.id!;
 
@@ -122,6 +127,10 @@ const deleteComment = async (req: ICustomRequest, res: Response) => {
 
 const getCommentsByPostId = async (req: Request, res: Response) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
     const post_id = req.params.post_id;
 
     if (!post_id) {
@@ -154,6 +163,11 @@ const getCommentsByPostId = async (req: Request, res: Response) => {
 
 const getRepliesByCommentId = async (req: Request, res: Response) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const comment_id = req.params.comment_id;
 
     if (!comment_id) {

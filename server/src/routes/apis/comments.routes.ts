@@ -1,5 +1,5 @@
 import { Router } from "express";
-import commentController from "../../controllers/comments";
+import commentController from "../../controllers/comments.controller";
 import authorize_user from "../../middlewares/auth";
 import {
   createCommentValidator,
