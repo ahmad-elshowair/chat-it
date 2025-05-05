@@ -83,12 +83,12 @@ const checkPassword: ValidationChain = check("password").custom(
 const checkUserNameExists: ValidationChain = check("user_name").custom(
   async (user_name: string) => {
     try {
-      const exists = await user_model.getUserByUsername(user_name);
-      if (exists) {
-        throw new Error("Username already exists!");
+      const user = await user_model.getUserByUsername(user_name);
+      if (user) {
+        throw new Error("USERNAME ALREADY EXISTS!");
       }
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof Error && !error.message.includes("User not found")) {
         throw new Error(`${(error as Error).message}!`);
       }
     }

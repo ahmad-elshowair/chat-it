@@ -10,19 +10,10 @@ class AuthModel {
     try {
       await connection.query("BEGIN");
 
-      const existingUser = await connection.query<TUser>(
-        "SELECT * FROM users WHERE email=$1",
-        [registerCredentials.email]
-      );
-
-      if (existingUser.rows[0]) {
-        throw new Error(`Email is already in use !`);
-      }
-
       const hashedPassword = passwords.hashPassword(
         registerCredentials.password
       );
-      const queryInsertUser = `
+      const sql = `
           INSERT INTO users (
             first_name,
             last_name,
@@ -42,14 +33,11 @@ class AuthModel {
         true,
       ];
 
-      const registerUserResult: QueryResult<TUser> = await connection.query(
-        queryInsertUser,
-        values
-      );
+      const result: QueryResult<TUser> = await connection.query(sql, values);
 
       await connection.query("COMMIT");
 
-      return registerUserResult.rows[0];
+      return result.rows[0];
     } catch (error) {
       await connection.query("ROLLBACK");
       console.error(`[AUTH MODEL] register error: ${(error as Error).message}`);

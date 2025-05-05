@@ -1,9 +1,13 @@
+import { body } from "express-validator";
 import { validateUUID } from "./common";
 
-export const validateFollowAction = validateUUID(
-  "user_id_followed",
-  "User ID followed"
-);
+export const validateFollowAction = [
+  body("user_id_followed")
+    .notEmpty()
+    .withMessage("User ID followed is required")
+    .isUUID()
+    .withMessage("User ID followed must be valid UUID"),
+];
 
 export const validateIsFollowedAction = validateUUID(
   "followed_id",

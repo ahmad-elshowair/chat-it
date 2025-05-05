@@ -21,8 +21,8 @@ export const Feed: FC<TFeedProps> = ({ user_id }) => {
           ? await api.get(`/posts/user/${user_id}`)
           : await api.get(`/posts/feed`);
 
-        const responseData = response.data;
-        setPosts(responseData.data);
+        const { data } = response.data;
+        setPosts(data);
       } catch (error: unknown) {
         const axiosError = error as AxiosError;
         if (axiosError.response) {

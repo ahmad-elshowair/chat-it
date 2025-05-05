@@ -23,7 +23,7 @@ export type TLoginCredentials = Pick<TUser, "email" | "password">;
 
 export type TUnknownUser = Pick<
   TUser,
-  "user_id" | "picture" | "first_name" | "last_name"
+  "user_id" | "picture" | "first_name" | "last_name" | "user_name"
 >;
 
 export type TFriend = Pick<

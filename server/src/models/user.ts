@@ -251,7 +251,8 @@ class UserModel {
 										u.user_id,
 										u.first_name,
 										u.last_name,
-										u.picture
+										u.picture,
+                    u.user_name
 									FROM users u
 									LEFT JOIN follows f ON u.user_id = f.user_id_followed
 									AND f.user_id_following = ($1)
