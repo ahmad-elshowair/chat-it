@@ -1,20 +1,19 @@
 import { PoolClient, QueryResult } from "pg";
 import db from "../database/pool";
 import { TFollowers, TFollowings } from "../types/follow";
-import { TUser } from "../types/users";
 
 export default class FollowModel {
   /**
    * Check if a user is following another user.
    * @param {string} following_id
    * @param {string} followed_id
-   * @returns {Promise<boolean>}
+   * @returns {Promise<{ is_following: boolean }>}
    * @throws {Error} Error if required fields are missing or operation fails
    */
-  async checkIfFollowing(
+  async isFollowing(
     following_id: string,
     followed_id: string
-  ): Promise<boolean> {
+  ): Promise<{ is_following: boolean }> {
     if (!following_id || !followed_id) {
       throw new Error(
         "Missing required fields: following_id and followed_id are required"
@@ -25,22 +24,24 @@ export default class FollowModel {
       await connection.query("BEGIN");
 
       const sql = `
-        SELECT 1
-        FROM follows
-        WHERE user_id_following = $1 AND user_id_followed = $2
+        SELECT EXISTS(
+          SELECT 1
+          FROM follows
+          WHERE user_id_following = $1 AND user_id_followed = $2
+        ) AS is_following;
       `;
-      const result: QueryResult<TUser> = await connection.query(sql, [
-        following_id,
-        followed_id,
-      ]);
+      const result: QueryResult<{ is_following: boolean }> =
+        await connection.query(sql, [following_id, followed_id]);
 
       await connection.query("COMMIT");
 
-      return result.rows.length > 0;
+      return result.rows[0];
     } catch (error) {
       await connection.query("ROLLBACK");
-      console.error("[FOLLOW MODEL] checkIfFollowing error", error);
-      throw new Error(`check follow model error: ${(error as Error).message}`);
+      console.error("[FOLLOW MODEL] isFollowing error", error);
+      throw new Error(
+        `Failed to check follow model error: ${(error as Error).message}`
+      );
     } finally {
       connection.release();
     }
@@ -66,11 +67,11 @@ export default class FollowModel {
     try {
       await connection.query("BEGIN");
 
-      const isFollowing = await this.checkIfFollowing(
+      const isFollowing = await this.isFollowing(
         user_id_following,
         user_id_followed
       );
-      if (!isFollowing) {
+      if (!isFollowing.is_following) {
         // FOLLOW THE USER.
         await connection.query(
           `INSERT INTO follows (user_id_following, user_id_followed) VALUES ($1, $2)`,
@@ -125,11 +126,11 @@ export default class FollowModel {
     try {
       await connection.query("BEGIN");
 
-      const isFollowing = await this.checkIfFollowing(
+      const isFollowing = await this.isFollowing(
         user_id_following,
         user_id_followed
       );
-      if (isFollowing) {
+      if (isFollowing.is_following) {
         await connection.query(
           "DELETE FROM follows WHERE user_id_following = $1 AND user_id_followed = $2",
           [user_id_following, user_id_followed]

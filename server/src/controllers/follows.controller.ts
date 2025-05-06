@@ -294,13 +294,13 @@ const isFollowed = async (
         "USER ID FOLLOWING IS REQUIRED!"
       );
     }
-    const checkIsFollowed = await follow_model.checkIfFollowing(
+    const isFollowed = await follow_model.isFollowing(
       following_id,
       followed_id
     );
     return sendResponse.success(
       res,
-      checkIsFollowed,
+      isFollowed.is_following,
       "FOLLOW STATUS CHECKED SUCCESSFULLY!",
       200
     );

@@ -39,10 +39,7 @@ export const Login = () => {
       console.error("Login error:", error);
     }
   };
-  // IF ERROR EXISTS, LOG THEM TO THE CONSOLE.
-  // if (state.errors) {
-  //   console.error(state.errors);
-  // }
+
   const imageUrl = `${config.api_url}/images/chat_it.png`;
 
   return (

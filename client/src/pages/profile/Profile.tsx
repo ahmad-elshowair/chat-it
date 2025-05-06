@@ -56,8 +56,8 @@ export const Profile = () => {
     try {
       setIsLoading(true);
       const response = await api.get(`/users/${user_name}`);
-      const responseData = response.data;
-      setUser(responseData.data);
+      const { data } = response.data;
+      setUser(data);
     } catch (error) {
       console.error(`Error Fetching user: ${error}`);
       if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -93,7 +93,9 @@ export const Profile = () => {
     }
     try {
       const response = await api.get(`/follows/is-followed/${user.user_id}`);
-      setIsFollowed(response.data);
+      const { data } = response.data;
+
+      setIsFollowed(data);
       setFollowCheckDone(true);
     } catch (error) {
       console.error("Error checking follow status:", error);

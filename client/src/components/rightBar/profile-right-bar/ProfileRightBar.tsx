@@ -21,8 +21,8 @@ export const ProfileRightBar: FC<TProfileRightBarProps> = ({
         const response = await api.get(
           `/users/friends/${user_id}?is_online=false`
         );
-        const responseData = response.data;
-        setFriends(responseData.data);
+        const { data } = response.data;
+        setFriends(data);
       } catch (error) {
         console.error(error);
       }
@@ -68,14 +68,7 @@ export const ProfileRightBar: FC<TProfileRightBarProps> = ({
         {friends.length > 0 ? (
           <div className="d-flex flex-wrap gap-2">
             {friends.map((friend) => (
-              <FriendCard
-                key={friend?.user_id}
-                user_id={friend?.user_id}
-                picture={friend?.picture}
-                first_name={friend?.first_name}
-                user_name={friend?.user_name}
-                is_online={friend?.is_online}
-              />
+              <FriendCard key={friend?.user_id} {...friend} />
             ))}
           </div>
         ) : (

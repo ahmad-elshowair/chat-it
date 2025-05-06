@@ -59,7 +59,6 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
         withCredentials: true,
       });
 
-      console.info(response.data);
       return response.data;
     } catch (error) {
       const axiosError = error as AxiosError;
