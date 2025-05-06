@@ -1,9 +1,9 @@
 import { AxiosError } from "axios";
-import { createContext, FC, useState } from "react";
+import { createContext, FC, useCallback, useState } from "react";
 
 import api from "../api/axiosInstance";
 import { getCsrf, syncAllAuthTokensFromCookies } from "../services/storage";
-import { TPost, TPostContext } from "../types/post";
+import { TPagination, TPost, TPostContext } from "../types/post";
 
 export const PostContext = createContext<TPostContext | undefined>(undefined);
 
@@ -11,40 +11,74 @@ export const PostProvider: FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [posts, setPosts] = useState<TPost[]>([]);
+  const [pagination, setPagination] = useState<TPagination>({
+    hasMore: false,
+    nextCursor: undefined,
+    previousCursor: undefined,
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const addPost = (newPost: TPost) => {
     setPosts((prevPosts) => [newPost, ...prevPosts]);
   };
 
-  const refreshPosts = async (user_id?: string) => {
-    syncAllAuthTokensFromCookies();
+  const refreshPosts = useCallback(
+    async (
+      user_id?: string,
+      cursor?: string,
+      append?: boolean,
+      limit?: number
+    ) => {
+      setIsLoading(true);
 
-    const csrf = getCsrf();
-    if (!csrf) {
-      console.error("CSRF token not found");
-      return;
-    }
+      syncAllAuthTokensFromCookies();
 
-    try {
-      const response = user_id
-        ? await api.get(`/posts/user/${user_id}`, {
-            withCredentials: true,
-            headers: { "X-CSRF-Token": csrf },
-          })
-        : await api.get(`/posts/feed`, {
-            withCredentials: true,
-            headers: { "X-CSRF-Token": csrf },
-          });
-
-      setPosts(response.data.data);
-    } catch (error: unknown) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response) {
-        console.error("Error data:", axiosError.response.data);
-        console.error("Error status:", axiosError.response.status);
+      const csrf = getCsrf();
+      if (!csrf) {
+        console.error("CSRF token not found");
+        setIsLoading(false);
+        return;
       }
-    }
-  };
+
+      try {
+        const params = new URLSearchParams();
+
+        if (cursor) params.append("cursor", cursor);
+        if (limit) params.append("limit", limit.toString());
+
+        const queryString = params.toString() ? `?${params.toString()}` : "";
+
+        const response = user_id
+          ? await api.get(`/posts/user/${user_id}${queryString}`, {
+              withCredentials: true,
+              headers: { "X-CSRF-Token": csrf },
+            })
+          : await api.get(`/posts/feed${queryString}`, {
+              withCredentials: true,
+              headers: { "X-CSRF-Token": csrf },
+            });
+
+        const { data, pagination: paginationData } = response.data;
+
+        if (append && cursor) {
+          setPosts((prevPosts) => [...prevPosts, ...data]);
+        } else {
+          setPosts(data);
+        }
+
+        setPagination(paginationData);
+      } catch (error: unknown) {
+        const axiosError = error as AxiosError;
+        if (axiosError.response) {
+          console.error("Error data:", axiosError.response.data);
+          console.error("Error status:", axiosError.response.status);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   const removePost = (post_id: string) => {
     setPosts((prevPosts) =>
@@ -57,6 +91,8 @@ export const PostProvider: FC<{ children: React.ReactNode }> = ({
       value={{
         posts,
         setPosts,
+        pagination,
+        isLoading,
         addPost,
         refreshPosts,
         removePost,

@@ -21,14 +21,29 @@ export type TModalPostProps = {
   handleClose: () => void;
 };
 
+export type TPagination = {
+  hasMore: boolean;
+  nextCursor?: string;
+  previousCursor?: string;
+};
+
 export type TPostContext = {
   posts: TPost[];
   setPosts: (posts: TPost[]) => void;
   addPost: (newPost: TPost) => void;
+  refreshPosts: (
+    user_id?: string,
+    cursor?: string,
+    append?: boolean,
+    limit?: number
+  ) => Promise<void>;
+  pagination: TPagination;
+  isLoading: boolean;
   removePost: (post_id: string) => void;
-  refreshPosts: (user_id?: string) => Promise<void>;
 };
 
 export type TFeedProps = {
   user_id?: string;
+  cursor?: string;
+  append?: boolean;
 };
