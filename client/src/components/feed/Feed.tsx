@@ -84,7 +84,7 @@ export const Feed: FC<TFeedProps> = ({ user_id }) => {
           {pagination.hasMore && (
             <article className="d-flex justify-content-center my-4">
               <button
-                className="btn btn-outline-warning rounded-pill px-4"
+                className="btn btn-outline-warning border-0 rounded-pill px-4"
                 onClick={handleLoadMore}
                 disabled={isLoading}
               >

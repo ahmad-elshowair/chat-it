@@ -18,7 +18,12 @@ export const createPaginationResult = <T>(
   totalCount: number,
   idField: keyof T
 ): IPaginatedResult<T> => {
-  const hasMore = data.length == options.limit && totalCount > options.limit;
+  const loadedItemsCount = options.cursor ? options.limit : 0;
+
+  const hasMore =
+    data.length === options.limit &&
+    data.length + loadedItemsCount < totalCount;
+
   const lastItem = data[data.length - 1];
   const firstItem = data[0];
   return {

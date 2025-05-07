@@ -319,18 +319,32 @@ class PostModel {
 					)
 			`;
       if (cursor) {
-        if (direction === "next") {
-          sql += ` AND p.updated_at < (SELECT updated_at FROM posts WHERE post_id = $2)`;
-        } else {
-          sql += ` AND p.updated_at > (SELECT updated_at FROM posts WHERE post_id = $2)`;
+        try {
+          const postCheck = await connection.query(
+            `SELECT updated_at FROM posts WHERE post_id = $1`,
+            [cursor]
+          );
+
+          if (postCheck.rows.length > 0) {
+            const timestamp = postCheck.rows[0].updated_at;
+            if (direction === "next") {
+              sql += ` AND p.updated_at < $2`;
+            } else {
+              sql += ` AND p.updated_at > $2`;
+            }
+            params.push(timestamp);
+          } else {
+            console.warn(`Post with ID ${cursor} not found for pagination`);
+          }
+        } catch (error) {
+          console.error("Error checking post for cursor:", error);
         }
-        params.push(cursor);
       }
 
       sql +=
         direction === "next"
-          ? " ORDER BY p.updated_at DESC "
-          : " ORDER BY p.updated_at ASC ";
+          ? " ORDER BY p.updated_at DESC, p.post_id DESC "
+          : " ORDER BY p.updated_at ASC, p.post_id ASC ";
 
       sql += `LIMIT $${params.length + 1}`;
 

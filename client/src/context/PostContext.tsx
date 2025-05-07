@@ -61,7 +61,22 @@ export const PostProvider: FC<{ children: React.ReactNode }> = ({
         const { data, pagination: paginationData } = response.data;
 
         if (append && cursor) {
-          setPosts((prevPosts) => [...prevPosts, ...data]);
+          setPosts((prevPosts) => {
+            const existingPostIds = new Set(
+              prevPosts.map((post) => post.post_id)
+            );
+
+            const uniquePosts = data.filter(
+              (post: TPost) => !existingPostIds.has(post.post_id)
+            );
+
+            const duplicatesCount = data.length - uniquePosts.length;
+            if (duplicatesCount > 0) {
+              console.log(`Filtered out ${duplicatesCount} duplicate posts`);
+            }
+
+            return [...prevPosts, ...uniquePosts];
+          });
         } else {
           setPosts(data);
         }
