@@ -7,13 +7,11 @@ import { Link } from "react-router-dom";
 import api from "../../api/axiosInstance";
 import config from "../../configs";
 import useAuthState from "../../hooks/useAuthState";
-import {
-  getCsrf,
-  syncAllAuthTokensFromCookies,
-  syncCsrfFromCookies,
-} from "../../services/storage";
+import { getCsrf, syncAllAuthTokensFromCookies } from "../../services/storage";
 import { TPost } from "../../types/post";
 import { TUser } from "../../types/user";
+import { formatRelativeTime } from "../../utils/dateUtils";
+import CommentList from "../comment/CommentList";
 import DeletePostModal from "../deletePostModal/DeletePostModal";
 import "./post.css";
 
@@ -32,6 +30,7 @@ export const Post: FC<TPost> = ({
     likes: number_of_likes,
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const { user: currentUser } = useAuthState();
 
   useEffect(() => {
@@ -67,14 +66,7 @@ export const Post: FC<TPost> = ({
   }, [user_name]);
 
   // FORMATE THE DATE
-  const date: Date = new Date(updated_at as Date);
-  const dateFormate = date.toLocaleString("en-GB", {
-    day: "numeric",
-    month: "long",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  });
+  const relativeDate = formatRelativeTime(updated_at as Date);
 
   const likeHandler = async () => {
     setLikeState((pervState) => ({
@@ -117,7 +109,7 @@ export const Post: FC<TPost> = ({
         (axiosError.response.data as any).error === "CSRF token mismatch!"
       ) {
         try {
-          syncCsrfFromCookies();
+          syncAllAuthTokensFromCookies();
           const newCsrfToken = getCsrf();
           if (newCsrfToken) {
             await api.post(
@@ -144,6 +136,10 @@ export const Post: FC<TPost> = ({
         likes: prevState.isLiked ? prevState.likes - 1 : prevState.likes + 1,
       }));
     }
+  };
+
+  const toggleComments = () => {
+    setShowComments((prev) => !prev);
   };
 
   return (
@@ -173,7 +169,7 @@ export const Post: FC<TPost> = ({
                 {`${user?.first_name} ${user?.last_name}`}
               </Link>
               <a href="#profile" className="post-header-info-links-date">
-                {dateFormate}
+                {relativeDate}
               </a>
             </div>
           </div>
@@ -228,16 +224,34 @@ export const Post: FC<TPost> = ({
               aria-label={likeState.isLiked ? "Unlike Post" : "Like post"}
             >
               {likeState.isLiked ? (
-                <AiFillLike className="like" />
+                <section className="d-flex align-items-center gap-2 justify-content-center">
+                  <AiFillLike className="like-icon" />
+                  <span className="text-muted">Liked</span>
+                </section>
               ) : (
-                <BiLike className="like" />
+                <section className="d-flex align-items-center gap-2 justify-content-center">
+                  <BiLike className="like-icon" />
+                  <span className="text-muted">Like</span>
+                </section>
               )}
             </button>
-            <button type="button">
-              <FaRegComment className="comment" />
+            <button
+              type="button"
+              onClick={toggleComments}
+              aria-label="Show comments"
+            >
+              <section className="d-flex align-items-center gap-2 justify-content-center">
+                <FaRegComment className="comment-icon" />
+                <span className="text-muted">Comment</span>
+              </section>
             </button>
           </div>
         </article>
+        {showComments && (
+          <article className="post-comments p-2 border-top">
+            <CommentList post_id={post_id} />
+          </article>
+        )}
       </div>
       <DeletePostModal
         show={showDeleteModal}

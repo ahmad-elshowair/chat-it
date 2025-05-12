@@ -134,7 +134,8 @@ class CommentModel {
                 c.parent_comment_id,
                 u.picture,
                 u.first_name,
-                u.last_name
+                u.last_name,
+                u.user_name
             FROM 
                 comments AS c
             JOIN 
@@ -177,7 +178,8 @@ class CommentModel {
                 c.parent_comment_id,
                 u.picture,
                 u.first_name,
-                u.last_name
+                u.last_name,
+                u.user_name
             FROM 
                 comments AS c
             JOIN 

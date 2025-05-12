@@ -1,4 +1,5 @@
 import { body } from "express-validator";
+import { validateUUID } from "./common";
 
 export const createCommentValidator = [
   body("post_id")
@@ -18,11 +19,7 @@ export const createCommentValidator = [
 ];
 
 export const updateCommentValidator = [
-  body("comment_id")
-    .notEmpty()
-    .withMessage("Comment ID is required")
-    .isUUID()
-    .withMessage("Comment ID must be a valid UUID"),
+  ...validateUUID("comment_id", "Comment ID"),
   body("content")
     .notEmpty()
     .withMessage("Comment Content is required")
@@ -30,26 +27,11 @@ export const updateCommentValidator = [
     .withMessage("Comment Content must be between 1 and 500 characters"),
 ];
 
-export const deleteCommentValidator = [
-  body("comment_id")
-    .notEmpty()
-    .withMessage("Comment ID is required")
-    .isUUID()
-    .withMessage("Comment ID must be a valid UUID"),
-];
+export const deleteCommentValidator = validateUUID("comment_id", "Comment ID");
 
-export const getCommentsByPostIdValidator = [
-  body("post_id")
-    .notEmpty()
-    .withMessage("Post ID is required")
-    .isUUID()
-    .withMessage("Post ID must be a valid UUID"),
-];
+export const getCommentsByPostIdValidator = validateUUID("post_id", "Post ID");
 
-export const getRepliesByCommentIdValidator = [
-  body("comment_id")
-    .notEmpty()
-    .withMessage("Comment ID is required")
-    .isUUID()
-    .withMessage("Comment ID must be a valid UUID"),
-];
+export const getRepliesByCommentIdValidator = validateUUID(
+  "comment_id",
+  "Comment ID"
+);
