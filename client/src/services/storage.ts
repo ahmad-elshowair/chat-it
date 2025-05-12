@@ -54,32 +54,48 @@ export const getCsrfFromCookie = (): string | null => {
   return null;
 };
 
-export const syncFingerprintFromCookies = (): boolean => {
+export const syncFingerprintFromCookies = (): string | null => {
   const cookieFingerprint = getFingerprintFromCookie();
   const localFingerprint = getFingerprint();
   if (cookieFingerprint && cookieFingerprint !== localFingerprint) {
     console.info("Synchronizing fingerprint from cookie to localStorage");
     setFingerprint(cookieFingerprint);
-    return true;
+    return cookieFingerprint;
   }
-  return false;
+  return localFingerprint;
 };
 
-export const syncCsrfFromCookies = (): boolean => {
+export const syncCsrfFromCookies = () => {
   const cookieCsrf = getCsrfFromCookie();
   const localCsrf = getCsrf();
   if (cookieCsrf && cookieCsrf !== localCsrf) {
     console.info("Synchronizing CSRF from cookie to localStorage");
     setCsrf(cookieCsrf);
-    return true;
+    return cookieCsrf;
   }
-  return false;
+  return localCsrf;
 };
 
-export const syncAllAuthTokensFromCookies = (): boolean => {
-  const syncFingerprint = syncFingerprintFromCookies();
-  const syncCsrf = syncCsrfFromCookies();
-  return syncFingerprint || syncCsrf;
+export const syncAllAuthTokensFromCookies = () => {
+  const cookieFingerprint = getFingerprintFromCookie();
+  const localFingerprint = getFingerprint();
+  const fingerprintSynced =
+    cookieFingerprint && cookieFingerprint !== localFingerprint;
+
+  const cookieCsrf = getCsrfFromCookie();
+  const localCsrf = getCsrf();
+  const csrfSynced = cookieCsrf && cookieCsrf !== localCsrf;
+
+  if (fingerprintSynced && cookieFingerprint) {
+    console.info("Synchronizing fingerprint from cookie to localStorage");
+    setFingerprint(cookieFingerprint);
+  }
+
+  if (csrfSynced && cookieCsrf) {
+    console.info("Synchronizing CSRF from cookie to localStorage");
+    setCsrf(cookieCsrf);
+  }
+  return fingerprintSynced || csrfSynced;
 };
 
 const parseExpiryTime = (expireString: string) => {

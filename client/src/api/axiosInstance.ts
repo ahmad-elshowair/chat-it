@@ -3,11 +3,16 @@ import axios from "axios";
 import configs from "../configs";
 import { getCsrf, getFingerprint } from "../services/storage";
 import { Store } from "../types/auth";
+import { setupCsrfInterceptor } from "./csrfInterceptor";
+import { setupRequestInterceptor } from "./requestInterceptor";
 
 const api = axios.create({
   baseURL: configs.api_url,
   withCredentials: true,
 });
+
+setupRequestInterceptor(api);
+setupCsrfInterceptor(api);
 
 export const setUpInterceptors = (store: Store) => {
   api.interceptors.response.use(
