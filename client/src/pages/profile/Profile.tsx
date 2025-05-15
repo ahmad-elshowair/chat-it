@@ -1,15 +1,14 @@
-import axios from "axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Spinner } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import api from "../../api/axiosInstance";
 import { Feed } from "../../components/feed/Feed";
 import LeftBar from "../../components/leftBar/leftBar";
-import { ProfileRightBar } from "../../components/rightBar/profile-right-bar/ProfileRightBar";
+import ProfileRightBar from "../../components/rightBar/profile-right-bar/ProfileRightBar";
 import { Topbar } from "../../components/topbar/Topbar";
 import config from "../../configs";
 import useAuthState from "../../hooks/useAuthState";
 import useAuthVerification from "../../hooks/useAuthVerification";
-import { getCsrf, syncAllAuthTokensFromCookies } from "../../services/storage";
+import { useSecureApi } from "../../hooks/useSecureApi";
 import { TUser } from "../../types/user";
 import "./profile.css";
 
@@ -19,6 +18,8 @@ export const Profile = () => {
 
   const { checkAuthStatus } = useAuthVerification();
   const { user: currentUser } = useAuthState();
+  const { get, post, del, isLoading: apiLoading, error } = useSecureApi();
+
   const [user, setUser] = useState<TUser | null>(null);
   const [isFollowed, setIsFollowed] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,28 +56,24 @@ export const Profile = () => {
 
     try {
       setIsLoading(true);
-      const response = await api.get(`/users/${user_name}`);
-      const { data } = response.data;
-      setUser(data);
+      const response = await get<{ success: boolean; data: TUser }>(
+        `/users/${user_name}`
+      );
+
+      if (response?.success) {
+        setUser(response.data);
+      }
     } catch (error) {
       console.error(`Error Fetching user: ${error}`);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        console.error(
-          "Unauthorized: User not authenticated - redirecting to login"
-        );
-      } else {
-        console.error(`Error fetching user: ${(error as Error).message}`);
-      }
       setUser(null);
     } finally {
       setIsLoading(false);
     }
-  }, [user_name, authChecked]);
+  }, [user_name, authChecked, get]);
 
   const checkIsFollowed = useCallback(async () => {
-    syncAllAuthTokensFromCookies();
     if (!user?.user_id || !authChecked || !currentUser || followCheckDone) {
-      console.error("Cannot check follow status - missing data:", {
+      console.debug("Cannot check follow status - missing data:", {
         hasAuthBeenVerified: authChecked,
         hasUser: Boolean(user),
         hasToken: Boolean(currentUser),
@@ -91,83 +88,71 @@ export const Profile = () => {
       setFollowCheckDone(true);
       return;
     }
-    try {
-      const response = await api.get(`/follows/is-followed/${user.user_id}`);
-      const { data } = response.data;
 
-      setIsFollowed(data);
-      setFollowCheckDone(true);
+    try {
+      const response = await get<{ success: boolean; data: boolean }>(
+        `/follows/is-followed/${user.user_id}`
+      );
+      if (response?.success !== undefined) {
+        setIsFollowed(response.data);
+        setFollowCheckDone(true);
+      }
     } catch (error) {
       console.error("Error checking follow status:", error);
       setIsFollowed(false);
       setFollowCheckDone(true);
     }
-  }, [currentUser, authChecked, user, followCheckDone]);
+  }, [currentUser, authChecked, user, followCheckDone, get]);
 
   const handleFollow = useCallback(async () => {
-    syncAllAuthTokensFromCookies();
-    const csrf = getCsrf();
-    if (!csrf) {
-      console.error("CSRF token not found");
-      return;
-    }
-    const headers: Record<string, string> = {
-      "X-CSRF-Token": csrf,
-    };
-
-    if (!user?.user_id) {
-      console.error("Cannot follow/unfollow: Missing user ID");
-      return;
-    }
-
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       if (isFollowed) {
         // UNFOLLOW USER
-        await api.delete("/follows/unfollow", {
-          data: { user_id_followed: user.user_id },
-          headers,
-          withCredentials: true,
+        const response = await del<{ success: boolean }>("/follows/unfollow", {
+          data: { user_id_followed: user?.user_id },
         });
 
-        setIsFollowed(false);
+        if (response?.success) {
+          setIsFollowed(false);
 
-        // UPDATE FOLLOWER COUNT UI
-        setUser((prevUser) => {
-          if (prevUser) {
-            return {
-              ...prevUser,
-              number_of_followers: Math.max(
-                0,
-                (prevUser.number_of_followers || 0) - 1
-              ),
-            };
-          }
-          return prevUser;
-        });
+          // UPDATE FOLLOWER COUNT UI
+          setUser((prevUser) => {
+            if (prevUser) {
+              return {
+                ...prevUser,
+                number_of_followers: Math.max(
+                  0,
+                  (prevUser.number_of_followers || 0) - 1
+                ),
+              };
+            }
+            return prevUser;
+          });
+        }
       } else {
         // FOLLOW USER
-        await api.post(
-          "/follows/follow",
-          { user_id_followed: user.user_id },
-          { withCredentials: true, headers }
-        );
-
-        setIsFollowed(true);
-
-        // UPDATE FOLLOWER COUNT UI
-        setUser((prevUser) => {
-          if (prevUser) {
-            return {
-              ...prevUser,
-              number_of_followers: Math.max(
-                0,
-                (prevUser.number_of_followers || 0) + 1
-              ),
-            };
-          }
-          return prevUser;
+        const response = await post<{ success: boolean }>("/follows/follow", {
+          user_id_followed: user?.user_id,
         });
+
+        if (response?.success) {
+          setIsFollowed(true);
+
+          // UPDATE FOLLOWER COUNT UI
+          setUser((prevUser) => {
+            if (prevUser) {
+              return {
+                ...prevUser,
+                number_of_followers: Math.max(
+                  0,
+                  (prevUser.number_of_followers || 0) + 1
+                ),
+              };
+            }
+            return prevUser;
+          });
+        }
       }
     } catch (error) {
       console.error(`Error updating follow status:`, error);
@@ -176,7 +161,7 @@ export const Profile = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isFollowed, user]);
+  }, [isFollowed, user, post, del]);
 
   // AUTOMATICALLY FETCH A USER WHEN AUTH IS CHECKED.
   useEffect(() => {
@@ -263,14 +248,23 @@ export const Profile = () => {
                 <button
                   className={`${isFollowed ? "follow-btn" : "btn-chat"}`}
                   onClick={handleFollow}
-                  disabled={isLoading}
+                  disabled={isLoading || apiLoading}
                 >
-                  {isLoading
-                    ? "Processing..."
-                    : isFollowed
-                    ? "Unfollow"
-                    : "Follow"}
+                  {isLoading || apiLoading ? (
+                    <>
+                      <Spinner animation="border" variant="light" />
+                    </>
+                  ) : isFollowed ? (
+                    "Unfollow"
+                  ) : (
+                    "Follow"
+                  )}
                 </button>
+              )}
+              {error && (
+                <p className="text-danger mt-2">
+                  {error.getUserFriendlyMessage()}
+                </p>
               )}
             </article>
           </section>

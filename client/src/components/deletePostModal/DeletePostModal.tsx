@@ -1,10 +1,8 @@
-import { AxiosError } from "axios";
 import { FC, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { FaInfo } from "react-icons/fa";
-import api from "../../api/axiosInstance";
 import { usePost } from "../../hooks/usePost";
-import { getCsrf, syncAllAuthTokensFromCookies } from "../../services/storage";
+import { useSecureApi } from "../../hooks/useSecureApi";
 import { DeletePostModalProps } from "../../types/post";
 
 const DeletePostModal: FC<DeletePostModalProps> = ({
@@ -12,8 +10,9 @@ const DeletePostModal: FC<DeletePostModalProps> = ({
   show,
   onHide,
 }) => {
-  const [error, setError] = useState<string>("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const { removePost } = usePost();
+  const { del, error: apiError } = useSecureApi();
 
   const deletePost = async () => {
     if (!post_id) {
@@ -21,36 +20,22 @@ const DeletePostModal: FC<DeletePostModalProps> = ({
       return;
     }
     try {
-      syncAllAuthTokensFromCookies();
+      setIsDeleting(true);
+      const response = await del<{ success: boolean }>(
+        `/posts/delete/${post_id}`
+      );
 
-      const csrfToken = getCsrf();
-      if (!csrfToken) {
-        console.error("CSRF token not found");
-        setError("Authentication error. Please refresh and try again.");
-        return;
+      if (response?.success) {
+        removePost(post_id);
+        onHide();
       }
-      await api.delete(`/posts/delete/${post_id}`, {
-        headers: {
-          "X-CSRF-Token": csrfToken,
-        },
-        withCredentials: true,
-      });
-
-      removePost(post_id);
-
-      onHide();
     } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response) {
-        setError(axiosError.response.data as string);
-        console.error("Error data:", axiosError.response.data);
-        console.error("Error status:", axiosError.response.status);
-      } else {
-        setError("Failed to delete post. Please try again.");
-        console.error("Error:", error);
-      }
+      console.error("Failed to delete post", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
+
   return (
     <Modal
       show={show}
@@ -70,15 +55,38 @@ const DeletePostModal: FC<DeletePostModalProps> = ({
           <p className="text-muted">
             Are you sure you want to delete this post? This cannot be undone!
           </p>
-          {error && <p className="alert alert-danger">{error}</p>}
+          {apiError && (
+            <p className="alert alert-danger">
+              {apiError.getUserFriendlyMessage()}
+            </p>
+          )}
         </div>
       </Modal.Body>
       <Modal.Footer>
-        <button onClick={onHide} className="btn btn-outline-secondary border-0">
+        <button
+          onClick={onHide}
+          className="btn btn-outline-secondary border-0"
+          disabled={isDeleting}
+        >
           Cancel
         </button>
-        <button onClick={deletePost} className="btn btn-danger border-0">
-          Delete
+        <button
+          onClick={deletePost}
+          className="btn btn-danger border-0"
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Deleting...
+            </>
+          ) : (
+            "Delete"
+          )}
         </button>
       </Modal.Footer>
     </Modal>

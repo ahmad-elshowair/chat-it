@@ -1,11 +1,16 @@
 import { FC, useEffect, useState } from "react";
-import { FaHome, FaMapMarkerAlt, FaRegGrinHearts } from "react-icons/fa";
-import api from "../../../api/axiosInstance";
+import {
+  FaExclamationCircle,
+  FaHome,
+  FaMapMarkerAlt,
+  FaRegGrinHearts,
+} from "react-icons/fa";
+import { useSecureApi } from "../../../hooks/useSecureApi";
 import { TFriendsCardProps, TProfileRightBarProps } from "../../../types/user";
 import { FriendCard } from "./friendCard/FriendCard";
 import "./profileRightBar.css";
 
-export const ProfileRightBar: FC<TProfileRightBarProps> = ({
+const ProfileRightBar: FC<TProfileRightBarProps> = ({
   user_id,
   bio,
   city,
@@ -13,22 +18,25 @@ export const ProfileRightBar: FC<TProfileRightBarProps> = ({
   marital_status,
 }) => {
   const [friends, setFriends] = useState<TFriendsCardProps[]>([]);
+  const { get, isLoading, error } = useSecureApi();
 
   useEffect(() => {
     const getFriends = async () => {
       if (!user_id) return;
       try {
-        const response = await api.get(
-          `/users/friends/${user_id}?is_online=false`
-        );
-        const { data } = response.data;
-        setFriends(data);
+        const response = await get<{
+          success: boolean;
+          data: TFriendsCardProps[];
+        }>(`/users/friends/${user_id}?is_online=false`);
+        if (response?.success) {
+          setFriends(response.data);
+        }
       } catch (error) {
-        console.error(error);
+        console.error("Failed to fetch friends", error);
       }
     };
     getFriends();
-  }, [user_id]);
+  }, [user_id, get]);
 
   return (
     <section className="profile-right-bar mb-3">
@@ -65,16 +73,33 @@ export const ProfileRightBar: FC<TProfileRightBarProps> = ({
       </article>
       <h3 className="friends-header">Friends</h3>
       <article className="right-bar__friends d-flex justify-content-center align-items-center">
-        {friends.length > 0 ? (
+        {isLoading ? (
+          <div className="d-flex justify-content-center ">
+            <div
+              className="spinner-border spinner-border-sm text-warning"
+              role="status"
+            >
+              <span className="visually-hidden">Loading Friends...</span>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="alert alert-danger">
+            <p className="d-flex align-items-center">
+              <FaExclamationCircle />
+              <span>Failed to load friends</span>
+            </p>
+          </div>
+        ) : friends.length > 0 ? (
           <div className="d-flex flex-wrap gap-2">
             {friends.map((friend) => (
               <FriendCard key={friend?.user_id} {...friend} />
             ))}
           </div>
         ) : (
-          <h5 className="m-0">No friends yet</h5>
+          <h5 className="m-0 text-muted">No friends yet</h5>
         )}
       </article>
     </section>
   );
 };
+export default ProfileRightBar;

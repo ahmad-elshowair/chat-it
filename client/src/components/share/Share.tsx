@@ -1,14 +1,13 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { FaLaugh, FaPhotoVideo, FaVideo } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../../context/AuthContext";
 
 import config from "../../configs";
+import useAuthState from "../../hooks/useAuthState";
 import { ModalPost } from "../modalPost/ModalPost";
 import "./share.css";
 export const Share = () => {
-  const { state } = useContext(AuthContext);
-  const { user } = state;
+  const { user } = useAuthState();
   const [show, setShow] = useState(false);
 
   const handleClose = () => setShow(false);

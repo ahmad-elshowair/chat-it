@@ -1,13 +1,11 @@
-import { AxiosError } from "axios";
 import { FC, useEffect, useState } from "react";
 import { AiFillLike } from "react-icons/ai";
 import { BiLike, BiSolidLike } from "react-icons/bi";
 import { FaComments, FaRegComment, FaTrash } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import api from "../../api/axiosInstance";
 import config from "../../configs";
 import useAuthState from "../../hooks/useAuthState";
-import { getCsrf, syncAllAuthTokensFromCookies } from "../../services/storage";
+import { useSecureApi } from "../../hooks/useSecureApi";
 import { TPost } from "../../types/post";
 import { TUser } from "../../types/user";
 import { formatRelativeTime } from "../../utils/dateUtils";
@@ -27,43 +25,52 @@ export const Post: FC<TPost> = ({
   const [user, setUser] = useState<TUser | null>(null);
   const [likeState, setLikeState] = useState({
     isLiked: false,
-    likes: number_of_likes,
+    likes: number_of_likes || 0,
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const { user: currentUser } = useAuthState();
+  const { get, post, isLoading } = useSecureApi();
 
   useEffect(() => {
     const checkIfLiked = async () => {
       if (!currentUser?.user_id || !post_id) return;
 
       try {
-        const response = await api.get(`/posts/is-liked/${post_id}`);
-        const { data } = response.data;
-        if (data.isLiked) {
+        const response = await get<{
+          success: boolean;
+          data: { isLiked: boolean };
+        }>(`/posts/is-liked/${post_id}`);
+
+        if (response?.success && response.data.isLiked) {
           setLikeState((prevState) => ({
             ...prevState,
             isLiked: true,
           }));
         }
       } catch (error) {
-        console.error(`Failed to check if post is liked: ${error}`);
+        console.error(`Failed to check if post is liked: `, error);
       }
     };
     checkIfLiked();
-  }, [post_id, currentUser?.user_id]);
+  }, [post_id, currentUser?.user_id, get]);
 
   useEffect(() => {
     const fetchAUser = async () => {
       try {
-        const response = await api.get(`/users/${user_name}`);
-        setUser(response.data.data);
+        const response = await get<{ success: boolean; data: TUser }>(
+          `/users/${user_name}`
+        );
+
+        if (response?.success) {
+          setUser(response.data);
+        }
       } catch (error) {
         console.error(`Failed to fetch user: ${error}`);
       }
     };
     fetchAUser();
-  }, [user_name]);
+  }, [user_name, get]);
 
   // FORMATE THE DATE
   const relativeDate = formatRelativeTime(updated_at as Date);
@@ -76,64 +83,26 @@ export const Post: FC<TPost> = ({
     }));
 
     try {
-      syncAllAuthTokensFromCookies();
-      // GET CSRF FROM SESSION STORAGE.
-      const csrfToken = getCsrf();
-
-      if (!csrfToken) {
-        console.error("CSRF token not found");
-        throw new Error("Missing CSRF token");
-      }
-      await api.post(
+      const response = await post<{ success: boolean }>(
         `/posts/like/${post_id}`,
-        {},
-        {
-          withCredentials: true,
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-        }
+        {}
       );
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response) {
-        console.error("Error data:", axiosError.response.data);
-        console.error("Error status:", axiosError.response.status);
-      }
 
-      //IF IT'S A CSRF MISMATCH, TRY ONE MORE WITH SYNCING THE TOKENS FROM COOKIES
-      if (
-        axiosError.response?.status === 403 &&
-        typeof axiosError.response.data === "object" &&
-        axiosError.response.data &&
-        (axiosError.response.data as any).error === "CSRF token mismatch!"
-      ) {
-        try {
-          syncAllAuthTokensFromCookies();
-          const newCsrfToken = getCsrf();
-          if (newCsrfToken) {
-            await api.post(
-              `/posts/like/${post_id}`,
-              {},
-              {
-                withCredentials: true,
-                headers: {
-                  "X-CSRF-Token": newCsrfToken,
-                },
-              }
-            );
-          }
-          return;
-        } catch (retryError) {
-          console.error("Retry failed: ", retryError);
-        }
+      if (response?.success) {
+        setLikeState((pervState) => ({
+          ...pervState,
+          isLiked: !pervState.isLiked,
+          likes: pervState.isLiked ? pervState.likes + 1 : pervState.likes - 1,
+        }));
       }
+    } catch (error) {
+      console.error(`Failed to like/unlike post: `, error);
 
       // IF IT'S NOT A CSRF MISMATCH, JUST TOGGLE THE LIKE
       setLikeState((prevState) => ({
         ...prevState,
         isLiked: !prevState.isLiked,
-        likes: prevState.isLiked ? prevState.likes - 1 : prevState.likes + 1,
+        likes: prevState.isLiked ? prevState.likes + 1 : prevState.likes - 1,
       }));
     }
   };
@@ -210,6 +179,7 @@ export const Post: FC<TPost> = ({
                 <span className="post-statistics-number">
                   {number_of_comments}
                 </span>
+                <span className="post-statistics-number">comments</span>
                 <FaComments className="comments ms-2" />
               </>
             )}
@@ -222,6 +192,7 @@ export const Post: FC<TPost> = ({
               type="button"
               onClick={likeHandler}
               aria-label={likeState.isLiked ? "Unlike Post" : "Like post"}
+              disabled={isLoading}
             >
               {likeState.isLiked ? (
                 <section className="d-flex align-items-center gap-2 justify-content-center">

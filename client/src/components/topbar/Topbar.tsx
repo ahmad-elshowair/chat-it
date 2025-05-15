@@ -9,11 +9,13 @@ import {
 import { Link } from "react-router-dom";
 import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
+import useAuthState from "../../hooks/useAuthState";
 import { logoutUser } from "../../services/auth";
 import "./topbar.css";
+
 export const Topbar = () => {
-  const { state, dispatch } = useContext(AuthContext);
-  const { user } = state;
+  const { user } = useAuthState();
+  const { dispatch } = useContext(AuthContext);
 
   const handleLogout = () => {
     logoutUser(dispatch);

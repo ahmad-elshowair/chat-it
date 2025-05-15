@@ -61,6 +61,8 @@ export interface Store {
 }
 
 export type TRequestOptions = {
+  params?: Record<string, string>;
+  data?: any;
   syncTokens?: boolean;
   onError?: (error: ApiError) => void;
   config?: AxiosRequestConfig;
