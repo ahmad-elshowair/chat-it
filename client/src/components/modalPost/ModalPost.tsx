@@ -57,12 +57,12 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
 
         const uploadResponse = await post<{
           success: boolean;
-          filePath: string;
+          data: { filePath: string };
         }>("/upload", formDate);
 
         if (uploadResponse?.success) {
           imageUrl = `${configs.api_url.replace("/api", "")}/${
-            uploadResponse.filePath
+            uploadResponse.data.filePath
           }`;
         }
       }
@@ -77,18 +77,29 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
 
       const response = await post<{
         success: boolean;
-        post_id: string;
-        created_at: string;
-        updated_at: string;
+        message: string;
+        data: {
+          post_id: string;
+          created_at: string;
+          updated_at: string;
+        };
       }>("/posts/create", postData);
 
+      const postID = response?.data?.post_id;
+
       if (response?.success) {
+        if (!postID) {
+          console.error("Server returned success but no post_id");
+        } else {
+          console.info("Created Post with ID: ", postID);
+        }
+
         const newPost = {
           ...postData,
-          post_id: response.post_id,
+          post_id: postID,
           user_name: currentUser?.user_name,
-          created_at: new Date(response.created_at),
-          updated_at: new Date(response.updated_at),
+          created_at: response.data.created_at,
+          updated_at: response.data.updated_at,
         };
         addPost(newPost);
         // RESET FORM
@@ -144,23 +155,7 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
               <GrClose onClick={closeImage} className="close-image_btn" />
             </Card>
           )}
-          <Form.Group
-            controlId="formFile"
-            className="mt-3 d-flex align-items-center justify-content-end"
-          >
-            <Form.Label className="mb-0 text-secondary">
-              <FaPhotoVideo className="icon" />
-            </Form.Label>
-            <Form.Control
-              type="file"
-              className="d-none"
-              onChange={handleFileChange}
-              disabled={isLoading || uploadProgress}
-            />
-            <span className={`text-secondary ${fileName ? "" : "d-none"}`}>
-              {fileName}
-            </span>
-          </Form.Group>
+
           {apiError && (
             <p className="alert alert-danger">
               {apiError.getUserFriendlyMessage()}
@@ -168,9 +163,33 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <div className="d-grid w-100">
+          {fileName && (
+            <div className="mb-2 text-secondary small">
+              <span className="fw-bold">Selected file:</span>
+              <span className="fw-normal text-warning"> {fileName}</span>
+            </div>
+          )}
+
+          <div className="d-flex align-items-center justify-content-between w-100">
+            <Form.Group className="">
+              <Form.Label
+                className="mb-0 btn btn-outline-secondary border-0"
+                htmlFor="file"
+              >
+                <FaPhotoVideo className="me-1" />
+                <span className="text-muted">Add Photo</span>
+              </Form.Label>
+
+              <Form.Control
+                type="file"
+                id="file"
+                className="d-none"
+                onChange={handleFileChange}
+                disabled={isLoading || uploadProgress}
+              />
+            </Form.Group>
             <button
-              className="btn-chat border-0"
+              className="btn-chat border-0 px-4 py-1"
               type="submit"
               disabled={
                 isLoading || uploadProgress || (!description.trim() && !file)
@@ -190,7 +209,8 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
                 </>
               ) : (
                 <>
-                  <FaLocationArrow className="icon" />
+                  <span>Post</span>
+                  <FaLocationArrow className="icon ms-1" />
                 </>
               )}
             </button>

@@ -4,6 +4,9 @@
 
 .modal-footer {
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-footer h6.m-0 {

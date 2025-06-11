@@ -3,8 +3,8 @@ export type TPost = {
   user_id?: string;
   description?: string;
   image?: string;
-  created_at?: Date;
-  updated_at?: Date;
+  created_at?: Date | string;
+  updated_at?: Date | string;
   number_of_likes: number;
   number_of_comments: number;
   user_name?: string;

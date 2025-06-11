@@ -63,8 +63,16 @@ export const formatDate = (
  * @returns Formatted relative time string
  */
 export const formatRelativeTime = (date: Date | string): string => {
+  if (!date) return "unknown";
+
   const dateObj = date instanceof Date ? date : new Date(date);
   const now = new Date();
+
+  if (isNaN(dateObj.getTime())) {
+    console.error("Invalid Date", date);
+    return "Invalid Date";
+  }
+
   const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
 
   if (diffInSeconds < 60) {

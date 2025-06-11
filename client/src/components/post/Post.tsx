@@ -73,7 +73,9 @@ export const Post: FC<TPost> = ({
   }, [user_name, get]);
 
   // FORMATE THE DATE
-  const relativeDate = formatRelativeTime(updated_at as Date);
+  const updatedAtDate = updated_at ? new Date(updated_at) : new Date();
+
+  const relativeDate = formatRelativeTime(updatedAtDate);
 
   const likeHandler = async () => {
     setLikeState((pervState) => ({
