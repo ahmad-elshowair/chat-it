@@ -181,7 +181,7 @@ export const Post: FC<TPost> = ({
                 <span className="post-statistics-number">
                   {number_of_comments}
                 </span>
-                <span className="post-statistics-number">comments</span>
+                <span className="post-statistics-number"> comments</span>
                 <FaComments className="comments ms-2" />
               </>
             )}

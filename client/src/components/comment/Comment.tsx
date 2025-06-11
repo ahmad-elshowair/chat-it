@@ -14,14 +14,19 @@ const Comment: FC<TCommentProps> = ({
   onReply,
   onUpdate,
   onDelete,
-  replies = [],
   showReplies = false,
+  replies = [],
 }) => {
   const { user } = useAuthState();
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [showReplyList, setShowReplyList] = useState(showReplies);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const directReplies = replies.filter(
+    (r) => r.parent_comment_id === comment.comment_id
+  );
+  const hasReplies = directReplies.length > 0;
 
   const handleSubmitReply = async (content: string) => {
     await onReply(comment.comment_id!, content);
@@ -145,34 +150,35 @@ const Comment: FC<TCommentProps> = ({
           </div>
         )}
 
-        {replies && replies.length > 0 && (
+        {hasReplies && (
           <div className="comment-replies mt-2">
             {!showReplyList && (
               <button
-                className="btn btn-sm text-primary p-0 border-0"
+                className="btn btn-sm text-warning p-0 border-0"
                 onClick={toggleReplyList}
               >
-                View {replies.length}{" "}
-                {replies.length === 1 ? "reply" : "replies"}
+                View {directReplies.length}{" "}
+                {directReplies.length === 1 ? "reply" : "replies"}
               </button>
             )}
 
             {showReplyList && (
               <>
                 <button
-                  className="btn btn-sm text-primary p-0 mb-2 border-0"
+                  className="btn btn-sm text-warning p-0 mb-2 border-0"
                   onClick={toggleReplyList}
                 >
                   Hide replies
                 </button>
                 <div className="replies-container">
-                  {replies.map((reply) => (
+                  {directReplies.map((reply) => (
                     <Comment
                       key={reply.comment_id}
                       comment={reply}
                       onReply={onReply}
                       onUpdate={onUpdate}
                       onDelete={onDelete}
+                      replies={replies}
                     />
                   ))}
                 </div>

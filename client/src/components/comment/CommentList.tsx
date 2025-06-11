@@ -24,6 +24,7 @@ const CommentList: FC<TCommentListProps> = ({ post_id }) => {
       if (response) {
         const { comments: topLevelComments, replies: commentsReplies } =
           response.data;
+
         setComments(topLevelComments);
         setReplies(commentsReplies);
       }
@@ -114,9 +115,9 @@ const CommentList: FC<TCommentListProps> = ({ post_id }) => {
     }
   };
 
-  const getCommentReplies = (comment_id: string) => {
-    return replies.filter((reply) => reply.parent_comment_id === comment_id);
-  };
+  // const getCommentReplies = (comment_id: string) => {
+  //   return replies.filter((reply) => reply.parent_comment_id === comment_id);
+  // };
   return (
     <section className="comments-container">
       {isLoading && comments.length === 0 ? (
@@ -140,7 +141,7 @@ const CommentList: FC<TCommentListProps> = ({ post_id }) => {
               onReply={addReply}
               onUpdate={updateComment}
               onDelete={deleteComment}
-              replies={getCommentReplies(comment.comment_id!)}
+              replies={replies}
             />
           ))}
         </div>
