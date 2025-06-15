@@ -4,6 +4,7 @@ import { ApiError } from "../api/ApiError";
 import api from "../api/axiosInstance";
 import { AuthService } from "../services/authService";
 import { TRequestOptions } from "../types/auth";
+import { TApiResponse } from "../types/api";
 
 export function useSecureApi() {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +18,7 @@ export function useSecureApi() {
       url: string,
       data?: any,
       options?: TRequestOptions
-    ): Promise<T | null> => {
+    ): Promise<TApiResponse<T> | null> => {
       const { syncTokens = true, onError, config = {} } = options || {};
       try {
         setIsLoading(true);
@@ -33,7 +34,7 @@ export function useSecureApi() {
           data,
         };
         const response = await api(requestConfig);
-        return response.data;
+        return { success: true, message: "Success", data: response.data };
       } catch (error) {
         console.error(`API ${method} error:`, error);
 
@@ -45,7 +46,12 @@ export function useSecureApi() {
         if (onError) {
           onError(apiError);
         }
-        return null;
+        return {
+          success: false,
+          message: apiError.getUserFriendlyMessage(),
+          error: apiError,
+          data: undefined,
+        };
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +60,10 @@ export function useSecureApi() {
   );
 
   const get = useCallback(
-    <T = any>(url: string, options?: TRequestOptions): Promise<T | null> => {
+    <T = any>(
+      url: string,
+      options?: TRequestOptions
+    ): Promise<TApiResponse<T> | null> => {
       return request<T>("GET", url, undefined, options);
     },
     [request]
@@ -65,7 +74,7 @@ export function useSecureApi() {
       url: string,
       data?: any,
       options?: TRequestOptions
-    ): Promise<T | null> => {
+    ): Promise<TApiResponse<T> | null> => {
       return request<T>("POST", url, data, options);
     },
     [request]
@@ -76,14 +85,17 @@ export function useSecureApi() {
       url: string,
       data?: any,
       options?: TRequestOptions
-    ): Promise<T | null> => {
+    ): Promise<TApiResponse<T> | null> => {
       return request<T>("PUT", url, data, options);
     },
     [request]
   );
 
   const del = useCallback(
-    <T = any>(url: string, options?: TRequestOptions): Promise<T | null> => {
+    <T = any>(
+      url: string,
+      options?: TRequestOptions
+    ): Promise<TApiResponse<T> | null> => {
       return request<T>("DELETE", url, undefined, options);
     },
     [request]

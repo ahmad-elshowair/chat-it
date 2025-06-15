@@ -3,6 +3,7 @@ import { validationResult } from "express-validator";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
 import CommentModel from "../models/comments";
 import { IComment } from "../types/comments";
+import { sendResponse } from "../utilities/response";
 
 const comment_model = new CommentModel();
 
@@ -10,14 +11,14 @@ const createComment = async (req: ICustomRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return sendResponse.error(res, "Validation Error", 400, errors.array());
     }
-    const user_id = req.user?.id!;
-    const { post_id, content, parent_comment_id } = req.body;
-
+    const user_id = req.user?.id;
     if (!user_id) {
-      return res.status(401).json({ error: "User authentication required" });
+      return sendResponse.error(res, "User Authentication Required", 401);
     }
+
+    const { post_id, content, parent_comment_id } = req.body;
 
     const comment: IComment = {
       user_id,
@@ -26,18 +27,20 @@ const createComment = async (req: ICustomRequest, res: Response) => {
       parent_comment_id: parent_comment_id || null,
     };
     const createdComment = await comment_model.create(comment);
-    res.status(201).json({
-      success: true,
-      data: createdComment,
-      message: "Comment created successfully",
-    });
+    return sendResponse.success(
+      res,
+      createdComment,
+      "Comment created successfully",
+      201
+    );
   } catch (error) {
     console.error("[CommentController]: createComment error: ", error);
-    res.status(500).json({
-      success: false,
-      error: "An error occurred while creating the comment",
-      message: (error as Error).message,
-    });
+    return sendResponse.error(
+      res,
+      "An error occurred while creating the comment",
+      500,
+      (error as Error).message
+    );
   }
 };
 
@@ -45,44 +48,48 @@ const updateComment = async (req: ICustomRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return sendResponse.error(res, "Validation Error", 400, errors.array());
     }
 
-    const comment_id = req.params.comment_id;
-    const content = req.body.content;
-    const user_id = req.user?.id!;
-
+    const user_id = req.user?.id;
     if (!user_id) {
-      return res.status(401).json({ error: "User authentication required" });
+      return sendResponse.error(res, "User authentication required", 401);
     }
+
+    const commentId = req.params.comment_id;
+    const { content } = req.body;
 
     try {
       const updatedComment = await comment_model.update(
-        comment_id,
+        commentId,
         content,
         user_id
       );
-      res.status(200).json({
-        success: true,
-        data: updatedComment,
-        message: "Comment updated successfully",
-      });
+      return sendResponse.success(
+        res,
+        updatedComment,
+        "Comment updated successfully",
+        200
+      );
     } catch (error) {
       if ((error as Error).message.includes("comment not found")) {
-        return res.status(404).json({
-          success: false,
-          error: "Comment not found or you don't have permission to update it",
-        });
+        return sendResponse.error(
+          res,
+          "Comment not found or you don't have permission to update it",
+          404,
+          (error as Error).message
+        );
       }
       throw error;
     }
   } catch (error) {
     console.error("[CommentController]: updateComment error: ", error);
-    res.status(500).json({
-      success: false,
-      error: "An error occurred while updating the comment",
-      message: (error as Error).message,
-    });
+    return sendResponse.error(
+      res,
+      "An error occurred while updating the comment",
+      500,
+      (error as Error).message
+    );
   }
 };
 
@@ -90,38 +97,39 @@ const deleteComment = async (req: ICustomRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return sendResponse.error(res, "Validation Error", 400, errors.array());
     }
 
-    const comment_id = req.params.comment_id;
-    const user_id = req.user?.id!;
+    const user_id = req.user?.id;
 
     if (!user_id) {
-      return res.status(401).json({ error: "User authentication required" });
+      return sendResponse.error(res, "User authentication required", 401);
     }
 
+    const commentId = req.params.comment_id;
+
     try {
-      const result = await comment_model.delete(comment_id, user_id);
-      res.status(200).json({
-        success: true,
-        message: result.message,
-      });
+      const deletedComment = await comment_model.delete(commentId, user_id);
+      return sendResponse.success(res, null, deletedComment.message, 200);
     } catch (error) {
       if ((error as Error).message.includes("comment not found")) {
-        return res.status(404).json({
-          success: false,
-          error: "Comment not found or you don't have permission to delete it",
-        });
+        return sendResponse.error(
+          res,
+          "Comment not found or you don't have permission to delete it",
+          404,
+          (error as Error).message
+        );
       }
       throw error;
     }
   } catch (error) {
     console.error("[CommentController]: deleteComment error: ", error);
-    res.status(500).json({
-      success: false,
-      error: "An error occurred while deleting the comment",
-      message: (error as Error).message,
-    });
+    return sendResponse.error(
+      res,
+      "An error occurred while deleting the comment",
+      500,
+      (error as Error).message
+    );
   }
 };
 
@@ -129,12 +137,12 @@ const getCommentsByPostId = async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return sendResponse.error(res, "Validation Error", 400, errors.array());
     }
     const post_id = req.params.post_id;
 
     if (!post_id) {
-      return res.status(400).json({ error: "Post ID is required" });
+      return sendResponse.error(res, "Post ID is required", 400);
     }
 
     const comments = await comment_model.getCommentsByPostId(post_id);
@@ -146,18 +154,22 @@ const getCommentsByPostId = async (req: Request, res: Response) => {
     const commentsReplies = comments.filter(
       (comment) => comment.parent_comment_id
     );
-    res.status(200).json({
-      success: true,
-      data: { comments: topLevelComments, replies: commentsReplies },
-      count: comments.length,
-    });
+    return sendResponse.success(
+      res,
+      {
+        comments: topLevelComments,
+        replies: commentsReplies,
+      },
+      "Comments fetched successfully"
+    );
   } catch (error) {
     console.error("[CommentController]: getCommentsByPostId error: ", error);
-    res.status(500).json({
-      success: false,
-      error: "An error occurred while fetching the comments",
-      message: (error as Error).message,
-    });
+    return sendResponse.error(
+      res,
+      "An error occurred while fetching the comments",
+      500,
+      (error as Error).message
+    );
   }
 };
 
@@ -165,28 +177,30 @@ const getRepliesByCommentId = async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return sendResponse.error(res, "Validation Error", 400, errors.array());
     }
 
     const comment_id = req.params.comment_id;
 
     if (!comment_id) {
-      return res.status(400).json({ error: "Comment ID is required" });
+      return sendResponse.error(res, "Comment ID is required", 400);
     }
 
     const replies = await comment_model.getRepliesByCommentId(comment_id);
-    res.status(200).json({
-      success: true,
-      data: replies,
-      count: replies.length,
-    });
+    return sendResponse.success(
+      res,
+      replies,
+      "Replies fetched successfully",
+      200
+    );
   } catch (error) {
     console.error("[CommentController]: getRepliesByCommentId error: ", error);
-    res.status(500).json({
-      success: false,
-      error: "An error occurred while fetching the replies",
-      message: (error as Error).message,
-    });
+    return sendResponse.error(
+      res,
+      "An error occurred while fetching the replies",
+      500,
+      (error as Error).message
+    );
   }
 };
 

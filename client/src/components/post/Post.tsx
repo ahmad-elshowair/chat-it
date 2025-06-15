@@ -12,6 +12,7 @@ import { formatRelativeTime } from "../../utils/dateUtils";
 import CommentList from "../comment/CommentList";
 import DeletePostModal from "../deletePostModal/DeletePostModal";
 import "./post.css";
+import { TApiResponse } from "../../types/api";
 
 export const Post: FC<TPost> = ({
   user_name,
@@ -42,7 +43,7 @@ export const Post: FC<TPost> = ({
           data: { isLiked: boolean };
         }>(`/posts/is-liked/${post_id}`);
 
-        if (response?.success && response.data.isLiked) {
+        if (response?.success && response.data) {
           setLikeState((prevState) => ({
             ...prevState,
             isLiked: true,
@@ -58,11 +59,9 @@ export const Post: FC<TPost> = ({
   useEffect(() => {
     const fetchAUser = async () => {
       try {
-        const response = await get<{ success: boolean; data: TUser }>(
-          `/users/${user_name}`
-        );
+        const response = await get<TUser>(`/users/${user_name}`);
 
-        if (response?.success) {
+        if (response?.success && response.data) {
           setUser(response.data);
         }
       } catch (error) {
@@ -85,7 +84,7 @@ export const Post: FC<TPost> = ({
     }));
 
     try {
-      const response = await post<{ success: boolean }>(
+      const response = await post<TApiResponse<{ success: boolean }>>(
         `/posts/like/${post_id}`,
         {}
       );
