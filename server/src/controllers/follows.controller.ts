@@ -1,6 +1,8 @@
 import { NextFunction, Response } from "express";
 import { validationResult } from "express-validator";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
+import { IPaginatedResult } from "../interfaces/IPagination";
+import { TFollowers, TFollowings } from "../types/follow";
 import {
   createPaginationResult,
   getCursorPaginationOptions,
@@ -47,12 +49,7 @@ const followUser = async (
       user_id_following,
       user_id_followed
     );
-    return sendResponse.success(
-      res,
-      followAUser,
-      "USER FOLLOWED SUCCESSFULLY!",
-      201
-    );
+    return sendResponse.success<{ message: string }>(res, followAUser, 201);
   } catch (error) {
     console.error("[followController] followUser error :", error);
     next(error);
@@ -98,12 +95,7 @@ const unFollowUser = async (
       user_id_following,
       user_id_followed
     );
-    return sendResponse.success(
-      res,
-      unFollowAUser,
-      "USER UNFOLLOWED SUCCESSFULLY!",
-      201
-    );
+    return sendResponse.success<{ message: string }>(res, unFollowAUser, 201);
   } catch (error) {
     console.error("[followController] unFollowUser error :", error);
     next(error);
@@ -131,12 +123,7 @@ const getNumberOfFollowings = async (
     }
     // get the followings from the database
     const numFollowings = await follow_model.getNumberOfFollowings(user_id);
-    return sendResponse.success(
-      res,
-      numFollowings,
-      "NUMBER OF FOLLOWINGS FETCHED SUCCESSFULLY!",
-      200
-    );
+    return sendResponse.success<number>(res, numFollowings, 200);
   } catch (error) {
     console.error("[followController] getNumberOfFollowings error :", error);
     next(error);
@@ -163,12 +150,7 @@ const getNumberOfFollowers = async (
       );
     }
     const numFollowers = await follow_model.getNumberOfFollowers(user_id);
-    return sendResponse.success(
-      res,
-      numFollowers,
-      "NUMBER OF FOLLOWERS FETCHED SUCCESSFULLY!",
-      200
-    );
+    return sendResponse.success<number>(res, numFollowers, 200);
   } catch (error) {
     console.error("[followController] getNumberOfFollowers error :", error);
     next(error);
@@ -211,10 +193,9 @@ const getFollowings = async (
       "user_id"
     );
 
-    return sendResponse.success(
+    return sendResponse.success<IPaginatedResult<TFollowings>>(
       res,
       result,
-      "FOLLOWINGS FETCHED SUCCESSFULLY!",
       200
     );
   } catch (error) {
@@ -258,12 +239,7 @@ const getFollowers = async (
       totalCount,
       "user_id"
     );
-    return sendResponse.success(
-      res,
-      result,
-      "FOLLOWERS FETCHED SUCCESSFULLY!",
-      200
-    );
+    return sendResponse.success<IPaginatedResult<TFollowers>>(res, result, 200);
   } catch (error) {
     console.error("[followController] getFollowers error :", error);
     next(error);
@@ -298,12 +274,7 @@ const isFollowed = async (
       following_id,
       followed_id
     );
-    return sendResponse.success(
-      res,
-      isFollowed.is_following,
-      "FOLLOW STATUS CHECKED SUCCESSFULLY!",
-      200
-    );
+    return sendResponse.success<boolean>(res, isFollowed.is_following, 200);
   } catch (error) {
     console.error("[followController] isFollowed error :", error);
     next(error);

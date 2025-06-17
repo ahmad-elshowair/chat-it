@@ -33,7 +33,10 @@ const handleLike = async (
       post_id: req.params.post_id,
     };
     const isLiked = await like_model.like(like);
-    return sendResponse.success(res, isLiked, "LIKE ADDED SUCCESSFULLY!", 200);
+    return sendResponse.success<{
+      message: string;
+      action: "liked" | "unliked";
+    }>(res, isLiked, 200);
   } catch (error) {
     console.error("[likeController] handleLike error :", error);
     next(error);
@@ -68,7 +71,7 @@ const checkIfLiked = async (
     const post_id = req.params.post_id;
 
     const result = await like_model.checkIfLiked(user_id, post_id);
-    return sendResponse.success(res, result, "LIKE CHECKED SUCCESSFULLY!", 200);
+    return sendResponse.success<{ isLiked: boolean }>(res, result, 200);
   } catch (error) {
     console.error("[likeController] checkIfLiked error :", error);
     next(error);

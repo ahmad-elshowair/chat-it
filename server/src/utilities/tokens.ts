@@ -58,94 +58,64 @@ export const generateToken = (
   return jwt.sign(tokenPayload, secret, { expiresIn, algorithm: "HS256" });
 };
 
+const generateCSRF = (): string => {
+  return require("crypto").randomBytes(32).toString("hex");
+};
+
 export const setTokensInCookies = (
   res: Response,
   access_token: string,
   refresh_token: string,
   fingerprint?: string
 ) => {
+  const isProduction = config.node_env === "production";
+
   const cookieConfigs = {
     httpOnly: true,
-    sameSite:
-      config.node_env === "development"
-        ? ("none" as const)
-        : config.node_env === "production"
-        ? ("strict" as const)
-        : ("lax" as const),
-    secure:
-      config.node_env === "production" || config.node_env === "development",
+    secure: isProduction,
+    sameSite: isProduction ? ("strict" as const) : ("lax" as const),
     path: "/",
   };
 
-  // SET COOKIES BASED ON ENVIRONMENT.
-  if (config.node_env === "development") {
-    res.cookie("access_token", access_token, {
+  const accessTokenName = isProduction ? "__Host-access_token" : "access_token";
+  const refreshTokenName = isProduction
+    ? "__Host-refresh_token"
+    : "refresh_token";
+  const fingerprintName = isProduction
+    ? "__Host-x-fingerprint"
+    : "x-fingerprint";
+  const csrfTokenName = isProduction ? "__Secure-csrf_token" : "csrf_token";
+
+  // SET THE ACCESS TOKEN IN COOKIES.
+  res.cookie(accessTokenName, access_token, {
+    ...cookieConfigs,
+    maxAge: getDurationInMs(config.access_token_expiry),
+  });
+
+  // SET THE REFRESH TOKEN IN COOKIES.
+  res.cookie(refreshTokenName, refresh_token, {
+    ...cookieConfigs,
+    maxAge: getDurationInMs(config.refresh_token_expiry),
+  });
+
+  // SET THE FINGERPRINT IN COOKIES.
+  if (fingerprint) {
+    res.cookie(fingerprintName, fingerprint, {
       ...cookieConfigs,
+      httpOnly: false,
+    });
+  }
+
+  // SET THE CSRF TOKEN IN COOKIES AND RESPONSE HEADER.
+  if (config.csrf_protection_enabled) {
+    const csrf_token = generateCSRF();
+    res.cookie(csrfTokenName, csrf_token, {
+      ...cookieConfigs,
+      httpOnly: false,
       maxAge: getDurationInMs(config.access_token_expiry),
     });
 
-    res.cookie("refresh_token", refresh_token, {
-      ...cookieConfigs,
-      path: "/",
-      maxAge: getDurationInMs(config.refresh_token_expiry),
-    });
-
-    if (fingerprint) {
-      res.cookie("x-fingerprint", fingerprint, {
-        ...cookieConfigs,
-        httpOnly: false,
-        maxAge: getDurationInMs(config.access_token_expiry),
-      });
-    }
-
-    // SET A NON-HTTPONLY CSRF TOKEN IF NEEDED.
-    if (config.csrf_protection_enabled) {
-      // GENERATE THE CSRF TOKEN.
-      const csrfToken = require("crypto").randomBytes(32).toString("hex");
-
-      // SET THE CSRF TOKEN IN COOKIES.
-      res.cookie("csrf_token", csrfToken, {
-        ...cookieConfigs,
-        maxAge: getDurationInMs(config.access_token_expiry),
-      });
-
-      // ALSO SET THE TOKEN IN THE RESPONSE HEADER FOR SPA FIRST LOAD.
-      res.setHeader("X-CSRF-Token", csrfToken);
-    }
-  } else {
-    res.cookie("__Host-access_token", access_token, {
-      ...cookieConfigs,
-      maxAge: getDurationInMs(config.access_token_expiry),
-    });
-
-    res.cookie("__Host-refresh_token", refresh_token, {
-      ...cookieConfigs,
-      path: "/",
-      maxAge: getDurationInMs(config.refresh_token_expiry),
-    });
-
-    if (fingerprint) {
-      res.cookie("__Host-x-fingerprint", fingerprint, {
-        ...cookieConfigs,
-        httpOnly: false,
-        maxAge: getDurationInMs(config.access_token_expiry),
-      });
-    }
-    // SET A NON-HTTPONLY CSRF TOKEN IF NEEDED.
-    if (config.csrf_protection_enabled) {
-      // GENERATE THE CSRF TOKEN.
-      const csrfToken = require("crypto").randomBytes(32).toString("hex");
-
-      // SET THE CSRF TOKEN IN COOKIES.
-      res.cookie("__Secure-csrf_token", csrfToken, {
-        ...cookieConfigs,
-        httpOnly: false,
-        maxAge: getDurationInMs(config.access_token_expiry),
-      });
-
-      // ALSO SET THE TOKEN IN THE RESPONSE HEADER FOR SPA FIRST LOAD.
-      res.setHeader("X-CSRF-Token", csrfToken);
-    }
+    res.setHeader("X-CSRF-Token", csrf_token);
   }
 };
 

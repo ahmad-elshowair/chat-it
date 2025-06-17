@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
+import { IPaginatedResult } from "../interfaces/IPagination";
+import { IFeedPost } from "../interfaces/IPost";
 import { Post } from "../types/post";
 import {
   createPaginationResult,
@@ -35,12 +37,7 @@ const create = async (
       image: req.body.image,
     };
     const createPost = await post_model.create(post);
-    return sendResponse.success(
-      res,
-      createPost,
-      "POST CREATED SUCCESSFULLY!",
-      201
-    );
+    return sendResponse.success<Post>(res, createPost, 201);
   } catch (error) {
     console.error("[postController]  create error :", error);
     next(error);
@@ -79,11 +76,7 @@ const update = async (
         );
       }
       const updatedPost = await post_model.update(req.params.post_id, post);
-      return sendResponse.success(
-        res,
-        updatedPost,
-        "POST UPDATED SUCCESSFULLY!"
-      );
+      return sendResponse.success<Post>(res, updatedPost);
     } catch (error) {
       if ((error as Error).message.includes("not found")) {
         return sendResponse.error(res, "POST NOT FOUND", 404);
@@ -111,7 +104,7 @@ const getPostById = async (req: Request, res: Response, next: NextFunction) => {
 
     try {
       const post = await post_model.fetchPostById(post_id);
-      return sendResponse.success(res, post, "POST FETCHED SUCCESSFULLY!");
+      return sendResponse.success<Post>(res, post);
     } catch (error) {
       if ((error as Error).message.includes("not found")) {
         return sendResponse.error(res, "POST NOT FOUND", 404);
@@ -150,7 +143,7 @@ const index = async (req: Request, res: Response, next: NextFunction) => {
       "post_id"
     );
 
-    return sendResponse.success(res, result, "POSTS FETCHED SUCCESSFULLY!");
+    return sendResponse.success<IPaginatedResult<Post>>(res, result);
   } catch (error) {
     console.error("[postController] index error:", error);
     next(error);
@@ -187,7 +180,7 @@ const deletePost = async (
         );
       }
       const result = await post_model.delete(post_id);
-      return sendResponse.success(res, null, result.message);
+      return sendResponse.success<{ message: string }>(res, result);
     } catch (error) {
       if ((error as Error).message.includes("not found")) {
         return sendResponse.error(res, "POST NOT FOUND", 404);
@@ -228,7 +221,7 @@ const userPosts = async (req: Request, res: Response, next: NextFunction) => {
       "post_id"
     );
 
-    return sendResponse.success(res, result, "POSTS FETCHED SUCCESSFULLY!");
+    return sendResponse.success<IPaginatedResult<IFeedPost>>(res, result);
   } catch (error) {
     console.error("[postController] userPosts error:", error);
     next(error);
@@ -266,7 +259,7 @@ const feed = async (req: ICustomRequest, res: Response, next: NextFunction) => {
       totalCount,
       "post_id"
     );
-    return sendResponse.success(res, result, "POSTS FETCHED SUCCESSFULLY!");
+    return sendResponse.success<IPaginatedResult<IFeedPost>>(res, result);
   } catch (error) {
     console.error("[postController] feed error:", error);
     next(error);

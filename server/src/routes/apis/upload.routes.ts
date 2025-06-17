@@ -41,16 +41,17 @@ uploadRouter.post("/", upload.single("file"), (req: Request, res: Response) => {
     }
     // Generate the relative file path for the URL
     const relativeFilePath = `api/images/${req.body.folder}/${req.file.filename}`;
-    return sendResponse.success(
-      res,
-      {
-        filePath: relativeFilePath,
-      },
-      "File UPLOADED successfully!"
-    );
+    return sendResponse.success<{ filePath: string }>(res, {
+      filePath: relativeFilePath,
+    });
   } catch (error) {
     console.error(error as Error);
-    return sendResponse.error(res, "Failed to upload file", 500);
+    return sendResponse.error<Error>(
+      res,
+      "Failed to upload file",
+      500,
+      error as Error
+    );
   }
 });
 

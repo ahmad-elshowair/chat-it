@@ -10,6 +10,7 @@ import {
   validateAuthToken,
   validateFingerprint,
 } from "../utilities/auth-helpers";
+import { sendResponse } from "../utilities/response";
 import {
   calculateExpirationDate,
   clearAuthCookies,
@@ -62,25 +63,39 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
     setTokensInCookies(res, access_token, refresh_token);
 
     // Return minimal user info to client
-    res.status(201).json({
-      message: "Registered Successfully",
-      user: {
-        user_id: user.user_id,
-        email: user.email,
-        is_admin: user.is_admin,
-        user_name: user.user_name,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        picture: user.picture,
-        cover: user.cover,
+    return sendResponse.success(
+      res,
+      {
+        user: {
+          user_id: user.user_id,
+          email: user.email,
+          is_admin: user.is_admin,
+          user_name: user.user_name,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          picture: user.picture,
+          cover: user.cover,
+        },
+        ...(config.csrf_protection_enabled && {
+          csrf: res.getHeader("X-CSRF-Token"),
+        }),
+        fingerprint: fingerprint,
       },
-      ...(config.csrf_protection_enabled && {
-        csrf: res.getHeader("X-CSRF-Token"),
-      }),
-      fingerprint: fingerprint,
-    });
+      201
+    );
   } catch (error) {
-    next(error);
+    console.error("[AUTH]: Register Error: ", error);
+    let errorMessage = "Registration Failed";
+    let statusCode = 500;
+    if (error instanceof Error) {
+      errorMessage = error.message || errorMessage;
+    }
+
+    if (typeof error === "object" && error !== null && "status" in error) {
+      statusCode = (error as { status: number }).status || statusCode;
+    }
+
+    return sendResponse.error(res, errorMessage, statusCode, error);
   }
 };
 
@@ -130,25 +145,40 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
     setTokensInCookies(res, access_token, refresh_token, fingerprint);
 
     // Return minimal user info to client
-    res.status(201).json({
-      message: "Login Successfully",
-      user: {
-        user_id: user.user_id,
-        email: user.email,
-        is_admin: user.is_admin,
-        user_name: user.user_name,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        picture: user.picture,
-        cover: user.cover,
+
+    return sendResponse.success(
+      res,
+      {
+        user: {
+          user_id: user.user_id,
+          email: user.email,
+          is_admin: user.is_admin,
+          user_name: user.user_name,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          picture: user.picture,
+          cover: user.cover,
+        },
+        ...(config.csrf_protection_enabled && {
+          csrf: res.getHeader("X-CSRF-Token"),
+        }),
+        fingerprint: fingerprint,
       },
-      ...(config.csrf_protection_enabled && {
-        csrf: res.getHeader("X-CSRF-Token"),
-      }),
-      fingerprint: fingerprint,
-    });
+      200
+    );
   } catch (error) {
-    next(error);
+    console.error("[AUTH]: Login Error: ", error);
+    let errorMessage = "Login Failed";
+    let statusCode = 500;
+    if (error instanceof Error) {
+      errorMessage = error.message || errorMessage;
+    }
+
+    if (typeof error === "object" && error !== null && "status" in error) {
+      statusCode = (error as { status: number }).status || statusCode;
+    }
+
+    return sendResponse.error(res, errorMessage, statusCode, error);
   }
 };
 
@@ -159,9 +189,7 @@ const logout = async (req: ICustomRequest, res: Response) => {
     // CHECK IF userId EXISTS BEFORE PROCEEDING.
     if (!userId) {
       console.error("[AUTH]: User Id is MISSING!");
-      return res.status(401).json({
-        message: "Unauthorized: User ID is missing!",
-      });
+      return sendResponse.error(res, "Unauthorized: User ID is Missing!", 401);
     }
 
     // Update online status to false if user ID is available
@@ -184,13 +212,10 @@ const logout = async (req: ICustomRequest, res: Response) => {
     // Clear all auth cookies
     clearAuthCookies(res);
     // Return success message
-    res.status(200).json({ message: "Logout Successfully!" });
+    return sendResponse.success(res, "Logout Successfully!", 200);
   } catch (error) {
     console.error("Logout Error:", error);
-    res.status(500).json({
-      message: "Error during logout",
-      error: (error as Error).message,
-    });
+    return sendResponse.error(res, "Error during logout", 500, error);
   }
 };
 
@@ -202,44 +227,39 @@ const refreshToken = async (req: Request, res: Response) => {
       return handleInvalidToken(res, tokeValidationResult.reason);
     }
 
+    const decodeUser = tokeValidationResult.user;
+
     // 2- VALIDATE FINGERPRINT.
-    const fingerprintValidationResult = validateFingerprint(
-      req,
-      tokeValidationResult.user!
-    );
+    const fingerprintValidationResult = validateFingerprint(req, decodeUser!);
     if (!fingerprintValidationResult.valid) {
       return handleInvalidToken(
         res,
         fingerprintValidationResult.reason,
-        tokeValidationResult.user?.id
+        decodeUser?.id
       );
     }
 
     // 3- VERIFY TOKEN IN DATABASE.
     const isTokenValid = await refresh_token_model.verifyToken(
-      tokeValidationResult.user?.id!,
+      decodeUser?.id!,
       hashFingerprint(fingerprintValidationResult.fingerprint!)
     );
     if (!isTokenValid) {
       return handleInvalidToken(
         res,
         "Token has been revoked or expired!",
-        tokeValidationResult.user?.id
+        decodeUser?.id
       );
     }
 
     // 4- ROTATE TOKENS FOR ENHANCED SECURITY.
     const tokenRotation = await rotateTokens(
-      tokeValidationResult.user!,
+      decodeUser!,
       fingerprintValidationResult.fingerprint!
     );
 
     // 5- SEND AUTH STATUS RESPONSE WITH USER DATA.
-    return await sendAuthStatusResponse(
-      res,
-      tokeValidationResult.user?.id!,
-      tokenRotation
-    );
+    return await sendAuthStatusResponse(res, decodeUser?.id!, tokenRotation);
   } catch (error) {
     return handleAuthError(res, error);
   }
@@ -253,44 +273,39 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
       return handleInvalidToken(res, tokenValidationResult.reason);
     }
 
+    const decodeUser = tokenValidationResult.user;
+
     // 2- VALIDATE FINGERPRINT
-    const fingerprintValidationResult = validateFingerprint(
-      req,
-      tokenValidationResult.user!
-    );
+    const fingerprintValidationResult = validateFingerprint(req, decodeUser!);
     if (!fingerprintValidationResult.valid) {
       return handleInvalidToken(
         res,
         fingerprintValidationResult.reason,
-        tokenValidationResult.user!.id
+        decodeUser?.id
       );
     }
 
     // 3- VERIFY TOKEN IN DATABASE.
     const isTokenValid = await refresh_token_model.verifyToken(
-      tokenValidationResult.user!.id!,
+      decodeUser?.id!,
       hashFingerprint(fingerprintValidationResult.fingerprint!)
     );
     if (!isTokenValid) {
       return handleInvalidToken(
         res,
         "Token has been revoked or not found in database!",
-        tokenValidationResult.user!.id
+        decodeUser?.id
       );
     }
 
     // 4- ROTATE TOKENS FOR ENHANCED SECURITY.
     const tokenRotation = await rotateTokens(
-      tokenValidationResult.user!,
+      decodeUser!,
       fingerprintValidationResult.fingerprint!
     );
 
     // 5- SEND AUTH STATUS RESPONSE WITH USER DATA.
-    return await sendAuthStatusResponse(
-      res,
-      tokenValidationResult.user!.id!,
-      tokenRotation
-    );
+    return await sendAuthStatusResponse(res, decodeUser?.id!, tokenRotation);
   } catch (error) {
     return handleAuthError(res, error);
   }

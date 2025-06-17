@@ -27,12 +27,7 @@ const createComment = async (req: ICustomRequest, res: Response) => {
       parent_comment_id: parent_comment_id || null,
     };
     const createdComment = await comment_model.create(comment);
-    return sendResponse.success(
-      res,
-      createdComment,
-      "Comment created successfully",
-      201
-    );
+    return sendResponse.success<IComment>(res, createdComment, 201);
   } catch (error) {
     console.error("[CommentController]: createComment error: ", error);
     return sendResponse.error(
@@ -65,12 +60,7 @@ const updateComment = async (req: ICustomRequest, res: Response) => {
         content,
         user_id
       );
-      return sendResponse.success(
-        res,
-        updatedComment,
-        "Comment updated successfully",
-        200
-      );
+      return sendResponse.success<IComment>(res, updatedComment, 200);
     } catch (error) {
       if ((error as Error).message.includes("comment not found")) {
         return sendResponse.error(
@@ -110,7 +100,7 @@ const deleteComment = async (req: ICustomRequest, res: Response) => {
 
     try {
       const deletedComment = await comment_model.delete(commentId, user_id);
-      return sendResponse.success(res, null, deletedComment.message, 200);
+      return sendResponse.success(res, deletedComment.message);
     } catch (error) {
       if ((error as Error).message.includes("comment not found")) {
         return sendResponse.error(
@@ -154,13 +144,16 @@ const getCommentsByPostId = async (req: Request, res: Response) => {
     const commentsReplies = comments.filter(
       (comment) => comment.parent_comment_id
     );
-    return sendResponse.success(
+    return sendResponse.success<{
+      comments: IComment[];
+      replies: IComment[];
+    }>(
       res,
       {
         comments: topLevelComments,
         replies: commentsReplies,
       },
-      "Comments fetched successfully"
+      200
     );
   } catch (error) {
     console.error("[CommentController]: getCommentsByPostId error: ", error);
@@ -187,12 +180,7 @@ const getRepliesByCommentId = async (req: Request, res: Response) => {
     }
 
     const replies = await comment_model.getRepliesByCommentId(comment_id);
-    return sendResponse.success(
-      res,
-      replies,
-      "Replies fetched successfully",
-      200
-    );
+    return sendResponse.success<IComment[]>(res, replies, 200);
   } catch (error) {
     console.error("[CommentController]: getRepliesByCommentId error: ", error);
     return sendResponse.error(

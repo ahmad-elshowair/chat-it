@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { ICustomRequest } from "../interfaces/ICustomRequest";
+import { IPaginatedResult } from "../interfaces/IPagination";
+import { TFriend, TUnknownUser, TUser } from "../types/users";
 import {
   createPaginationResult,
   getCursorPaginationOptions,
@@ -32,7 +34,7 @@ export const getUsers = async (
     "user_id"
   );
 
-  return sendResponse.success(res, result, "USERS FETCHED SUCCESSFULLY!");
+  return sendResponse.success<IPaginatedResult<TUser>>(res, result, 200);
 };
 
 /**
@@ -52,7 +54,7 @@ const getUserByUsername = async (
     }
     const { user_name } = req.params;
     const user = await user_model.getUserByUsername(user_name);
-    return sendResponse.success(res, user, "USER FETCHED SUCCESSFULLY!");
+    return sendResponse.success<TUser>(res, user, 200);
   } catch (error) {
     console.error("[USER CONTROLLER] getUserByUsername error: ", error);
     next(error);
@@ -74,7 +76,7 @@ const getUserById = async (req: Request, res: Response, next: NextFunction) => {
     }
     const { user_id } = req.params;
     const user = await user_model.getUserById(user_id);
-    return sendResponse.success(res, user, "USER FETCHED SUCCESSFULLY!");
+    return sendResponse.success<TUser>(res, user, 200);
   } catch (error) {
     console.error("[USER CONTROLLER] getUserById error: ", error);
     next(error);
@@ -113,11 +115,7 @@ const update = async (
       );
     }
     const updated_user = await user_model.update(user_id, userData);
-    return sendResponse.success(
-      res,
-      updated_user,
-      "USER PROFILE UPDATED SUCCESSFULLY!"
-    );
+    return sendResponse.success<TUser>(res, updated_user, 200);
   } catch (error) {
     console.error("[USER CONTROLLER] update error: ", error);
     next(error);
@@ -155,11 +153,7 @@ const deleteUser = async (
       );
     }
     const deleted_user = await user_model.delete(user_id);
-    return sendResponse.success(
-      res,
-      deleted_user,
-      "USER DELETED SUCCESSFULLY!"
-    );
+    return sendResponse.success<{ message: string }>(res, deleted_user);
   } catch (error) {
     console.error("[USER CONTROLLER] delete error: ", error);
     next(error);
@@ -184,11 +178,7 @@ const getUnknownUsers = async (
   }
   try {
     const unknowns = await user_model.getUnknowns(user_id);
-    return sendResponse.success(
-      res,
-      unknowns,
-      "UNKNOWN USERS FETCHED SUCCESSFULLY!"
-    );
+    return sendResponse.success<TUnknownUser[]>(res, unknowns);
   } catch (error) {
     console.error("[USER CONTROLLER] getUnknownUsers error: ", error);
     next(error);
@@ -224,7 +214,7 @@ const getFriends = async (req: Request, res: Response, next: NextFunction) => {
       totalCount,
       "user_id"
     );
-    return sendResponse.success(res, result, "FRIENDS FETCHED SUCCESSFULLY!");
+    return sendResponse.success<IPaginatedResult<TFriend>>(res, result);
   } catch (error) {
     console.error("[USER CONTROLLER] getFriends error: ", error);
     next(error);
