@@ -58,14 +58,19 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
         // EXPECT THE API TO RETURN AN OBJECT.
         const uploadResponse = await post<{
           success: boolean;
-          filePath: string;
+          data: string;
         }>("/upload", formDate);
 
         if (uploadResponse?.success) {
           console.log("the response of upload:", uploadResponse);
 
-          const { filePath } = uploadResponse;
-          imageUrl = `${configs.api_url.replace("/api", "")}/${filePath}`;
+          const { data } = uploadResponse;
+          imageUrl = `${configs.api_url.replace("/api", "")}/${data}`;
+        } else {
+          console.error(
+            "Upload Failed: No filepath in response.",
+            uploadResponse
+          );
         }
       }
 
@@ -77,7 +82,10 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
         number_of_likes: 0,
       };
 
-      const response = await post("/posts/create", postData);
+      const response = await post<{ success: boolean; data: TPost }>(
+        "/posts/create",
+        postData
+      );
 
       if (response?.success) {
         console.log("the new post response", response.data);
