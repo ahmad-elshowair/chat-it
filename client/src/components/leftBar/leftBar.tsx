@@ -21,11 +21,12 @@ const LeftBar = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await get<{ success: boolean; data: TUser[] }>(
-          `/users/unknowns`
-        );
+        const response = await get(`/users/unknowns`);
         if (response?.success) {
-          setUsers(response.data);
+          const { data } = response;
+          if (data) {
+            setUsers(data);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch unknown users", error);

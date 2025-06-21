@@ -17,12 +17,11 @@ export const HomeRightBar = () => {
     const fetchOnlineFriends = async () => {
       if (!user?.user_id) return;
       try {
-        const response = await get<{
-          success: boolean;
-          data: TOnlineFriendProps[];
-        }>(`/users/friends/${user.user_id}/?is_online=true`);
+        const response = await get(
+          `/users/friends/${user.user_id}/?is_online=true`
+        );
 
-        if (response?.success) {
+        if (response?.success && response.data) {
           setOnlineFriends(response.data);
         }
       } catch (error) {

@@ -55,15 +55,17 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
         formDate.append("file", file);
         formDate.append("folder", folder);
 
+        // EXPECT THE API TO RETURN AN OBJECT.
         const uploadResponse = await post<{
           success: boolean;
-          data: { filePath: string };
+          filePath: string;
         }>("/upload", formDate);
 
         if (uploadResponse?.success) {
-          imageUrl = `${configs.api_url.replace("/api", "")}/${
-            uploadResponse.data.filePath
-          }`;
+          console.log("the response of upload:", uploadResponse);
+
+          const { filePath } = uploadResponse;
+          imageUrl = `${configs.api_url.replace("/api", "")}/${filePath}`;
         }
       }
 
@@ -75,32 +77,27 @@ export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {
         number_of_likes: 0,
       };
 
-      const response = await post<{
-        success: boolean;
-        message: string;
-        data: {
-          post_id: string;
-          created_at: string;
-          updated_at: string;
-        };
-      }>("/posts/create", postData);
-
-      const postID = response?.data?.post_id;
+      const response = await post("/posts/create", postData);
 
       if (response?.success) {
-        if (!postID) {
+        console.log("the new post response", response.data);
+
+        const { post_id, updated_at, created_at } = response.data;
+
+        if (!post_id) {
           console.error("Server returned success but no post_id");
         } else {
-          console.info("Created Post with ID: ", postID);
+          console.info("Created Post with ID: ", post_id);
         }
 
         const newPost = {
           ...postData,
-          post_id: postID,
           user_name: currentUser?.user_name,
-          created_at: response.data.created_at,
-          updated_at: response.data.updated_at,
-        };
+          post_id,
+          created_at,
+          updated_at,
+        } as TPost;
+
         addPost(newPost);
         // RESET FORM
         setDescription("");

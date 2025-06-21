@@ -12,7 +12,6 @@ import { formatRelativeTime } from "../../utils/dateUtils";
 import CommentList from "../comment/CommentList";
 import DeletePostModal from "../deletePostModal/DeletePostModal";
 import "./post.css";
-import { TApiResponse } from "../../types/api";
 
 export const Post: FC<TPost> = ({
   user_name,
@@ -38,12 +37,9 @@ export const Post: FC<TPost> = ({
       if (!currentUser?.user_id || !post_id) return;
 
       try {
-        const response = await get<{
-          success: boolean;
-          data: { isLiked: boolean };
-        }>(`/posts/is-liked/${post_id}`);
+        const response = await get(`/posts/is-liked/${post_id}`);
 
-        if (response?.success && response.data) {
+        if (response?.success) {
           setLikeState((prevState) => ({
             ...prevState,
             isLiked: true,
@@ -59,9 +55,9 @@ export const Post: FC<TPost> = ({
   useEffect(() => {
     const fetchAUser = async () => {
       try {
-        const response = await get<TUser>(`/users/${user_name}`);
+        const response = await get(`/users/${user_name}`);
 
-        if (response?.success && response.data) {
+        if (response?.success) {
           setUser(response.data);
         }
       } catch (error) {
@@ -84,10 +80,7 @@ export const Post: FC<TPost> = ({
     }));
 
     try {
-      const response = await post<TApiResponse<{ success: boolean }>>(
-        `/posts/like/${post_id}`,
-        {}
-      );
+      const response = await post(`/posts/like/${post_id}`, {});
 
       if (response?.success) {
         setLikeState((pervState) => ({

@@ -11,7 +11,7 @@ export const Feed: FC<TFeedProps> = ({ user_id }) => {
   const { isAuthChecked, user: currentUser } = useAuthState();
   const { posts, refreshPosts, pagination, isLoading } = usePost();
   const initialLoadComplete = useRef(false);
-  const [postsPerPage, setPostsPerPage] = useState<number>(2);
+  const [postsPerPage, setPostsPerPage] = useState<number>(5);
 
   useEffect(() => {
     if (!isAuthChecked) return;
@@ -54,7 +54,7 @@ export const Feed: FC<TFeedProps> = ({ user_id }) => {
                 aria-expanded="false"
                 style={{ color: "var(--main-color)" }}
               >
-                {postsPerPage} per page
+                {postsPerPage} posts per page
               </button>
               <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0">
                 {[2, 5, 10, 20].map((limit) => (
@@ -71,7 +71,7 @@ export const Feed: FC<TFeedProps> = ({ user_id }) => {
                           postsPerPage === limit ? "var(--main-color)" : "",
                       }}
                     >
-                      {limit} posts
+                      {limit} Posts
                     </button>
                   </li>
                 ))}

@@ -56,12 +56,16 @@ export const Profile = () => {
 
     try {
       setIsLoading(true);
-      const response = await get<{ success: boolean; data: TUser }>(
-        `/users/${user_name}`
-      );
+      const response = await get(`/users/${user_name}`);
+      console.log("API RESPONSE", response);
 
       if (response?.success) {
-        setUser(response.data);
+        console.log("Setting user data:", response.data);
+
+        const { data } = response;
+        if (data) {
+          setUser(data);
+        }
       }
     } catch (error) {
       console.error(`Error Fetching user: ${error}`);
@@ -90,12 +94,13 @@ export const Profile = () => {
     }
 
     try {
-      const response = await get<{ success: boolean; data: boolean }>(
-        `/follows/is-followed/${user.user_id}`
-      );
-      if (response?.success !== undefined) {
-        setIsFollowed(response.data);
-        setFollowCheckDone(true);
+      const response = await get(`/follows/is-followed/${user.user_id}`);
+      if (response?.success) {
+        const { data } = response;
+        if (data) {
+          setIsFollowed(data);
+          setFollowCheckDone(true);
+        }
       }
     } catch (error) {
       console.error("Error checking follow status:", error);
@@ -109,7 +114,7 @@ export const Profile = () => {
       setIsLoading(true);
       if (isFollowed) {
         // UNFOLLOW USER
-        const response = await del<{ success: boolean }>("/follows/unfollow", {
+        const response = await del("/follows/unfollow", {
           data: { user_id_followed: user?.user_id },
         });
 
@@ -132,7 +137,7 @@ export const Profile = () => {
         }
       } else {
         // FOLLOW USER
-        const response = await post<{ success: boolean }>("/follows/follow", {
+        const response = await post("/follows/follow", {
           user_id_followed: user?.user_id,
         });
 
@@ -189,7 +194,24 @@ export const Profile = () => {
       : `${config.api_url}/images/noCover.png`;
   }, [user?.cover]);
 
-  if (isLoading && !user) {
+  if (!user) {
+    return (
+      <>
+        <Topbar />
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: "80vh" }}
+        >
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">NO USER FOUND.</span>
+          </div>
+        </div>
+        x
+      </>
+    );
+  }
+
+  if (isLoading) {
     return (
       <>
         <Topbar />
@@ -204,6 +226,8 @@ export const Profile = () => {
       </>
     );
   }
+
+  console.log("Profile component rendering, user:", user);
 
   return (
     <>

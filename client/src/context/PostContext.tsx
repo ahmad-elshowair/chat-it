@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 import { createContext, FC, useCallback, useState } from "react";
 
-import api from "../api/axiosInstance";
+import { useSecureApi } from "../hooks/useSecureApi";
 import { getCsrf, syncAllAuthTokensFromCookies } from "../services/storage";
 import { TPagination, TPost, TPostContext } from "../types/post";
 
@@ -22,6 +22,7 @@ export const PostProvider: FC<{ children: React.ReactNode }> = ({
     setPosts((prevPosts) => [newPost, ...prevPosts]);
   };
 
+  const { get } = useSecureApi();
   const refreshPosts = useCallback(
     async (
       user_id?: string,
@@ -48,17 +49,23 @@ export const PostProvider: FC<{ children: React.ReactNode }> = ({
 
         const queryString = params.toString() ? `?${params.toString()}` : "";
 
-        const response = user_id
-          ? await api.get(`/posts/user/${user_id}${queryString}`, {
-              withCredentials: true,
-              headers: { "X-CSRF-Token": csrf },
-            })
-          : await api.get(`/posts/feed${queryString}`, {
-              withCredentials: true,
-              headers: { "X-CSRF-Token": csrf },
-            });
+        const endpoint = user_id
+          ? `/posts/user/${user_id}${queryString}`
+          : `/posts/feed${queryString}`;
 
-        const { data, pagination: paginationData } = response.data;
+        const response = await get<{
+          data: TPost[];
+          pagination: TPagination;
+        }>(endpoint);
+
+        console.log("the response of feed or user's posts: ", response);
+        if (!response?.data) {
+          console.error("Failed to fetch posts");
+          setIsLoading(false);
+          return;
+        }
+
+        const { data, pagination: paginationData } = response;
 
         if (append && cursor) {
           setPosts((prevPosts) => {
@@ -92,7 +99,7 @@ export const PostProvider: FC<{ children: React.ReactNode }> = ({
         setIsLoading(false);
       }
     },
-    []
+    [get]
   );
 
   const removePost = (post_id: string) => {

@@ -24,11 +24,8 @@ const ProfileRightBar: FC<TProfileRightBarProps> = ({
     const getFriends = async () => {
       if (!user_id) return;
       try {
-        const response = await get<{
-          success: boolean;
-          data: TFriendsCardProps[];
-        }>(`/users/friends/${user_id}?is_online=false`);
-        if (response?.success) {
+        const response = await get(`/users/friends/${user_id}?is_online=false`);
+        if (response?.success && response.data) {
           setFriends(response.data);
         }
       } catch (error) {

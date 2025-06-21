@@ -4,7 +4,6 @@ import { TComment, TCommentListProps } from "../../types/comments";
 import Comment from "./Comment";
 import CommentForm from "./CommentForm";
 import "./comment.css";
-import { TApiResponse } from "../../types/api";
 
 const CommentList: FC<TCommentListProps> = ({ post_id }) => {
   const [comments, setComments] = useState<TComment[]>([]);
@@ -16,9 +15,13 @@ const CommentList: FC<TCommentListProps> = ({ post_id }) => {
 
   useEffect(() => {
     const fetchComments = async () => {
-      const response = await get<
-        TApiResponse<{ comments: TComment[]; replies: TComment[] }>
-      >(`/posts/${post_id}/comments`);
+      const response = await get<{
+        success: boolean;
+        data: {
+          comments: TComment[];
+          replies: TComment[];
+        };
+      }>(`/posts/${post_id}/comments`);
 
       if (response?.success) {
         const { comments: topLevelComments, replies: commentsReplies } =
@@ -40,31 +43,36 @@ const CommentList: FC<TCommentListProps> = ({ post_id }) => {
   }, [apiError]);
 
   const addComment = async (content: string) => {
-    const response = await post<TApiResponse<TComment>>("/comments/create", {
-      post_id: post_id,
-      content: content,
-    });
+    const response = await post<{ success: boolean; data: TComment }>(
+      "/comments/create",
+      {
+        post_id: post_id,
+        content: content,
+      }
+    );
     if (response?.success && response.data) {
-      setComments((prevComments: TComment[]) => [
-        ...prevComments,
-        response.data,
-      ]);
+      const newComment = response.data;
+      setComments((prevComments) => [...prevComments, newComment]);
     }
   };
 
   const addReply = async (comment_id: string, content: string) => {
-    const response = await post<TApiResponse<TComment>>("/comments/create", {
-      post_id: post_id,
-      content: content,
-      parent_comment_id: comment_id,
-    });
+    const response = await post<{ success: boolean; data: TComment }>(
+      "/comments/create",
+      {
+        post_id: post_id,
+        content: content,
+        parent_comment_id: comment_id,
+      }
+    );
     if (response?.success && response.data) {
-      setReplies((prevReplies: TComment[]) => [...prevReplies, response.data]);
+      const newReply = response.data;
+      setReplies((prevReplies) => [...prevReplies, newReply]);
     }
   };
 
   const updateComment = async (comment_id: string, content: string) => {
-    const response = await put<TApiResponse<TComment>>(
+    const response = await put<{ success: boolean; data: TComment }>(
       `/comments/update/${comment_id}`,
       {
         content: content,
@@ -90,9 +98,9 @@ const CommentList: FC<TCommentListProps> = ({ post_id }) => {
   };
 
   const deleteComment = async (comment_id: string) => {
-    const response = await del<
-      TApiResponse<{ success: boolean; message: string }>
-    >(`/comments/delete/${comment_id}`);
+    const response = await del<{ success: boolean; message: string }>(
+      `/comments/delete/${comment_id}`
+    );
     if (response?.success) {
       setComments((prevComments) =>
         prevComments.filter((comment) => comment.comment_id !== comment_id)
