@@ -3,7 +3,7 @@ import { Modal } from "react-bootstrap";
 import { FaInfo } from "react-icons/fa";
 import { usePost } from "../../hooks/usePost";
 import { useSecureApi } from "../../hooks/useSecureApi";
-import { DeletePostModalProps } from "../../types/post";
+import { DeletePostModalProps } from "../../types/TPost";
 
 const DeletePostModal: FC<DeletePostModalProps> = ({
   post_id,

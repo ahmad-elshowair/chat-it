@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from "react";
 import { useSecureApi } from "../../hooks/useSecureApi";
-import { TComment, TCommentListProps } from "../../types/comments";
+import { TComment, TCommentListProps } from "../../types/TComments";
 import Comment from "./Comment";
 import CommentForm from "./CommentForm";
 import "./comment.css";

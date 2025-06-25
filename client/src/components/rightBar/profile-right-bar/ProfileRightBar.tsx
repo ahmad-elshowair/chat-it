@@ -6,7 +6,7 @@ import {
   FaRegGrinHearts,
 } from "react-icons/fa";
 import { useSecureApi } from "../../../hooks/useSecureApi";
-import { TFriendsCardProps, TProfileRightBarProps } from "../../../types/user";
+import { TFriendsCardProps, TProfileRightBarProps } from "../../../types/TUser";
 import { FriendCard } from "./friendCard/FriendCard";
 import "./profileRightBar.css";
 

@@ -2,7 +2,7 @@ import axios from "axios";
 
 import configs from "../configs";
 import { getCsrf, getFingerprint } from "../services/storage";
-import { Store } from "../types/auth";
+import { Store } from "../types/TAuth";
 import { setupCsrfInterceptor } from "./csrfInterceptor";
 import { setupRequestInterceptor } from "./requestInterceptor";
 

@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { Link } from "react-router-dom";
-import { TOnlineFriendProps } from "../../types/user";
+import { TOnlineFriendProps } from "../../types/TUser";
 import "./onlineFriend.css";
 export const OnlineFriend: FC<TOnlineFriendProps> = ({
   first_name,

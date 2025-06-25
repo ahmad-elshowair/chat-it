@@ -1,7 +1,7 @@
 import { useCallback, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { loginUser, logoutUser, registerUser } from "../services/auth";
-import { LoginCredentials, RegisterCredentials } from "../types/auth";
+import { LoginCredentials, RegisterCredentials } from "../types/TAuth";
 
 const useAuthActions = () => {
   const { dispatch } = useContext(AuthContext);

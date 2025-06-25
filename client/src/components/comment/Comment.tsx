@@ -1,13 +1,13 @@
 import { FC, useState } from "react";
+import { Dropdown } from "react-bootstrap";
+import { BsPencil, BsThreeDots, BsTrash } from "react-icons/bs";
 import { Link } from "react-router-dom";
 import configs from "../../configs";
 import useAuthState from "../../hooks/useAuthState";
-import { TCommentProps } from "../../types/comments";
+import { TCommentProps } from "../../types/TComments";
 import { formatRelativeTime } from "../../utils/dateUtils";
 import CommentForm from "./CommentForm";
 import DeleteConfirmation from "./DeleteConfirmation";
-import { Dropdown } from "react-bootstrap";
-import { BsPencil, BsThreeDots, BsTrash } from "react-icons/bs";
 
 const Comment: FC<TCommentProps> = ({
   comment,

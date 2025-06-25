@@ -10,7 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import config from "../../configs";
 import { useSecureApi } from "../../hooks/useSecureApi";
-import { TUser } from "../../types/user";
+import { TUser } from "../../types/TUser";
 import { Friend } from "../friend/Friend";
 import "./leftBar.css";
 

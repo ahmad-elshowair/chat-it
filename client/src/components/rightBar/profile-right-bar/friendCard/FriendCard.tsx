@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import config from "../../../../configs";
-import { TFriendsCardProps } from "../../../../types/user";
+import { TFriendsCardProps } from "../../../../types/TUser";
 import "./friendCard.css";
 
 export const FriendCard: FC<TFriendsCardProps> = ({

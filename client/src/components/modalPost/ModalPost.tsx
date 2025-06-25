@@ -7,7 +7,7 @@ import useAuthState from "../../hooks/useAuthState";
 import useAuthVerification from "../../hooks/useAuthVerification";
 import { usePost } from "../../hooks/usePost";
 import { useSecureApi } from "../../hooks/useSecureApi";
-import { TModalPostProps, TPost } from "../../types/post";
+import { TModalPostProps, TPost } from "../../types/TPost";
 import "./modalPost.css";
 
 export const ModalPost: FC<TModalPostProps> = ({ show, handleClose }) => {

@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import config from "../../configs";
 import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../services/auth";
-import { LoginCredentials } from "../../types/auth";
+import { LoginCredentials } from "../../types/TAuth";
 import "./login.css";
 
 export const Login = () => {

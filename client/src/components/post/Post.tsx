@@ -6,8 +6,8 @@ import { Link } from "react-router-dom";
 import config from "../../configs";
 import useAuthState from "../../hooks/useAuthState";
 import { useSecureApi } from "../../hooks/useSecureApi";
-import { TPost } from "../../types/post";
-import { TUser } from "../../types/user";
+import { TPost } from "../../types/TPost";
+import { TUser } from "../../types/TUser";
 import { formatRelativeTime } from "../../utils/dateUtils";
 import CommentList from "../comment/CommentList";
 import DeletePostModal from "../deletePostModal/DeletePostModal";
@@ -37,12 +37,18 @@ export const Post: FC<TPost> = ({
       if (!currentUser?.user_id || !post_id) return;
 
       try {
-        const response = await get(`/posts/is-liked/${post_id}`);
+        const response = await get<{
+          success: boolean;
+          data: { isLiked: boolean };
+        }>(`/posts/is-liked/${post_id}`);
 
         if (response?.success) {
+          const { isLiked } = response.data;
+          console.log("the response of checking liking:", response);
+
           setLikeState((prevState) => ({
             ...prevState,
-            isLiked: true,
+            isLiked: isLiked,
           }));
         }
       } catch (error) {
@@ -73,20 +79,24 @@ export const Post: FC<TPost> = ({
   const relativeDate = formatRelativeTime(updatedAtDate);
 
   const likeHandler = async () => {
-    setLikeState((pervState) => ({
-      ...pervState,
-      isLiked: !pervState.isLiked,
-      likes: pervState.isLiked ? pervState.likes - 1 : pervState.likes + 1,
-    }));
-
+    const currentLikedStat = likeState.isLiked;
     try {
-      const response = await post(`/posts/like/${post_id}`, {});
+      const response = await post<{
+        success: boolean;
+        data: {
+          message: string;
+          action: "liked" | "unlinked";
+        };
+      }>(`/posts/like/${post_id}`, {});
 
       if (response?.success) {
+        console.log("the response of likeHandler: ", response);
+
+        const { action } = response.data;
         setLikeState((pervState) => ({
           ...pervState,
-          isLiked: !pervState.isLiked,
-          likes: pervState.isLiked ? pervState.likes + 1 : pervState.likes - 1,
+          isLiked: action === "liked",
+          likes: action === "liked" ? pervState.likes + 1 : pervState.likes - 1,
         }));
       }
     } catch (error) {
@@ -95,8 +105,8 @@ export const Post: FC<TPost> = ({
       // IF IT'S NOT A CSRF MISMATCH, JUST TOGGLE THE LIKE
       setLikeState((prevState) => ({
         ...prevState,
-        isLiked: !prevState.isLiked,
-        likes: prevState.isLiked ? prevState.likes + 1 : prevState.likes - 1,
+        isLiked: currentLikedStat,
+        likes: currentLikedStat ? prevState.likes + 1 : prevState.likes - 1,
       }));
     }
   };

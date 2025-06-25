@@ -3,7 +3,7 @@ import { FaExclamationCircle } from "react-icons/fa";
 import config from "../../../configs";
 import useAuthState from "../../../hooks/useAuthState";
 import { useSecureApi } from "../../../hooks/useSecureApi";
-import { TOnlineFriendProps } from "../../../types/user";
+import { TOnlineFriendProps } from "../../../types/TUser";
 import { OnlineFriend } from "../../online/OnlineFriend";
 import "./homeRightBar.css";
 

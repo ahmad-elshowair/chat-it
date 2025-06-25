@@ -7,8 +7,8 @@ import {
   AuthAction,
   LoginCredentials,
   RegisterCredentials,
-} from "../types/auth";
-import { TUserPayload } from "../types/user";
+} from "../types/TAuth";
+import { UserPayload } from "../types/TUser";
 import {
   clearAuthStorage,
   getFingerprint,
@@ -30,7 +30,7 @@ export const registerUser = async (
       data: {
         csrf: string;
         fingerprint: string;
-        user: TUserPayload;
+        user: UserPayload;
       };
     }>(`/auth/register`, userData);
 
@@ -111,7 +111,7 @@ export const loginUser = async (
     // ENSURE WE'RE USING withCredentials FOR THIS CRITICAL REQUEST.
     const response = await post<{
       success: boolean;
-      data: { user: TUserPayload; csrf: string; fingerprint: string };
+      data: { user: UserPayload; csrf: string; fingerprint: string };
     }>(`/auth/login`, userCredentials);
     if (!response) {
       console.error("LOGIN Failed - No Response received");

@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { ApiError } from "../api/ApiError";
 import api from "../api/axiosInstance";
 import { AuthService } from "../services/authService";
-import { TRequestOptions } from "../types/auth";
+import { TRequestOptions } from "../types/TAuth";
 
 export function createSecureApi() {
   /**

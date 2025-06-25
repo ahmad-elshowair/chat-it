@@ -6,7 +6,7 @@ import {
   useReducer,
 } from "react";
 import { setUpInterceptors } from "../api/axiosInstance";
-import { AuthAction, AuthState } from "../types/auth";
+import { AuthAction, AuthState } from "../types/TAuth";
 import AuthReducer, { initialState } from "./AuthReducer";
 
 export const AuthContext = createContext<{

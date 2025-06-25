@@ -1,6 +1,6 @@
 import { FC, FormEvent, useEffect, useState } from "react";
 import { FaLocationArrow } from "react-icons/fa";
-import { TCommentFormProps } from "../../types/comments";
+import { TCommentFormProps } from "../../types/TComments";
 
 const CommentForm: FC<TCommentFormProps> = ({
   onSubmit,

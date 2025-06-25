@@ -2,7 +2,7 @@ import { FC, useEffect, useRef, useState } from "react";
 import { BsEmojiSmile } from "react-icons/bs";
 import useAuthState from "../../hooks/useAuthState";
 import { usePost } from "../../hooks/usePost";
-import { TFeedProps } from "../../types/post";
+import { TFeedProps } from "../../types/TPost";
 import { Post } from "../post/Post";
 import { Share } from "../share/Share";
 import "./feed.css";

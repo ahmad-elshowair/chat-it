@@ -3,7 +3,7 @@ import { createContext, FC, useCallback, useState } from "react";
 
 import { useSecureApi } from "../hooks/useSecureApi";
 import { getCsrf, syncAllAuthTokensFromCookies } from "../services/storage";
-import { TPagination, TPost, TPostContext } from "../types/post";
+import { TPagination, TPost, TPostContext } from "../types/TPost";
 
 export const PostContext = createContext<TPostContext | undefined>(undefined);
 
@@ -58,7 +58,6 @@ export const PostProvider: FC<{ children: React.ReactNode }> = ({
           pagination: TPagination;
         }>(endpoint);
 
-        console.log("the response of feed or user's posts: ", response);
         if (!response?.data) {
           console.error("Failed to fetch posts");
           setIsLoading(false);

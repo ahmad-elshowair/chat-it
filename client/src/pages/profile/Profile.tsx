@@ -9,7 +9,7 @@ import config from "../../configs";
 import useAuthState from "../../hooks/useAuthState";
 import useAuthVerification from "../../hooks/useAuthVerification";
 import { useSecureApi } from "../../hooks/useSecureApi";
-import { TUser } from "../../types/user";
+import { TUser } from "../../types/TUser";
 import "./profile.css";
 
 export const Profile = () => {
@@ -226,8 +226,6 @@ export const Profile = () => {
       </>
     );
   }
-
-  console.log("Profile component rendering, user:", user);
 
   return (
     <>

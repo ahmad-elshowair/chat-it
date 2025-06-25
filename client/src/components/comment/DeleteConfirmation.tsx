@@ -1,7 +1,7 @@
 import React from "react";
 import { Modal } from "react-bootstrap";
 import { FaExclamationTriangle } from "react-icons/fa";
-import { TDeleteConfirmationProps } from "../../types/comments";
+import { TDeleteConfirmationProps } from "../../types/TComments";
 
 const DeleteConfirmation: React.FC<TDeleteConfirmationProps> = ({
   isOpen,
