@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Design a standalone, extensible system audit log. It should track who performed what action, on which entity, with previous and new values, within atomic transactions. Not coupled to any single feature — must serve RBAC, reports, user management, and future modules alike."
 
+## Clarifications
+
+### Session 2026-04-29
+
+- Q: Which existing actions should emit audit records on day one? → A: All admin+moderator actions — RBAC operations (role assign/revoke/create/update/delete, user ban/unban) plus content moderation actions (post/comment deletions by admins/moderators, report resolution).
+- Q: Should the query endpoint support filtering by `actor_type`? → A: Yes, include it now for future-proofing.
+- Q: What database column type should be used for the `entity_id` field? → A: UUID (Assuming all platform entities use UUIDs).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Automatic Capture of Administrative Actions (Priority: P1)
@@ -103,25 +111,27 @@ As a compliance-conscious platform, I want audit records to be append-only — n
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST create an audit record for every mutating administrative action, capturing: actor ID, actor type (user or system), action name, entity type, entity ID, previous values (JSON), new values (JSON), and timestamp.
-- **FR-002**: Audit records MUST be persisted within the same database transaction as the business operation they describe. If the business operation rolls back, the audit record MUST also roll back.
-- **FR-003**: The system MUST provide a function that accepts an existing database client (transaction connection) so callers can embed audit recording inside their own transactions.
-- **FR-004**: The system MUST expose paginated query endpoints supporting the following filters (individually and in combination): actor ID, action name, entity type, entity ID, date range (from/to).
+- **FR-001**: The system MUST create an audit record for every mutating administrative or moderation action, capturing: actor ID, actor type (user or system), action name, entity type, entity ID (UUID), previous values (JSON), new values (JSON), and timestamp. The initial action set covers: `role.assign`, `role.revoke`, `role.create`, `role.update`, `role.delete`, `user.ban`, `user.unban`, `post.delete.any`, `comment.delete.any`, `report.dismiss`, `report.escalate`. Regular-user actions (e.g., `posts.delete.own`, `comments.delete.own`) are explicitly out of scope.
+- **FR-002**: Audit records MUST be persisted within the same database transaction as the business operation they describe. If either the business operation or the audit INSERT fails, the entire transaction MUST roll back — audit and business share the same transactional fate unconditionally.
+- **FR-003**: The system MUST provide a function that accepts an existing database client (transaction connection) so callers can embed audit recording inside their own transactions. If no existing transaction is provided, the function MUST open and manage its own transaction.
+- **FR-004**: The system MUST expose paginated query endpoints supporting the following filters (individually and in combination): actor ID, actor type, action name, entity type, entity ID, date range (from/to).
 - **FR-005**: Pagination MUST use cursor-based (keyset) strategy on the sequential audit record ID, consistent with Constitution Article VIII.
 - **FR-006**: The system MUST NOT execute `SELECT COUNT(*)` queries alongside paginated audit queries (Constitution Article VIII).
 - **FR-007**: Access to audit log query endpoints MUST be gated by an `audit.read` permission enforced through the existing RBAC middleware (spec 005).
-- **FR-008**: Audit records MUST be append-only. The database MUST reject any UPDATE or DELETE operations on audit records (enforced via database-level trigger or policy).
+- **FR-008**: Audit records MUST be append-only with no exceptions — including super admins. The database MUST reject any UPDATE or DELETE operations on audit records (enforced via database-level trigger). The migration creating the trigger MUST include a comment documenting its purpose so that future migrations are aware of the immutability constraint.
 - **FR-009**: The `action` field MUST accept any string value. The system MUST NOT restrict actions to a predefined enum, ensuring extensibility for future modules.
-- **FR-010**: The `previous_values` and `new_values` fields MUST store structured data as JSON. When there is no previous state (e.g., a creation event), `previous_values` MUST be null.
-- **FR-011**: The system MUST distinguish between human actors (authenticated users) and system actors (automated processes) via an `actor_type` field.
+- **FR-010**: The `previous_values` and `new_values` fields MUST store full entity snapshots as JSON (not diffs). When there is no previous state (e.g., a creation event), `previous_values` MUST be null. At least one of `previous_values` or `new_values` MUST be non-null — a record with both null is invalid and MUST be rejected.
+- **FR-010a**: Each JSON payload in `previous_values` and `new_values` MUST NOT exceed 10 KB. If a snapshot exceeds this limit, the system MUST truncate non-essential fields and include a `_truncated: true` marker in the JSON.
+- **FR-011**: The system MUST distinguish between human actors (authenticated users) and system actors (automated processes) via an `actor_type` field. System actors MUST use a reserved `actor_id` of `0` to clearly separate them from user IDs.
 - **FR-012**: When a single action affects multiple entities, the system MUST create one audit record per affected entity, all within the same transaction.
 - **FR-013**: Query results MUST be returned in reverse chronological order (newest first) by default.
 - **FR-014**: Each audit record MUST include an `ip_address` field capturing the originating request's IP, when available, to support security investigations.
 - **FR-015**: The system MUST return audit query results using the standardized response envelope (Constitution Article V).
+- **FR-016**: The `audit.read` permission MUST be added to the predefined permissions seed data and assigned to the admin and super_admin roles during migration. Custom roles MAY be granted `audit.read` only through explicit super admin assignment — it is NOT included in any custom role by default.
 
 ### Key Entities
 
-- **Audit Record**: An immutable, append-only entry representing a single state-changing event. Contains: sequential ID, actor ID, actor type, action name, entity type, entity ID, previous values (JSON), new values (JSON), IP address, and creation timestamp. This is the sole entity of the audit log system.
+- **Audit Record**: An immutable, append-only entry representing a single state-changing event. Contains: sequential ID, actor ID, actor type, action name, entity type, entity ID (UUID), previous values (full JSON snapshot, max 10 KB), new values (full JSON snapshot, max 10 KB), IP address, and creation timestamp. This is the sole entity of the audit log system.
 
 ## Success Criteria *(mandatory)*
 
@@ -137,8 +147,10 @@ As a compliance-conscious platform, I want audit records to be append-only — n
 
 - The RBAC system (spec 005) is the primary initial consumer. The audit log is designed to serve it but is not limited to it.
 - The existing `pg` client and transaction patterns (`BEGIN` / `COMMIT` / `ROLLBACK`) are the standard for database operations. The audit function must accept a `pg.PoolClient` to participate in callers' transactions.
-- `previous_values` and `new_values` payloads are expected to be modest (under 10 KB each). Large object storage is out of scope.
+- `previous_values` and `new_values` payloads are expected to be modest (under 10 KB each, formal limit in FR-010a).
 - Date-based queries use UTC timestamps consistently.
-- The `audit.read` permission will be added to the predefined permissions seed data (alongside the existing permissions from spec 005) and assigned to the admin and super_admin roles.
+- The `audit.read` permission is formally required by FR-016.
 - Audit log retention and archival (e.g., moving old records to cold storage) are out of scope for this feature. Records accumulate indefinitely until a separate retention policy is specified.
 - The IP address is captured on a best-effort basis — system-initiated actions may not have an IP address.
+- PII redaction in audit records (e.g., removing email addresses from snapshots) is out of scope for this feature. A separate PII handling policy should be defined before any compliance-mandated redaction is required.
+- Meta-auditing (recording when a user reads the audit log) is out of scope for this feature. Audit log read access is already gated by the `audit.read` permission (FR-007).
