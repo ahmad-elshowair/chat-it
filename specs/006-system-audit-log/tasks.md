@@ -34,14 +34,113 @@
 
 ### Implementation
 
-- [ ] T006 [US1] Create `server/src/models/audit.ts` — `AuditModel` class with two methods: (1) `record(client: PoolClient, params: TAuditEmitParams): Promise<TAuditRecord>` — INSERT into `audit_log` using the provided client (joins caller's transaction). Validates at least one of previous/new values is non-null. Truncates JSON payloads exceeding 10 KB with `_truncated: true` marker. Follow `BookmarkModel` pattern: `QueryResult<TAuditRecord>`, `connection.query($1, $2...)`, error via `throw new Error('msg', { cause: error })`. (2) `query(params: TAuditQueryParams): Promise<IPaginatedResult<TAuditRecord>>` — builds dynamic WHERE clause from optional filters, uses compound cursor `(created_at DESC, id DESC)` for keyset pagination. Follow existing cursor pattern from `BookmarkModel.getUserBookmarks()`.
-- [ ] T007 [US1] Create `server/src/services/auditEmitter.ts` — export `emitAudit(params: TAuditEmitParams): Promise<void>`. If `params.client` is provided, call `auditModel.record()` with it. If not, open `pool.connect()`, BEGIN, call `record()`, COMMIT, release in `finally`. Validate at least one of previous/new values is non-null before proceeding.
-- [ ] T008 [US1] Register `AuditModel` in `server/src/controllers/factory.ts` — add `import AuditModel from '../models/audit.js'` and `const audit_model = new AuditModel()`. Export `audit_model`.
-- [ ] T009 [US1] Add `emitAudit` calls to `server/src/controllers/roles.controller.ts` — in `assignRole()` (action: `role.assign`), `revokeRole()` (action: `role.revoke`), `createRole()` (action: `role.create`), `updateRole()` (action: `role.update`), `deleteRole()` (action: `role.delete`). Each call passes `client` from the model's transaction context, `req.user.id` as actorId, appropriate entity type/id, and before/after snapshots. Add `emitAudit` import. Calls go after the business operation succeeds but before the response is sent.
-- [ ] T010 [P] [US1] Add `emitAudit` calls to `server/src/controllers/users.controller.ts` — in the ban user handler (action: `user.ban`) and unban handler (action: `user.unban`). Pass `previousValues: { status: 'active' }` / `newValues: { status: 'banned' }` (or reverse for unban).
-- [ ] T011 [US1] Verify: manually test role assignment and user ban via API, then `SELECT * FROM audit_log` to confirm records are created with correct fields. Verify that a failed transaction (e.g., duplicate role assignment) does NOT leave an audit row.
+- [ ] T006 [US1] Create `server/src/models/audit.ts` — `AuditModel` class with two methods:
 
-**Checkpoint**: All RBAC admin actions and user ban/unban are audit-logged atomically. Immutability trigger blocks UPDATE/DELETE.
+  **(1) `record(client: PoolClient, params: TAuditEmitParams): Promise<TAuditRecord>`** — INSERT into `audit_log` using the provided client (joins caller's transaction). **Validation** (consolidated here — F-006): validates required string fields (`action`, `entityType`, `entityId`, `actorId`) are non-empty, validates at least one of `previousValues`/`newValues` is non-null (throws `Error` otherwise). **Truncation**: JSON payloads exceeding 10 KB are truncated with a `_truncated: true` marker (FR-010a). Follow `BookmarkModel` pattern: `QueryResult<TAuditRecord>`, `connection.query($1, $2...)`, error via `throw new Error('msg', { cause: error })`. Does NOT manage its own connection — always requires a `PoolClient`.
+
+  **(2) `query(params: TAuditQueryParams): Promise<IPaginatedResult<TAuditRecord>>`** — uses parameterized `IS NULL OR` pattern for dynamic WHERE (F-003):
+
+  ```sql
+  SELECT * FROM audit_log
+  WHERE ($1::timestamptz IS NULL OR created_at >= $1)
+    AND ($2::timestamptz IS NULL OR created_at <= $2)
+    AND ($3::text IS NULL OR actor_id = $3)
+    AND ($4::text IS NULL OR actor_type = $4)
+    AND ($5::text IS NULL OR action = $5)
+    AND ($6::text IS NULL OR entity_type = $6)
+    AND ($7::text IS NULL OR entity_id = $7)
+    AND ($8::uuid IS NULL OR (created_at, id) < (
+      SELECT created_at, id FROM audit_log WHERE id = $8
+    ))
+  ORDER BY created_at DESC, id DESC
+  LIMIT $9
+  ```
+
+  **Compound cursor** (F-004): The cursor is a UUID (the `id` of the last record). The subquery resolves `(created_at, id)` from that UUID internally — the caller only passes a single UUID string. Builds its own `IPaginatedResult` (does NOT use the generic `createPaginationResult` utility, which only supports single-field cursors). Uses `pool.connect()` with `connection.release()` in `finally` (read-only, no transaction needed).
+
+- [ ] T006a [US1] Refactor `server/src/models/role.ts` — update 5 methods to accept an **optional `PoolClient` parameter** (F-001). When provided, the model uses it without managing its own connection or transaction. When absent, the model manages its own `pool.connect()` / `BEGIN` / `COMMIT` / `ROLLBACK` / `release()` (backward-compatible).
+
+  Pattern to apply to `create()`, `update()`, `delete()`, `assignRole()`, `revokeRole()`:
+  ```typescript
+  async assignRole(userId: string, roleId: string, assignedBy: string, externalClient?: PoolClient): Promise<TUserRole> {
+    const connection = externalClient ?? await pool.connect();
+    const ownsTransaction = !externalClient;
+    try {
+      if (ownsTransaction) await connection.query('BEGIN');
+      // ... business logic unchanged ...
+      if (ownsTransaction) await connection.query('COMMIT');
+      return result.rows[0];
+    } catch (error) {
+      if (ownsTransaction) await connection.query('ROLLBACK');
+      throw new Error(`Failed to assign role: ${(error as Error).message}`, { cause: error });
+    } finally {
+      if (ownsTransaction) connection.release();
+    }
+  }
+  ```
+
+  **Verify**: Run `pnpm test` after refactoring. All existing behavior must be unchanged when called without `externalClient`.
+
+- [ ] T007 [US1] Create `server/src/services/auditEmitter.ts` — export `emitAudit(params: TAuditEmitParams): Promise<void>`.
+
+  **With client**: calls `auditModel.record(params.client, params)` directly — joins the caller's transaction. No validation in the service (model handles it — F-006).
+
+  **Without client**: opens `pool.connect()`, `BEGIN`, calls `record()`, `COMMIT`, releases in `finally`. On error: `ROLLBACK` in catch, rethrow with `throw new Error('msg', { cause: error })`. Validates only that `client` OR standalone mode is correctly handled — field validation stays in the model.
+
+- [ ] T008 [US1] Register `AuditModel` in `server/src/controllers/factory.ts` — add `import AuditModel from '../models/audit.js'` and `const audit_model = new AuditModel()`. Export `audit_model`.
+
+- [ ] T009 [US1] Rewrite `server/src/controllers/roles.controller.ts` — each audited handler now **manages the transaction** at the controller level (F-001), calls the model with the `PoolClient`, captures `previousValues` via pre-mutation reads (F-005), then calls `emitAudit` within the same transaction:
+
+  **Pattern for each handler:**
+  ```typescript
+  import pool from '../database/pool.js';
+  import { emitAudit } from '../services/auditEmitter.js';
+
+  const assignRole = async (req: ICustomRequest, res: Response, next: NextFunction) => {
+    const connection = await pool.connect();
+    try {
+      await connection.query('BEGIN');
+      // 1. Business operation (model uses our connection)
+      const assignment = await roleModel.assignRole(userId, roleId, assignedBy!, connection);
+      // 2. Audit recording (same transaction)
+      await emitAudit({
+        client: connection,
+        actorId: assignedBy!,
+        actorType: 'user',
+        action: 'role.assign',
+        entityType: 'user_role',
+        entityId: userId,
+        previousValues: null,  // creation event — no prior state
+        newValues: { role: 'moderator', assigned_by: assignedBy },
+        ipAddress: req.ip,
+      });
+      // 3. Cache invalidation
+      await permissionCache.invalidate(userId);
+      await connection.query('COMMIT');
+      return sendResponse.success(res, assignment, 200);
+    } catch (error) {
+      await connection.query('ROLLBACK');
+      // ... error handling ...
+    } finally {
+      connection.release();
+    }
+  };
+  ```
+
+  **Handlers and their previousValues strategy** (F-005):
+  - `assignRole` — `previousValues: null` (creation), `newValues: { role_id, role_name, assigned_by }`
+  - `revokeRole` — Fetch role name before revoke: `previousValues: { role_id, role_name }`, `newValues: null` (deletion)
+  - `createRole` — `previousValues: null` (creation), `newValues: { name, description, permission_ids }`
+  - `updateRole` — Fetch current role via `roleModel.getById(roleId, connection)` before update: `previousValues: { description, permission_ids }`, `newValues: { description, permission_ids }`
+  - `deleteRole` — Fetch current role before delete: `previousValues: { name, description, is_system }`, `newValues: null` (deletion)
+
+  **Note**: `getById()` must also be refactored to accept an optional `PoolClient` (read-only, no transaction needed, just connection reuse) to avoid an extra `pool.connect()` inside the pre-mutation read.
+
+- [ ] T010 ~~[US1] DEFERRED~~ — `user.ban` / `user.unban` endpoints do not exist in `users.controller.ts` (F-002). Audit integration for these actions will be added when ban/unban functionality is implemented in a future spec (likely spec 007 — Reports & Moderation). The `audit_log` table and `emitAudit()` function already support these action names.
+
+- [ ] T011 [US1] Verify: manually test role assignment and revocation via API, then `SELECT * FROM audit_log` to confirm records are created with correct fields. Verify that a failed transaction (e.g., duplicate role assignment returning 409) does NOT leave an audit row. Verify `previousValues` captures the before-state correctly for update and delete operations.
+
+**Checkpoint**: All RBAC admin actions are audit-logged atomically. Controllers own the transaction boundary. Immutability trigger blocks UPDATE/DELETE.
 
 ---
 
@@ -71,7 +170,7 @@
 
 ### Verification (implemented by T014's `requirePermission('audit.read')`)
 
-- [ ] T017 [US3] Verify RBAC integration: (1) login as super_admin, confirm `GET /api/audit` returns 200; (2) login as admin, confirm 200; (3) login as moderator (no `audit.read`), confirm 403; (4) login as regular user, confirm 403; (5) assign `audit.read` to a custom role via super_admin, assign that role to a test user, confirm 200 for that user.
+- [ ] T017 [US3] Verify RBAC integration: (1) login as super_admin, confirm `GET /api/audit` returns 200; (2) login as admin, confirm 200; (3) login as moderator (no `audit.read`), confirm 403; (4) login as regular user, confirm 403; (5) assign `audit.read` to a custom role via super_admin, assign that role to a test user, confirm 200 for that user. (6) Confirm the audit log for the custom role assignment (step 5) was recorded correctly.
 
 **Checkpoint**: Permission gating is correct for all role levels.
 
@@ -138,9 +237,11 @@ Phase 1 (Foundational)
 - T001–T004 can run in parallel (different files)
 - T005 depends on T002, T003, T004
 - T006 depends on T001
+- T006a depends on T001 (parallel with T006 — different files)
 - T007 depends on T006
 - T008 depends on T006
-- T009, T010 depend on T007, T008 (can run in parallel)
+- T009 depends on T006a + T007 + T008 (requires refactored models AND audit service)
+- T010 DEFERRED — no ban/unban endpoints exist
 - T012, T013 can run in parallel (different files)
 - T014 depends on T012, T013
 - T015 depends on T014
@@ -149,7 +250,10 @@ Phase 1 (Foundational)
 
 ```
 After Phase 1:
-  T006 (model) → T007 (emitter) → T009, T010 (controller integrations)
+  T006 (audit model) ─────────────────────────┐
+  T006a (refactor role.ts) ─────────────────────┤
+                                                 ├→ T007 (emitter) → T009 (controller rewrite)
+  T008 (factory registration) ──────────────────┘
   T012 (validators), T013 (controller) in parallel → T014 (routes) → T015 (mount)
 ```
 
@@ -159,6 +263,9 @@ After Phase 1:
 
 - Tasks organized so US1 + US2 form the MVP — after Phase 3, the audit log is fully functional (capture + query).
 - US3–US5 are verification tasks since their requirements are satisfied by the foundational implementation (trigger, permission seed, emitAudit design).
-- T009 is the largest task — it touches 5 handler methods in `roles.controller.ts`. Each handler should be modified individually with a manual test between each.
-- T010 touches `users.controller.ts` — can run in parallel with T009 since they're different files.
+- **T006a is a prerequisite for T009** — the RBAC model methods must accept optional `PoolClient` before controllers can manage transactions. Verify backward compatibility by running existing tests after T006a.
+- **T009 is the most complex task** — it rewrites 5 controller handlers to manage transactions, adds pre-mutation reads for `previousValues`, and integrates `emitAudit`. Each handler should be modified and tested individually.
+- **T010 is deferred** — `user.ban` / `user.unban` endpoints do not exist yet. Will be added in spec 007 (Reports & Moderation).
+- **Validation is consolidated** in `AuditModel.record()` (F-006) — the service layer only checks infrastructure concerns (client present or not), not data validity.
 - No new npm dependencies required — all infrastructure (pg, express, express-validator, db-migrate) already exists.
+- See `analysis.md` for the full rationale behind all task amendments.

@@ -28,7 +28,7 @@ Build a standalone, append-only audit log that records every administrative and 
 | I — Raw SQL, No ORM | All DB ops via `pg` parameterized queries | ✅ PASS | Model methods use `connection.query($1, $2...)` |
 | II — Migration-First | Schema via `db-migrate` with up.sql/down.sql/.js | ✅ PASS | Single migration for audit table + trigger + indexes + seed |
 | III — TypeScript Strict | Strict mode, types in `types/`, interfaces in `interfaces/` | ✅ PASS | `TAuditRecord` type, `ICursorPaginationOptions` reused |
-| IV — Transaction Safety | BEGIN/COMMIT/ROLLBACK, `finally` release, audit joins caller txn | ✅ PASS | FR-002/FR-003: bidirectional atomicity, optional standalone txn |
+| IV — Transaction Safety | BEGIN/COMMIT/ROLLBACK, `finally` release, audit joins caller txn | ✅ PASS | FR-002/FR-003: bidirectional atomicity. Controllers manage txn for audited ops; models accept optional `PoolClient` (see analysis F-001, research R-010). |
 | V — RESTful API | Standardized response envelope, REST semantics | ✅ PASS | GET /api/audit with filters, response via `sendResponse` |
 | VI — Tiered Rate Limiting | Rate limits applied before route handlers | ✅ PASS | Audit endpoint uses existing `globalLimiter` |
 | VII — Simplicity Gate | Max 3 tables per migration | ✅ PASS | 1 table (`audit_log`) + 1 trigger + 1 permission seed row |

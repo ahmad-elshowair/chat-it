@@ -130,25 +130,48 @@ async function emitAudit(params: EmitAuditParams): Promise<void>;
 
 | Scenario | Behavior |
 |----------|----------|
-| `client` provided | Uses the caller's transaction. Audit INSERT joins the existing BEGIN/COMMIT lifecycle. |
-| `client` NOT provided | Opens a new `pool.connect()`, runs BEGIN, INSERT, COMMIT, releases in `finally`. |
-| Both `previousValues` and `newValues` are null | Throws `Error` — at least one must be non-null (FR-010). |
-| JSON payload exceeds 10 KB | Truncates non-essential fields, adds `_truncated: true` marker (FR-010a). |
+| `client` provided | Calls `auditModel.record(client, params)` — joins the caller's transaction. Caller is responsible for `connection.release()`. |
+| `client` NOT provided | Opens a new `pool.connect()`, BEGIN, calls `record()`, COMMIT, releases in `finally`. |
+| Both `previousValues` and `newValues` are null | `auditModel.record()` throws `Error` — at least one must be non-null (validation consolidated in model). |
+| JSON payload exceeds 10 KB | `auditModel.record()` truncates non-essential fields, adds `_truncated: true` marker (FR-010a). |
+| Required string fields empty | `auditModel.record()` throws `Error` — `action`, `entityType`, `entityId`, `actorId` must be non-empty. |
 
-### Usage Example (in controller)
+### Usage Example (in controller — transaction managed by controller)
 
 ```typescript
-await emitAudit({
-  client,
-  actorId: req.user.id,
-  actorType: 'user',
-  action: 'role.assign',
-  entityType: 'user_role',
-  entityId: targetUserId,
-  previousValues: null,
-  newValues: { role: 'moderator', assigned_by: req.user.id },
-  ipAddress: req.ip,
-});
+import pool from '../database/pool.js';
+import { emitAudit } from '../services/auditEmitter.js';
+
+const assignRole = async (req: ICustomRequest, res: Response, next: NextFunction) => {
+  const connection = await pool.connect();
+  try {
+    await connection.query('BEGIN');
+
+    // 1. Business operation — model uses our connection
+    const assignment = await roleModel.assignRole(userId, roleId, assignedBy!, connection);
+
+    // 2. Audit recording — same transaction
+    await emitAudit({
+      client: connection,
+      actorId: assignedBy!,
+      actorType: 'user',
+      action: 'role.assign',
+      entityType: 'user_role',
+      entityId: userId,
+      previousValues: null,
+      newValues: { role: 'moderator', assigned_by: assignedBy },
+      ipAddress: req.ip,
+    });
+
+    await connection.query('COMMIT');
+    return sendResponse.success(res, assignment, 200);
+  } catch (error) {
+    await connection.query('ROLLBACK');
+    next(error);
+  } finally {
+    connection.release();
+  }
+};
 ```
 
 ## Auditable Actions — Initial Set

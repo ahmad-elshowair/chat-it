@@ -124,3 +124,18 @@ COMMENT ON TRIGGER trg_audit_log_immutable ON audit_log IS
 **Alternatives considered**:
 - **Database CHECK constraint**: Would enforce the limit at the DB level, but can't implement the `_truncated: true` marker semantics. Would cause hard failures instead of graceful truncation.
 - **No enforcement**: Risks unbounded JSON payloads consuming storage.
+
+---
+
+### R-010: Transaction Ownership — Controller vs Model (from analysis F-001)
+
+**Decision**: Controllers manage transactions for audited operations. Models accept an optional `PoolClient` parameter.
+
+**Rationale**: The existing pattern has models owning `pool.connect()`, `BEGIN/COMMIT/ROLLBACK`, and `connection.release()`. This works for single-concern writes but fails when the controller needs to compose multiple operations (business + audit) within one atomic transaction. The solution is to make model methods accept an optional `externalClient?: PoolClient`. When provided, the model uses it without managing connection or transaction lifecycle. When absent, the model manages everything itself — fully backward-compatible. This preserves existing behavior for non-audited code paths while enabling the controller to orchestrate multi-step transactions.
+
+**Key invariant**: The entity that calls `pool.connect()` must also call `connection.release()` in `finally`. When a controller passes a client to a model, the controller owns the release — the model must NOT release an external client.
+
+**Alternatives considered**:
+- **Move audit into models**: Couples the audit system into every model. Violates the extensibility goal (FR-009) — future modules would need to know about audit internals.
+- **Middleware-based capture**: A post-handler middleware can't access `previous_values` or the transaction context.
+- **Database triggers for capture**: Can't capture actor ID, IP address, or action semantics at the application level.
