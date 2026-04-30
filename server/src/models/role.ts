@@ -46,11 +46,13 @@ class RoleModel {
   /**
    * Get a single role by ID.
    * @param roleId - the role UUID
+   * @param externalClient - optional client from caller's transaction
    * @returns the role with its permissions
    * @throws {Error} if role not found
    */
-  async getById(roleId: string): Promise<TRoleWithPermissions> {
-    const connection: PoolClient = await pool.connect();
+  async getById(roleId: string, externalClient?: PoolClient): Promise<TRoleWithPermissions> {
+    const connection = externalClient ?? (await pool.connect());
+    const ownsConnection = !externalClient;
     try {
       const roleResult: QueryResult<TRole> = await connection.query(
         'SELECT role_id, name, description, is_system, created_at, updated_at FROM roles WHERE role_id = $1',
@@ -73,7 +75,7 @@ class RoleModel {
     } catch (error) {
       throw new Error(`Failed to get role: ${(error as Error).message}`, { cause: error });
     } finally {
-      connection.release();
+      if (ownsConnection) connection.release();
     }
   }
 
@@ -102,6 +104,7 @@ class RoleModel {
    * @param name - unique role name
    * @param description - human-readable description
    * @param permissionIds - permission UUIDs to assign
+   * @param externalClient - optional client from caller's transaction
    * @returns the created role with permissions
    * @throws {Error} on duplicate name or if any permission is invalid
    */
@@ -109,10 +112,12 @@ class RoleModel {
     name: string,
     description: string,
     permissionIds: string[],
+    externalClient?: PoolClient,
   ): Promise<TRoleWithPermissions> {
-    const connection: PoolClient = await pool.connect();
+    const connection = externalClient ?? (await pool.connect());
+    const ownsTransaction = !externalClient;
     try {
-      await connection.query('BEGIN');
+      if (ownsTransaction) await connection.query('BEGIN');
 
       const insertResult: QueryResult<TRole> = await connection.query(
         `INSERT INTO roles (name, description)
@@ -131,7 +136,7 @@ class RoleModel {
         );
       }
 
-      await connection.query('COMMIT');
+      if (ownsTransaction) await connection.query('COMMIT');
 
       const permsResult: QueryResult<TPermission> = await connection.query(
         `SELECT p.permission_id, p.name, p.description, p.resource, p.action, p.created_at
@@ -143,10 +148,10 @@ class RoleModel {
 
       return { ...role, permissions: permsResult.rows };
     } catch (error) {
-      await connection.query('ROLLBACK');
+      if (ownsTransaction) await connection.query('ROLLBACK');
       throw new Error(`Failed to create role: ${(error as Error).message}`, { cause: error });
     } finally {
-      connection.release();
+      if (ownsTransaction) connection.release();
     }
   }
 
@@ -155,6 +160,7 @@ class RoleModel {
    * @param roleId - the role to update
    * @param description - new description
    * @param permissionIds - replacement permission set
+   * @param externalClient - optional client from caller's transaction
    * @returns the updated role with permissions
    * @throws {Error} if role not found or is a system role
    */
@@ -162,10 +168,12 @@ class RoleModel {
     roleId: string,
     description: string,
     permissionIds: string[],
+    externalClient?: PoolClient,
   ): Promise<TRoleWithPermissions> {
-    const connection: PoolClient = await pool.connect();
+    const connection = externalClient ?? (await pool.connect());
+    const ownsTransaction = !externalClient;
     try {
-      await connection.query('BEGIN');
+      if (ownsTransaction) await connection.query('BEGIN');
 
       const updateResult: QueryResult<TRole> = await connection.query(
         `UPDATE roles SET description = $1, updated_at = NOW()
@@ -188,7 +196,7 @@ class RoleModel {
         );
       }
 
-      await connection.query('COMMIT');
+      if (ownsTransaction) await connection.query('COMMIT');
 
       const permsResult: QueryResult<TPermission> = await connection.query(
         `SELECT p.permission_id, p.name, p.description, p.resource, p.action, p.created_at
@@ -200,10 +208,10 @@ class RoleModel {
 
       return { ...updateResult.rows[0], permissions: permsResult.rows };
     } catch (error) {
-      await connection.query('ROLLBACK');
+      if (ownsTransaction) await connection.query('ROLLBACK');
       throw new Error(`Failed to update role: ${(error as Error).message}`, { cause: error });
     } finally {
-      connection.release();
+      if (ownsTransaction) connection.release();
     }
   }
 
@@ -211,13 +219,15 @@ class RoleModel {
    * Delete a custom role. System roles are rejected at the DB trigger level.
    * CASCADE removes all user assignments and permission mappings automatically.
    * @param roleId - the role to delete
+   * @param externalClient - optional client from caller's transaction
    * @returns confirmation message
    * @throws {Error} if role not found or is a system role
    */
-  async delete(roleId: string): Promise<{ message: string }> {
-    const connection: PoolClient = await pool.connect();
+  async delete(roleId: string, externalClient?: PoolClient): Promise<{ message: string }> {
+    const connection = externalClient ?? (await pool.connect());
+    const ownsTransaction = !externalClient;
     try {
-      await connection.query('BEGIN');
+      if (ownsTransaction) await connection.query('BEGIN');
 
       const result: QueryResult = await connection.query(
         'DELETE FROM roles WHERE role_id = $1 RETURNING role_id',
@@ -228,13 +238,13 @@ class RoleModel {
         throw new Error('Role not found');
       }
 
-      await connection.query('COMMIT');
+      if (ownsTransaction) await connection.query('COMMIT');
       return { message: 'Role deleted successfully' };
     } catch (error) {
-      await connection.query('ROLLBACK');
+      if (ownsTransaction) await connection.query('ROLLBACK');
       throw new Error(`Failed to delete role: ${(error as Error).message}`, { cause: error });
     } finally {
-      connection.release();
+      if (ownsTransaction) connection.release();
     }
   }
 
@@ -323,13 +333,20 @@ class RoleModel {
    * @param userId - the target user
    * @param roleId - the role to assign
    * @param assignedBy - the super admin performing the assignment
+   * @param externalClient - optional client from caller's transaction
    * @returns the created user-role assignment
    * @throws {Error} on duplicate assignment
    */
-  async assignRole(userId: string, roleId: string, assignedBy: string): Promise<TUserRole> {
-    const connection: PoolClient = await pool.connect();
+  async assignRole(
+    userId: string,
+    roleId: string,
+    assignedBy: string,
+    externalClient?: PoolClient,
+  ): Promise<TUserRole> {
+    const connection = externalClient ?? (await pool.connect());
+    const ownsTransaction = !externalClient;
     try {
-      await connection.query('BEGIN');
+      if (ownsTransaction) await connection.query('BEGIN');
 
       const result: QueryResult<TUserRole> = await connection.query(
         `INSERT INTO user_roles (user_id, role_id, assigned_by)
@@ -338,13 +355,13 @@ class RoleModel {
         [userId, roleId, assignedBy],
       );
 
-      await connection.query('COMMIT');
+      if (ownsTransaction) await connection.query('COMMIT');
       return result.rows[0];
     } catch (error) {
-      await connection.query('ROLLBACK');
+      if (ownsTransaction) await connection.query('ROLLBACK');
       throw new Error(`Failed to assign role: ${(error as Error).message}`, { cause: error });
     } finally {
-      connection.release();
+      if (ownsTransaction) connection.release();
     }
   }
 
@@ -352,13 +369,19 @@ class RoleModel {
    * Revoke a role from a user.
    * @param userId - the target user
    * @param roleId - the role to revoke
+   * @param externalClient - optional client from caller's transaction
    * @returns confirmation message
    * @throws {Error} if assignment not found
    */
-  async revokeRole(userId: string, roleId: string): Promise<{ message: string }> {
-    const connection: PoolClient = await pool.connect();
+  async revokeRole(
+    userId: string,
+    roleId: string,
+    externalClient?: PoolClient,
+  ): Promise<{ message: string }> {
+    const connection = externalClient ?? (await pool.connect());
+    const ownsTransaction = !externalClient;
     try {
-      await connection.query('BEGIN');
+      if (ownsTransaction) await connection.query('BEGIN');
 
       const result: QueryResult = await connection.query(
         'DELETE FROM user_roles WHERE user_id = $1 AND role_id = $2 RETURNING user_id',
@@ -369,13 +392,13 @@ class RoleModel {
         throw new Error('Role assignment not found');
       }
 
-      await connection.query('COMMIT');
+      if (ownsTransaction) await connection.query('COMMIT');
       return { message: 'Role revoked successfully' };
     } catch (error) {
-      await connection.query('ROLLBACK');
+      if (ownsTransaction) await connection.query('ROLLBACK');
       throw new Error(`Failed to revoke role: ${(error as Error).message}`, { cause: error });
     } finally {
-      connection.release();
+      if (ownsTransaction) connection.release();
     }
   }
 

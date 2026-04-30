@@ -34,7 +34,7 @@
 
 ### Implementation
 
-- [ ] T006 [US1] Create `server/src/models/audit.ts` — `AuditModel` class with two methods:
+- [x] T006 [US1] Create `server/src/models/audit.ts` — `AuditModel` class with two methods:
 
   **(1) `record(client: PoolClient, params: TAuditEmitParams): Promise<TAuditRecord>`** — INSERT into `audit_log` using the provided client (joins caller's transaction). **Validation** (consolidated here — F-006): validates required string fields (`action`, `entityType`, `entityId`, `actorId`) are non-empty, validates at least one of `previousValues`/`newValues` is non-null (throws `Error` otherwise). **Truncation**: JSON payloads exceeding 10 KB are truncated with a `_truncated: true` marker (FR-010a). Follow `BookmarkModel` pattern: `QueryResult<TAuditRecord>`, `connection.query($1, $2...)`, error via `throw new Error('msg', { cause: error })`. Does NOT manage its own connection — always requires a `PoolClient`.
 
@@ -58,7 +58,7 @@
 
   **Compound cursor** (F-004): The cursor is a UUID (the `id` of the last record). The subquery resolves `(created_at, id)` from that UUID internally — the caller only passes a single UUID string. Builds its own `IPaginatedResult` (does NOT use the generic `createPaginationResult` utility, which only supports single-field cursors). Uses `pool.connect()` with `connection.release()` in `finally` (read-only, no transaction needed).
 
-- [ ] T006a [US1] Refactor `server/src/models/role.ts` — update 5 methods to accept an **optional `PoolClient` parameter** (F-001). When provided, the model uses it without managing its own connection or transaction. When absent, the model manages its own `pool.connect()` / `BEGIN` / `COMMIT` / `ROLLBACK` / `release()` (backward-compatible).
+- [x] T006a [US1] Refactor `server/src/models/role.ts` — update 5 methods to accept an **optional `PoolClient` parameter** (F-001). When provided, the model uses it without managing its own connection or transaction. When absent, the model manages its own `pool.connect()` / `BEGIN` / `COMMIT` / `ROLLBACK` / `release()` (backward-compatible).
 
   Pattern to apply to `create()`, `update()`, `delete()`, `assignRole()`, `revokeRole()`:
   ```typescript
@@ -81,15 +81,15 @@
 
   **Verify**: Run `pnpm test` after refactoring. All existing behavior must be unchanged when called without `externalClient`.
 
-- [ ] T007 [US1] Create `server/src/services/auditEmitter.ts` — export `emitAudit(params: TAuditEmitParams): Promise<void>`.
+- [x] T007 [US1] Create `server/src/services/auditEmitter.ts` — export `emitAudit(params: TAuditEmitParams): Promise<void>`.
 
   **With client**: calls `auditModel.record(params.client, params)` directly — joins the caller's transaction. No validation in the service (model handles it — F-006).
 
   **Without client**: opens `pool.connect()`, `BEGIN`, calls `record()`, `COMMIT`, releases in `finally`. On error: `ROLLBACK` in catch, rethrow with `throw new Error('msg', { cause: error })`. Validates only that `client` OR standalone mode is correctly handled — field validation stays in the model.
 
-- [ ] T008 [US1] Register `AuditModel` in `server/src/controllers/factory.ts` — add `import AuditModel from '../models/audit.js'` and `const audit_model = new AuditModel()`. Export `audit_model`.
+- [x] T008 [US1] Register `AuditModel` in `server/src/controllers/factory.ts` — add `import AuditModel from '../models/audit.js'` and `const audit_model = new AuditModel()`. Export `audit_model`.
 
-- [ ] T009 [US1] Rewrite `server/src/controllers/roles.controller.ts` — each audited handler now **manages the transaction** at the controller level (F-001), calls the model with the `PoolClient`, captures `previousValues` via pre-mutation reads (F-005), then calls `emitAudit` within the same transaction:
+- [x] T009 [US1] Rewrite `server/src/controllers/roles.controller.ts` — each audited handler now **manages the transaction** at the controller level (F-001), calls the model with the `PoolClient`, captures `previousValues` via pre-mutation reads (F-005), then calls `emitAudit` within the same transaction:
 
   **Pattern for each handler:**
   ```typescript
