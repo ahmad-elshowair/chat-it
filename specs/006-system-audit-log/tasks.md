@@ -16,11 +16,11 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T001 [US0] Create `server/src/types/audit.ts` — define `TActorType`, `TAuditRecord`, `TAuditQueryParams`, `TAuditEmitParams` types per data-model.md TypeScript section. Follow existing `types/bookmark.ts` pattern (type aliases, optional fields with `?`).
-- [ ] T002 [US0] Create migration runner `server/migrations/<timestamp>-audit-log.js` — follow existing pattern from `20260426082213-bookmarks.js` (read SQL file, run via `db.runSql`). Generate timestamp via `npx db-migrate create audit-log`.
-- [ ] T003 [US0] Create `server/migrations/sqls/<timestamp>-audit-log-up.sql` — create `audit_log` table (UUID PK, JSONB columns, INET for ip_address, CHECK constraint on previous/new values), immutability trigger function + trigger + comment, all 5 indexes, and seed `audit.read` permission for admin/super_admin roles. Wrap in `BEGIN/COMMIT`. Per data-model.md.
-- [ ] T004 [US0] Create `server/migrations/sqls/<timestamp>-audit-log-down.sql` — drop trigger, trigger function, table, and remove seeded permission/role-permission rows. Wrap in `BEGIN/COMMIT`.
-- [ ] T005 [US0] Run `npx db-migrate up` and verify with `\d audit_log` that table, trigger, indexes, and seed data exist.
+- [x] T001 [US0] Create `server/src/types/audit.ts` — define `TActorType`, `TAuditRecord`, `TAuditQueryParams`, `TAuditEmitParams` types per data-model.md TypeScript section. Follow existing `types/bookmark.ts` pattern (type aliases, optional fields with `?`).
+- [x] T002 [US0] Create migration runner `server/migrations/<timestamp>-audit-log.js` — follow existing pattern from `20260426082213-bookmarks.js` (read SQL file, run via `db.runSql`). Generate timestamp via `npx db-migrate create audit-log`.
+- [x] T003 [US0] Create `server/migrations/sqls/20260430150959-audit-log-up.sql` — create `audit_log` table (UUID PK, JSONB columns, INET for ip_address, CHECK constraint on previous/new values), immutability trigger function + trigger + comment, all 5 indexes, and seed `audit.read` permission for admin/super_admin roles. Wrap in `BEGIN/COMMIT`. Per data-model.md.
+- [x] T004 [US0] Create `server/migrations/sqls/20260430150959-audit-log-down.sql` — drop trigger, trigger function, table, and remove seeded permission/role-permission rows. Wrap in `BEGIN/COMMIT`.
+- [x] T005 [US0] Run `npx db-migrate up` and verify with `\d audit_log` that table, trigger, indexes, and seed data exist.
 
 **Checkpoint**: Schema and types ready. User story implementation can begin.
 
