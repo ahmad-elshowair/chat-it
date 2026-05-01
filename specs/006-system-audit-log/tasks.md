@@ -136,9 +136,9 @@
 
   **Note**: `getById()` must also be refactored to accept an optional `PoolClient` (read-only, no transaction needed, just connection reuse) to avoid an extra `pool.connect()` inside the pre-mutation read.
 
-- [ ] T010 ~~[US1] DEFERRED~~ — `user.ban` / `user.unban` endpoints do not exist in `users.controller.ts` (F-002). Audit integration for these actions will be added when ban/unban functionality is implemented in a future spec (likely spec 007 — Reports & Moderation). The `audit_log` table and `emitAudit()` function already support these action names.
+- [x] T010 ~~[US1] DEFERRED~~ — `user.ban` / `user.unban` endpoints do not exist in `users.controller.ts` (F-002). Audit integration for these actions will be added when ban/unban functionality is implemented in a future spec (likely spec 007 — Reports & Moderation). The `audit_log` table and `emitAudit()` function already support these action names.
 
-- [ ] T011 [US1] Verify: manually test role assignment and revocation via API, then `SELECT * FROM audit_log` to confirm records are created with correct fields. Verify that a failed transaction (e.g., duplicate role assignment returning 409) does NOT leave an audit row. Verify `previousValues` captures the before-state correctly for update and delete operations.
+- [x] T011 [US1] Verify: manually test role assignment and revocation via API, then `SELECT * FROM audit_log` to confirm records are created with correct fields. Verify that a failed transaction (e.g., duplicate role assignment returning 409) does NOT leave an audit row. Verify `previousValues` captures the before-state correctly for update and delete operations.
 
 **Checkpoint**: All RBAC admin actions are audit-logged atomically. Controllers own the transaction boundary. Immutability trigger blocks UPDATE/DELETE.
 
