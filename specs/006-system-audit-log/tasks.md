@@ -184,8 +184,8 @@
 
 ### Verification (implemented by T007 `emitAudit`)
 
-- [ ] T018 [US4] Verify extensibility: call `emitAudit()` with `action: 'settings.updated'`, `entityType: 'app_settings'`, `entityId: 'general'` and confirm the record is created with all fields correct. Confirm the system does not reject unrecognized action types.
-- [ ] T019 [US4] Verify standalone transaction: call `emitAudit()` WITHOUT a `client` parameter and confirm it opens its own transaction, inserts the record, and releases the connection.
+- [x] T018 [US4] Verify extensibility: call `emitAudit()` with `action: 'settings.updated'`, `entityType: 'app_settings'`, `entityId: 'general'` and confirm the record is created with all fields correct. Confirm the system does not reject unrecognized action types.
+- [x] T019 [US4] Verify standalone transaction: call `emitAudit()` WITHOUT a `client` parameter and confirm it opens its own transaction, inserts the record, and releases the connection.
 
 **Checkpoint**: Audit recording is decoupled from RBAC — any module can emit events.
 
