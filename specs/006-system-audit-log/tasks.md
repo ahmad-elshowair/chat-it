@@ -205,10 +205,10 @@
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T021 [P] Run `pnpm run lint` and `pnpm run prettier:check` in both `client/` and `server/` — fix any violations.
-- [ ] T022 [P] Verify all new files follow JSDoc conventions per AGENTS.md: no redundant function names, no `@description`, no type annotations in `@param`, always include `@route` for controllers.
-- [ ] T023 Run `pnpm test` and confirm all existing tests still pass (no regressions from new migration or factory changes).
-- [ ] T024 Verify quickstart.md: run migration on clean database, test recording example, test query example, confirm all steps work end-to-end.
+- [x] T021 [P] Run `pnpm run lint` and `pnpm run prettier:check` in both `client/` and `server/` — fix any violations.
+- [x] T022 [P] Verify all new files follow JSDoc conventions per AGENTS.md: no redundant function names, no `@description`, no type annotations in `@param`, always include `@route` for controllers.
+- [x] T023 Run `pnpm test` and confirm all existing tests still pass (no regressions from new migration or factory changes).
+- [x] T024 Verify quickstart.md: run migration on clean database, test recording example, test query example, confirm all steps work end-to-end.
 
 ---
 
