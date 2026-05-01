@@ -152,11 +152,11 @@
 
 ### Implementation
 
-- [ ] T012 [P] [US2] Create `server/src/middlewares/validations/audit.ts` — express-validator chain for `GET /api/audit` query params: `actor_id` (optional UUID), `actor_type` (optional, in `['user', 'system']`), `action` (optional string, max 100), `entity_type` (optional string, max 50), `entity_id` (optional string), `from`/`to` (optional ISO 8601), `limit` (optional int 1–100), `cursor` (optional UUID), `direction` (optional, in `['next', 'previous']`). Follow `validations/bookmarks.ts` pattern.
-- [ ] T013 [US2] Create `server/src/controllers/audit.controller.ts` — single `getAuditLogs` handler. Extracts query params via `getCursorPaginationOptions(req)`, builds `TAuditQueryParams`, calls `audit_model.query()`, returns via `sendResponse.success()` with pagination metadata. Follow `bookmarks.controller.ts` pattern: `validationResult` check, `sendResponse.error` on failure, `next(error)` in catch.
-- [ ] T014 [US2] Create `server/src/routes/apis/audit.routes.ts` — `GET /` with middleware stack: `authorizeUser`, `requirePermission('audit.read')`, `auditQueryValidator`, `auditController.getAuditLogs`. Follow `roles.routes.ts` pattern.
-- [ ] T015 [US2] Mount audit routes in `server/src/routes/index.ts` — add `import auditRoute from './apis/audit.routes.js'` and `routes.use('/audit', auditRoute)` alongside existing route mounts.
-- [ ] T016 [US2] Verify: call `GET /api/audit` with various filter combinations (actor_id, action, entity_type, date range, pagination cursor). Confirm correct filtering, pagination metadata, and reverse-chronological order. Confirm 403 for users without `audit.read`.
+- [x] T012 [P] [US2] Create `server/src/middlewares/validations/audit.ts` — express-validator chain for `GET /api/audit` query params: `actor_id` (optional UUID), `actor_type` (optional, in `['user', 'system']`), `action` (optional string, max 100), `entity_type` (optional string, max 50), `entity_id` (optional string), `from`/`to` (optional ISO 8601), `limit` (optional int 1–100), `cursor` (optional UUID), `direction` (optional, in `['next', 'previous']`). Follow `validations/bookmarks.ts` pattern.
+- [x] T013 [US2] Create `server/src/controllers/audit.controller.ts` — single `getAuditLogs` handler. Extracts query params via `getCursorPaginationOptions(req)`, builds `TAuditQueryParams`, calls `audit_model.query()`, returns via `sendResponse.success()` with pagination metadata. Follow `bookmarks.controller.ts` pattern: `validationResult` check, `sendResponse.error` on failure, `next(error)` in catch.
+- [x] T014 [US2] Create `server/src/routes/apis/audit.routes.ts` — `GET /` with middleware stack: `authorizeUser`, `requirePermission('audit.read')`, `auditQueryValidator`, `auditController.getAuditLogs`. Follow `roles.routes.ts` pattern.
+- [x] T015 [US2] Mount audit routes in `server/src/routes/index.ts` — add `import auditRoute from './apis/audit.routes.js'` and `routes.use('/audit', auditRoute)` alongside existing route mounts.
+- [x] T016 [US2] Verify: call `GET /api/audit` with various filter combinations (actor_id, action, entity_type, date range, pagination cursor). Confirm correct filtering, pagination metadata, and reverse-chronological order. Confirm 403 for users without `audit.read`.
 
 **Checkpoint**: Audit log is queryable via paginated, filtered, permission-gated endpoint.
 

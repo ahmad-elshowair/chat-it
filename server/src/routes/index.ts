@@ -6,6 +6,7 @@ import {
   refreshLimiter,
 } from '../middlewares/rateLimiter.js';
 import authentication from './apis/auth.routes.js';
+import audit from './apis/audit.routes.js';
 import bookmarks from './apis/bookmarks.routes.js';
 import comments from './apis/comments.routes.js';
 import follows from './apis/follow.routes.js';
@@ -27,6 +28,7 @@ routes.use(globalLimiter);
 
 // Route groups (logout and is-authenticated fall under global limiter only)
 routes.use('/auth', authentication);
+routes.use('/audit', audit);
 routes.use('/users', users);
 routes.use('/posts', posts);
 routes.use('/bookmarks', bookmarks);
