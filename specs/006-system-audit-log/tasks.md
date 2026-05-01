@@ -197,7 +197,7 @@
 
 ### Verification (implemented by T003 trigger)
 
-- [ ] T020 [US5] Verify immutability: (1) attempt `UPDATE audit_log SET action = 'tampered' WHERE id = '<uuid>'` — confirm exception raised; (2) attempt `DELETE FROM audit_log WHERE id = '<uuid>'` — confirm exception raised; (3) confirm `created_at` matches insertion time on read-back and cannot be altered.
+- [x] T020 [US5] Verify immutability: (1) attempt `UPDATE audit_log SET action = 'tampered' WHERE id = '<uuid>'` — confirm exception raised; (2) attempt `DELETE FROM audit_log WHERE id = '<uuid>'` — confirm exception raised; (3) confirm `created_at` matches insertion time on read-back and cannot be altered.
 
 **Checkpoint**: Audit log is tamper-proof at the database level.
 
