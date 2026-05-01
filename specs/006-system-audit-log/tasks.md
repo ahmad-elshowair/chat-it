@@ -170,7 +170,7 @@
 
 ### Verification (implemented by T014's `requirePermission('audit.read')`)
 
-- [ ] T017 [US3] Verify RBAC integration: (1) login as super_admin, confirm `GET /api/audit` returns 200; (2) login as admin, confirm 200; (3) login as moderator (no `audit.read`), confirm 403; (4) login as regular user, confirm 403; (5) assign `audit.read` to a custom role via super_admin, assign that role to a test user, confirm 200 for that user. (6) Confirm the audit log for the custom role assignment (step 5) was recorded correctly.
+- [x] T017 [US3] Verify RBAC integration: (1) login as super_admin, confirm `GET /api/audit` returns 200; (2) login as admin, confirm 200; (3) login as moderator (no `audit.read`), confirm 403; (4) login as regular user, confirm 403; (5) assign `audit.read` to a custom role via super_admin, assign that role to a test user, confirm 200 for that user. (6) Confirm the audit log for the custom role assignment (step 5) was recorded correctly.
 
 **Checkpoint**: Permission gating is correct for all role levels.
 
