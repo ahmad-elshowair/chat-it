@@ -125,13 +125,14 @@ An admin or user attempts to update or delete a post that has been removed. The 
 
 ### Edge Cases
 
-- What happens when two requests with the same Idempotency-Key arrive at the exact same millisecond (Redis SET race)?
-- What happens when Redis is down — does the idempotency middleware block all requests or fall through gracefully?
-- What happens when a retryable error (deadlock) occurs inside a transaction that has already partially completed?
+- What happens when two requests with the same Idempotency-Key arrive at the exact same millisecond (Redis SETNX handles atomic claim)?
+- What happens when Redis is down — idempotency middleware falls through gracefully (fail-open, consistent with rate limiter behavior)?
+- What happens when a retryable error (deadlock) occurs inside a transaction that has already partially completed (retry re-acquires entire transaction)?
 - What happens when the post existence check fails because the post was deleted between the check and the update?
-- What happens when the pool max connections is reached — are queued requests rejected or do they wait?
-- What happens when a graceful shutdown is triggered while a retry loop is mid-backoff?
-- What happens when the follow ON CONFLICT detects an existing row — should the response differ from a fresh follow?
+- What happens when the pool max connections is reached — queued requests wait (standard pg behavior)?
+- What happens when a graceful shutdown is triggered while a retry loop is mid-backoff (abort retry, proceed with shutdown)?
+- What happens when the follow ON CONFLICT detects an existing row — return success with "already following" message, no counter change?
+- What happens when two concurrent like toggles arrive — one INSERTs, one DELETEs, net neutral state, counters remain correct?
 
 ## Requirements *(mandatory)*
 
@@ -140,7 +141,7 @@ An admin or user attempts to update or delete a post that has been removed. The 
 - **FR-001**: System MUST classify database errors by error code and return the appropriate HTTP status code (409 for unique violations, 400 for foreign key violations, 422 for check constraint violations, 503 for transient failures, 500 for unclassified errors)
 - **FR-002**: System MUST sanitize all error messages sent to clients — never exposing constraint names, table names, column names, or SQL query text
 - **FR-003**: System MUST preserve full database error detail (code, constraint, table, detail) in server-side structured logs
-- **FR-004**: System MUST replace read-then-write patterns in like, follow, and bookmark operations with atomic database operations that eliminate race conditions
+- **FR-004**: System MUST replace read-then-write patterns with atomic database operations — for create-only endpoints (follow) use single INSERT ... ON CONFLICT DO NOTHING; for toggle endpoints (like, bookmark) add ON CONFLICT DO NOTHING to the INSERT path and keep the DELETE path, using rowCount to determine counter direction
 - **FR-005**: System MUST maintain accurate counters (like count, follower count, following count, bookmark count) even under concurrent operations
 - **FR-006**: System MUST support an Idempotency-Key header on mutating requests (POST, PUT, PATCH) that caches responses for 24 hours
 - **FR-007**: System MUST scope idempotency keys to the authenticated user to prevent cross-user response replay
@@ -153,6 +154,7 @@ An admin or user attempts to update or delete a post that has been removed. The 
 - **FR-014**: System MUST fix the post model existence check so that update and delete operations correctly verify the post exists before proceeding
 - **FR-015**: System MUST accept the Idempotency-Key header in CORS configuration
 - **FR-016**: System MUST NOT create any new database tables — idempotency keys are stored in the existing Redis infrastructure
+- **FR-017**: System MUST preserve toggle semantics for like and bookmark endpoints — the same handler handles both create and remove directions, with ON CONFLICT DO NOTHING protecting the INSERT path and DELETE WHERE protecting the remove path
 
 ### Key Entities
 
@@ -172,12 +174,28 @@ An admin or user attempts to update or delete a post that has been removed. The 
 - **SC-006**: All existing automated tests continue to pass without modification
 - **SC-007**: Every mutating endpoint (POST, PUT, PATCH) processes errors through the centralized error handler — no inline error responses bypass it
 
+## Clarifications
+
+### Session 2026-05-01
+
+- Q: Idempotency-Key storage — Redis (24h TTL) vs PostgreSQL table? → A: Redis — no new table, automatic expiration, already in stack for rate limiting. (FR-006, FR-016)
+- Q: Which endpoints get Idempotency-Key enforcement? → A: All POST endpoints that create resources (create post, create comment, follow, like, bookmark toggle). GET/DELETE are naturally idempotent. (FR-006)
+- Q: Retry strategy for 40001/40P01? → A: Exponential backoff (100ms → 200ms → 400ms, max 3 attempts). (FR-008)
+- Q: Retry wrapper placement — model layer or Express middleware? → A: Model-layer utility — the retry must re-acquire the transaction, which only the model controls. (Assumption confirmed)
+- Q: Follow/like/bookmark race conditions — ON CONFLICT DO NOTHING vs DO UPDATE? → A: ON CONFLICT DO NOTHING + check rowCount to determine insert vs. already-existed. (FR-004)
+- Q: Pool configuration max connections? → A: 20 for development, configurable via environment variable. (FR-009)
+- Q: Idempotency middleware before or after auth? → A: After — only authenticated users use idempotency keys, scoped to user_id. (FR-007)
+- Q: Graceful shutdown — drain pool and close Redis on SIGTERM? → A: Yes, with a 10s grace period. (FR-010)
+- Q: Like/bookmark are toggle endpoints (same handler creates AND removes). Pure INSERT ON CONFLICT DO NOTHING only handles INSERT direction — how to preserve toggle semantics? → A: Keep toggles — add ON CONFLICT DO NOTHING to INSERT path only, keep DELETE for unlike path, use rowCount to determine counter direction. (Updated FR-004, FR-017)
+
 ## Assumptions
 
 - The existing Redis infrastructure (already used for rate limiting and permission caching) is suitable for storing idempotency keys
 - Idempotency key enforcement is optional — requests without the header proceed normally and are not rejected
+- When Redis is unavailable, the idempotency middleware fails open (proceeds without caching) — consistent with the rate limiter's passOnStoreError behavior
 - The retry wrapper operates at the model layer because it must re-acquire the full transaction, not just the query
 - The follow model's existence check (isFollowing) currently uses a separate database connection from the follow/unfollow write operation, and the ON CONFLICT fix will eliminate this cross-connection pattern entirely
+- Like and bookmark are toggle endpoints (same handler for create and remove) — ON CONFLICT DO NOTHING is applied to the INSERT path only, DELETE remains for the remove path
 - Post existence check in update/delete is a method reference bug (missing parentheses) that needs fixing alongside the broader error handling changes
 - Environment variables for pool configuration (max connections) will use sensible defaults (20) when not set
 - The 24-hour TTL for idempotency keys is sufficient for typical retry scenarios without excessive memory usage
