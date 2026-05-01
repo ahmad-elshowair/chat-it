@@ -1,12 +1,14 @@
 # post-it Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-25
+Auto-generated from all feature plans. Last updated: 2026-04-30
 
 ## Active Technologies
 - TypeScript 5.x (strict mode), Node.js + Express 4, express-rate-limit, rate-limit-redis, Redis, pg 8 (002-fix-auth-rate-limit)
 - Redis (rate limit counters), PostgreSQL (user data) (002-fix-auth-rate-limit)
 - TypeScript 5.x (strict mode), Node.js + Express 4, pg (node-postgres), db-migrate, express-rate-limit, rate-limit-redis, express-validator (004-bookmark-posts)
 - PostgreSQL 15+ (primary), Redis (rate limiting) (004-bookmark-posts)
+- TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limi (006-system-audit-log)
+- PostgreSQL 15+ (primary), Redis (RBAC permission cache — reused) (006-system-audit-log)
 
 - TypeScript 5.x (strict mode), Node.js + Express 4, React 18, Zustand 5, Multer 1.4, Helmet 7, pg 8, jsonwebtoken 9, bcryptjs 3 (001-rate-limit-security)
 
@@ -73,10 +75,10 @@ tests/
 - Do not use unnecessary escape characters in regex/string literals (`no-useless-escape`)
 
 ## Recent Changes
+- 006-system-audit-log: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limi
 - 004-bookmark-posts: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg (node-postgres), db-migrate, express-rate-limit, rate-limit-redis, express-validator
 - 002-fix-auth-rate-limit: Added TypeScript 5.x (strict mode), Node.js + Express 4, express-rate-limit, rate-limit-redis, Redis, pg 8
 
-- 001-rate-limit-security: Added TypeScript 5.x (strict mode), Node.js + Express 4, React 18, Zustand 5, Multer 1.4, Helmet 7, pg 8, jsonwebtoken 9, bcryptjs 3
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

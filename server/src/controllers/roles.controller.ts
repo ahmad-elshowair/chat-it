@@ -1,5 +1,7 @@
 import { NextFunction, Response } from 'express';
 import RoleModel from '../models/role.js';
+import pool from '../database/pool.js';
+import { emitAudit } from '../services/auditEmitter.js';
 import permissionCache from '../services/permissionCache.js';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { sendResponse } from '../utilities/response.js';
@@ -37,11 +39,12 @@ const listPermissions = async (_req: ICustomRequest, res: Response, next: NextFu
 /**
  * Create a new custom role with selected permissions.
  * @route POST /api/roles
- * @returns 201 with the created role, 400 on validation failure
+ * @returns 201 with the created role, 400 on validation failure, 409 on duplicate
  */
 const createRole = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
     const { name, description, permissionIds } = req.body;
+    const actorId = req.user?.id;
 
     if (!name || !description) {
       return sendResponse.error(res, 'name and description are required', 400);
@@ -51,8 +54,32 @@ const createRole = async (req: ICustomRequest, res: Response, next: NextFunction
       return sendResponse.error(res, 'permissionIds must be an array', 400);
     }
 
-    const role = await roleModel.create(name, description, permissionIds);
-    return sendResponse.success(res, role, 201);
+    const connection = await pool.connect();
+    try {
+      await connection.query('BEGIN');
+
+      const role = await roleModel.create(name, description, permissionIds, connection);
+
+      await emitAudit({
+        client: connection,
+        actorId: actorId!,
+        actorType: 'user',
+        action: 'role.create',
+        entityType: 'role',
+        entityId: role.role_id,
+        previousValues: null,
+        newValues: { name: role.name, description: role.description, permissionIds },
+        ipAddress: req.ip,
+      });
+
+      await connection.query('COMMIT');
+      return sendResponse.success(res, role, 201);
+    } catch (error) {
+      await connection.query('ROLLBACK');
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     if (
       (error as Error).message.includes('duplicate key') ||
@@ -73,6 +100,7 @@ const updateRole = async (req: ICustomRequest, res: Response, next: NextFunction
   try {
     const { id } = req.params;
     const { description, permissionIds } = req.body;
+    const actorId = req.user?.id;
 
     if (!description) {
       return sendResponse.error(res, 'description is required', 400);
@@ -82,9 +110,39 @@ const updateRole = async (req: ICustomRequest, res: Response, next: NextFunction
       return sendResponse.error(res, 'permissionIds must be an array', 400);
     }
 
-    const role = await roleModel.update(id, description, permissionIds);
-    await permissionCache.invalidateAll();
-    return sendResponse.success(res, role, 200);
+    const connection = await pool.connect();
+    try {
+      await connection.query('BEGIN');
+
+      const previousRole = await roleModel.getById(id, connection);
+      const previousValues = {
+        description: previousRole.description,
+        permissionIds: previousRole.permissions.map((p) => p.permission_id),
+      };
+
+      const role = await roleModel.update(id, description, permissionIds, connection);
+
+      await emitAudit({
+        client: connection,
+        actorId: actorId!,
+        actorType: 'user',
+        action: 'role.update',
+        entityType: 'role',
+        entityId: id,
+        previousValues,
+        newValues: { description, permissionIds },
+        ipAddress: req.ip,
+      });
+
+      await connection.query('COMMIT');
+      await permissionCache.invalidateAll();
+      return sendResponse.success(res, role, 200);
+    } catch (error) {
+      await connection.query('ROLLBACK');
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     if ((error as Error).message === 'Role not found') {
       return sendResponse.error(res, 'Role not found', 404);
@@ -101,9 +159,42 @@ const updateRole = async (req: ICustomRequest, res: Response, next: NextFunction
 const deleteRole = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    await roleModel.delete(id);
-    await permissionCache.invalidateAll();
-    return sendResponse.success(res, { message: 'Role deleted successfully' }, 200);
+    const actorId = req.user?.id;
+
+    const connection = await pool.connect();
+    try {
+      await connection.query('BEGIN');
+
+      const previousRole = await roleModel.getById(id, connection);
+      const previousValues = {
+        name: previousRole.name,
+        description: previousRole.description,
+        is_system: previousRole.is_system,
+      };
+
+      await roleModel.delete(id, connection);
+
+      await emitAudit({
+        client: connection,
+        actorId: actorId!,
+        actorType: 'user',
+        action: 'role.delete',
+        entityType: 'role',
+        entityId: id,
+        previousValues,
+        newValues: null,
+        ipAddress: req.ip,
+      });
+
+      await connection.query('COMMIT');
+      await permissionCache.invalidateAll();
+      return sendResponse.success(res, { message: 'Role deleted successfully' }, 200);
+    } catch (error) {
+      await connection.query('ROLLBACK');
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     const msg = (error as Error).message;
     if (msg === 'Role not found') {
@@ -119,7 +210,7 @@ const deleteRole = async (req: ICustomRequest, res: Response, next: NextFunction
 /**
  * Assign a role to a user.
  * @route POST /api/roles/:userId/assign
- * @returns 200 with the assignment record
+ * @returns 200 with the assignment record, 409 on duplicate
  */
 const assignRole = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
@@ -131,9 +222,39 @@ const assignRole = async (req: ICustomRequest, res: Response, next: NextFunction
       return sendResponse.error(res, 'roleId is required', 400);
     }
 
-    const assignment = await roleModel.assignRole(userId, roleId, assignedBy!);
-    await permissionCache.invalidate(userId);
-    return sendResponse.success(res, assignment, 200);
+    const connection = await pool.connect();
+    try {
+      await connection.query('BEGIN');
+
+      const assignment = await roleModel.assignRole(userId, roleId, assignedBy!, connection);
+
+      const assignedRole = await roleModel.getById(roleId, connection);
+
+      await emitAudit({
+        client: connection,
+        actorId: assignedBy!,
+        actorType: 'user',
+        action: 'role.assign',
+        entityType: 'user_role',
+        entityId: userId,
+        previousValues: null,
+        newValues: {
+          role_id: roleId,
+          role_name: assignedRole.name,
+          assigned_by: assignedBy,
+        },
+        ipAddress: req.ip,
+      });
+
+      await connection.query('COMMIT');
+      await permissionCache.invalidate(userId);
+      return sendResponse.success(res, assignment, 200);
+    } catch (error) {
+      await connection.query('ROLLBACK');
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     if (
       (error as Error).message.includes('duplicate key') ||
@@ -148,7 +269,7 @@ const assignRole = async (req: ICustomRequest, res: Response, next: NextFunction
 /**
  * Revoke a role from a user. Prevents self-lockout of last super_admin.
  * @route POST /api/roles/:userId/revoke
- * @returns 200 with confirmation
+ * @returns 200 with confirmation, 404 if assignment not found
  */
 const revokeRole = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
@@ -170,9 +291,39 @@ const revokeRole = async (req: ICustomRequest, res: Response, next: NextFunction
       }
     }
 
-    const result = await roleModel.revokeRole(userId, roleId);
-    await permissionCache.invalidate(userId);
-    return sendResponse.success(res, result, 200);
+    const connection = await pool.connect();
+    try {
+      await connection.query('BEGIN');
+
+      const revokedRole = await roleModel.getById(roleId, connection);
+      const previousValues = {
+        role_id: roleId,
+        role_name: revokedRole.name,
+      };
+
+      const result = await roleModel.revokeRole(userId, roleId, connection);
+
+      await emitAudit({
+        client: connection,
+        actorId: revokedBy!,
+        actorType: 'user',
+        action: 'role.revoke',
+        entityType: 'user_role',
+        entityId: userId,
+        previousValues,
+        newValues: null,
+        ipAddress: req.ip,
+      });
+
+      await connection.query('COMMIT');
+      await permissionCache.invalidate(userId);
+      return sendResponse.success(res, result, 200);
+    } catch (error) {
+      await connection.query('ROLLBACK');
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     if ((error as Error).message === 'Role assignment not found') {
       return sendResponse.error(res, 'Role assignment not found', 404);
@@ -184,7 +335,7 @@ const revokeRole = async (req: ICustomRequest, res: Response, next: NextFunction
 /**
  * Verify user retains at least one super_admin role after revocation (FR-013).
  * @param targetUserId - the user being modified
- * @param actingUserId - the super admin performing the action
+ * @param _actingUserId - the super admin performing the action
  * @returns true if safe to proceed (user keeps super_admin), false if lockout would occur
  */
 const checkNotLastSuperAdmin = async (
