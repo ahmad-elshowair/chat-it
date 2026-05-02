@@ -135,17 +135,13 @@ server/src/
 | 17 | `middlewares/idempotency.ts` | CREATE | types/idempotency, redis | FR-006, FR-007, FR-019–024 |
 | 18 | `index.ts` | MODIFY | pool, redis, idempotency, server | FR-010, FR-015, FR-022 |
 
-### Phase 6 — Testing & Validation
+### Phase 6 — Validation
 
 | # | Action | Validates |
 |---|--------|-----------|
-| 19 | Write unit tests for classifyPgError() | FR-001 |
-| 20 | Write unit tests for withRetry() | FR-008 |
-| 21 | Write unit tests for idempotency middleware | FR-006, FR-019–024 |
-| 22 | Write unit tests for error middleware | FR-001–003, FR-018 |
-| 23 | Write integration tests for model race conditions | FR-004, FR-005 |
-| 24 | Write integration tests for controller error flow | FR-012, FR-013 |
-| 25 | Run `pnpm run lint && pnpm run prettier:check && pnpm test` | SC-006 |
+| 19 | Run `pnpm run lint && pnpm run prettier:check && pnpm test` | SC-006 |
+
+> **Note**: Unit and integration tests for the new utilities (classifyPgError, withRetry, idempotency middleware, error middleware, model race conditions, controller error flow) are deferred to a dedicated testing spec. This spec focuses on implementation + existing test pass.
 
 ## Key Design Decisions
 
