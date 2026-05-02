@@ -1,13 +1,14 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import CommentModel from '../models/comments.js';
 import { IComment } from '../types/comments.js';
+import { AppError } from '../utilities/appError.js';
 import { sendResponse } from '../utilities/response.js';
 
 const comment_model = new CommentModel();
 
-const createComment = async (req: ICustomRequest, res: Response) => {
+const createComment = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -30,16 +31,11 @@ const createComment = async (req: ICustomRequest, res: Response) => {
     return sendResponse.success<IComment>(res, createdComment, 201);
   } catch (error) {
     console.error('[CommentController]: createComment error: ', error);
-    return sendResponse.error(
-      res,
-      'An error occurred while creating the comment',
-      500,
-      (error as Error).message,
-    );
+    next(error);
   }
 };
 
-const updateComment = async (req: ICustomRequest, res: Response) => {
+const updateComment = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -59,27 +55,17 @@ const updateComment = async (req: ICustomRequest, res: Response) => {
       return sendResponse.success<IComment>(res, updatedComment, 200);
     } catch (error) {
       if ((error as Error).message.includes('comment not found')) {
-        return sendResponse.error(
-          res,
-          "Comment not found or you don't have permission to update it",
-          404,
-          (error as Error).message,
-        );
+        throw new AppError("Comment not found or you don't have permission to update it", 404);
       }
       throw error;
     }
   } catch (error) {
     console.error('[CommentController]: updateComment error: ', error);
-    return sendResponse.error(
-      res,
-      'An error occurred while updating the comment',
-      500,
-      (error as Error).message,
-    );
+    next(error);
   }
 };
 
-const deleteComment = async (req: ICustomRequest, res: Response) => {
+const deleteComment = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -99,27 +85,17 @@ const deleteComment = async (req: ICustomRequest, res: Response) => {
       return sendResponse.success(res, deletedComment.message);
     } catch (error) {
       if ((error as Error).message.includes('comment not found')) {
-        return sendResponse.error(
-          res,
-          "Comment not found or you don't have permission to delete it",
-          404,
-          (error as Error).message,
-        );
+        throw new AppError("Comment not found or you don't have permission to delete it", 404);
       }
       throw error;
     }
   } catch (error) {
     console.error('[CommentController]: deleteComment error: ', error);
-    return sendResponse.error(
-      res,
-      'An error occurred while deleting the comment',
-      500,
-      (error as Error).message,
-    );
+    next(error);
   }
 };
 
-const getCommentsByPostId = async (req: Request, res: Response) => {
+const getCommentsByPostId = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -133,7 +109,6 @@ const getCommentsByPostId = async (req: Request, res: Response) => {
 
     const comments = await comment_model.getCommentsByPostId(post_id);
 
-    // ORGANIZE COMMENTS INTO HIERARCHICAL STRUCTURES.
     const topLevelComments = comments.filter((comment) => !comment.parent_comment_id);
     const commentsReplies = comments.filter((comment) => comment.parent_comment_id);
     return sendResponse.success<{
@@ -149,16 +124,11 @@ const getCommentsByPostId = async (req: Request, res: Response) => {
     );
   } catch (error) {
     console.error('[CommentController]: getCommentsByPostId error: ', error);
-    return sendResponse.error(
-      res,
-      'An error occurred while fetching the comments',
-      500,
-      (error as Error).message,
-    );
+    next(error);
   }
 };
 
-const getRepliesByCommentId = async (req: Request, res: Response) => {
+const getRepliesByCommentId = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -175,12 +145,7 @@ const getRepliesByCommentId = async (req: Request, res: Response) => {
     return sendResponse.success<IComment[]>(res, replies, 200);
   } catch (error) {
     console.error('[CommentController]: getRepliesByCommentId error: ', error);
-    return sendResponse.error(
-      res,
-      'An error occurred while fetching the replies',
-      500,
-      (error as Error).message,
-    );
+    next(error);
   }
 };
 
