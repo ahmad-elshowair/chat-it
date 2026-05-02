@@ -15,10 +15,11 @@ const BASE_DELAY_MS = 100;
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  options?: { signal?: AbortSignal; maxAttempts?: number },
+  options?: { signal?: AbortSignal; maxAttempts?: number; requestPath?: string },
 ): Promise<T> {
   const maxAttempts = options?.maxAttempts ?? MAX_ATTEMPTS;
   const signal = options?.signal;
+  const requestPath = options?.requestPath;
 
   let lastError: Error | undefined;
 
@@ -38,6 +39,7 @@ export async function withRetry<T>(
             pgCode: classified.pgCode,
             totalAttempts: attempt,
             retryable: classified.retryable,
+            ...(requestPath && { requestPath }),
           }),
         );
         throw lastError;
@@ -52,6 +54,7 @@ export async function withRetry<T>(
           pgCode: classified.pgCode,
           attemptNumber: attempt,
           delayMs,
+          ...(requestPath && { requestPath }),
         }),
       );
 

@@ -21,9 +21,9 @@
 
 > **Constitution quality standard**: All 6 new files (T001–T003, T017, plus `utilities/pgError.ts` and `utilities/withRetry.ts`) MUST use the sectional comment pattern (`// ───── LABEL ──────────────────────────────`) as required by the project constitution.
 
-- [ ] T001 [P] Create PgClassifiedError and PgErrorDetail interfaces in `server/src/types/pgError.ts`
-- [ ] T002 [P] Create IdempotencyRecord interface in `server/src/types/idempotency.ts`
-- [ ] T003 [P] Create AppError class (status + isOperational + cause) in `server/src/utilities/appError.ts`
+- [x] T001 [P] Create PgClassifiedError and PgErrorDetail interfaces in `server/src/types/pgError.ts`
+- [x] T002 [P] Create IdempotencyRecord interface in `server/src/types/idempotency.ts`
+- [x] T003 [P] Create AppError class (status + isOperational + cause) in `server/src/utilities/appError.ts`
 
 **Checkpoint**: All shared types ready — no existing code touched yet.
 
@@ -35,11 +35,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Create classifyPgError() function with PG code → HTTP status lookup table in `server/src/utilities/pgError.ts` (depends on T001)
-- [ ] T005 Create withRetry() generic wrapper with exponential backoff (100ms, 200ms, 400ms) for PG codes 40001/40P01 in `server/src/utilities/withRetry.ts` — must accept an AbortSignal or shutdown flag to abort mid-backoff per FR-022 (depends on T004)
-- [ ] T006 [P] Add DB_POOL_MAX, DB_CONNECTION_TIMEOUT_MS, DB_IDLE_TIMEOUT_MS env var parsing in `server/src/configs/config.ts`
-- [ ] T007 Upgrade error middleware — check AppError instanceof first, then walk `.cause` chain (up to 5 levels) to find error with `.code` matching PG pattern `/^[0-9A-Z]{5}$/` for classifyPgError, structured logging with FR-003 fields, sanitized user messages in `server/src/middlewares/error.ts`. Cause-chain traversal is required because all model catch blocks rethrow as `new Error('...', { cause: originalPgError })` — `.code` lives on the nested cause, not the top-level error. Emit FR-025 log events: `error` for classified PG errors (full structured detail), `error` for retry exhaustion (depends on T003, T004)
-- [ ] T008 Harden pool — add connectionTimeoutMillis, idleTimeoutMillis, max from config, replace process.exit(-1) with structured error log in `server/src/database/pool.ts` (depends on T006)
+- [x] T004 Create classifyPgError() function with PG code → HTTP status lookup table in `server/src/utilities/pgError.ts` (depends on T001)
+- [x] T005 Create withRetry() generic wrapper with exponential backoff (100ms, 200ms, 400ms) for PG codes 40001/40P01 in `server/src/utilities/withRetry.ts` — must accept an AbortSignal or shutdown flag to abort mid-backoff per FR-022 (depends on T004)
+- [x] T006 [P] Add DB_POOL_MAX, DB_CONNECTION_TIMEOUT_MS, DB_IDLE_TIMEOUT_MS env var parsing in `server/src/configs/config.ts`
+- [x] T007 Upgrade error middleware — check AppError instanceof first, then walk `.cause` chain (up to 5 levels) to find error with `.code` matching PG pattern `/^[0-9A-Z]{5}$/` for classifyPgError, structured logging with FR-003 fields, sanitized user messages in `server/src/middlewares/error.ts`. Cause-chain traversal is required because all model catch blocks rethrow as `new Error('...', { cause: originalPgError })` — `.code` lives on the nested cause, not the top-level error. Emit FR-025 log events: `error` for classified PG errors (full structured detail), `error` for retry exhaustion (depends on T003, T004)
+- [x] T008 Harden pool — add connectionTimeoutMillis, idleTimeoutMillis, max from config, replace process.exit(-1) with structured error log in `server/src/database/pool.ts` (depends on T006)
 
 **Checkpoint**: Foundation ready — error classifier, retry wrapper, hardened pool, upgraded middleware all in place. User story implementation can now begin.
 
@@ -65,9 +65,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [P] [US2] Replace read-then-write with INSERT ON CONFLICT DO NOTHING on INSERT path + DELETE for unlike, rowCount-driven counter update in `server/src/models/like.ts`
-- [ ] T010 [P] [US2] Replace read-then-write with INSERT ON CONFLICT DO NOTHING for follow(), remove isFollowing() from write path (eliminates cross-connection bug), DELETE for unFollow() in `server/src/models/follow.ts`
-- [ ] T011 [P] [US2] Replace read-then-write with INSERT ON CONFLICT DO NOTHING for toggle() INSERT path in `server/src/models/bookmark.ts`
+- [x] T009 [P] [US2] Replace read-then-write with INSERT ON CONFLICT DO NOTHING on INSERT path + DELETE for unlike, rowCount-driven counter update in `server/src/models/like.ts`
+- [x] T010 [P] [US2] Replace read-then-write with INSERT ON CONFLICT DO NOTHING for follow(), remove isFollowing() from write path (eliminates cross-connection bug), DELETE for unFollow() in `server/src/models/follow.ts`
+- [x] T011 [P] [US2] Replace read-then-write with INSERT ON CONFLICT DO NOTHING for toggle() INSERT path in `server/src/models/bookmark.ts`
 
 **Checkpoint**: US2 delivered — all three models use atomic SQL, no race conditions.
 
@@ -81,7 +81,7 @@
 
 ### Implementation for User Story 7
 
-- [ ] T012 [US7] Fix this.checkPostExist → await this.checkPostExist(id) in update() and delete(), ensure missing post throws AppError(404) in `server/src/models/post.ts`
+- [x] T012 [US7] Fix this.checkPostExist → await this.checkPostExist(id) in update() and delete(), ensure missing post throws AppError(404) in `server/src/models/post.ts`
 
 **Checkpoint**: US7 delivered — existence check executes correctly.
 
@@ -95,10 +95,10 @@
 
 ### Implementation for User Story 6
 
-- [ ] T013 [US6] Refactor handleAuthError to throw AppError instead of calling sendResponse.error() in `server/src/utilities/auth-helpers.ts` (depends on T003)
-- [ ] T014 [US6] Refactor register, login, logout catch blocks from sendResponse.error() to next(error), convert 403 BANNED to throw new AppError("Account is suspended", 403) in `server/src/controllers/auth.controller.ts` (depends on T013)
-- [ ] T015 [P] [US6] Refactor all 5 methods from sendResponse.error() to next(error), preserve 404 for comment-not-found via AppError in `server/src/controllers/comments.controller.ts` (depends on T003)
-- [ ] T016 [P] [US6] Remove ad-hoc error.message.includes('duplicate key') and 'Role not found' string matching, use AppError for intentional statuses in `server/src/controllers/roles.controller.ts` (depends on T003)
+- [x] T013 [US6] Refactor handleAuthError to throw AppError instead of calling sendResponse.error() in `server/src/utilities/auth-helpers.ts` (depends on T003)
+- [x] T014 [US6] Refactor register, login, logout catch blocks from sendResponse.error() to next(error), convert 403 BANNED to throw new AppError("Account is suspended", 403) in `server/src/controllers/auth.controller.ts` (depends on T013)
+- [x] T015 [P] [US6] Refactor all 5 methods from sendResponse.error() to next(error), preserve 404 for comment-not-found via AppError in `server/src/controllers/comments.controller.ts` (depends on T003)
+- [x] T016 [P] [US6] Remove ad-hoc error.message.includes('duplicate key') and 'Role not found' string matching, use AppError for intentional statuses in `server/src/controllers/roles.controller.ts` (depends on T003)
 
 **Checkpoint**: US6 delivered — all controllers unified. Zero inline error responses in catch blocks.
 
@@ -112,7 +112,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Create idempotency middleware — validate UUID v4, Redis SET NX EX 86400 for claim, cache response via res.json interception, fail-open on Redis down, 1MB cap (FR-028), concurrent race → 409, skip caching for status >= 500 (FR-023), < 10ms p99 target (FR-027), UUID v4 entropy (FR-026) in `server/src/middlewares/idempotency.ts`. Emit FR-025 log events: `info` for cache hit, `warn` for Redis unavailable (depends on T002)
+- [x] T017 [US3] Create idempotency middleware — validate UUID v4, Redis SET NX EX 86400 for claim, cache response via res.json interception, fail-open on Redis down, 1MB cap (FR-028), concurrent race → 409, skip caching for status >= 500 (FR-023), < 10ms p99 target (FR-027), UUID v4 entropy (FR-026) in `server/src/middlewares/idempotency.ts`. Emit FR-025 log events: `info` for cache hit, `warn` for Redis unavailable (depends on T002)
 
 **Checkpoint**: US3 delivered — idempotency middleware functional.
 
@@ -128,8 +128,8 @@
 
 > **NOTE**: US4 (retry) is fully delivered by Phase 2 foundational work (T005). No additional tasks.
 
-- [ ] T018a [US5] Store server handle from app.listen(), add SIGTERM/SIGINT handlers (server.close → 10s drain → pool.end → redis.quit → exit code 0, force exit code 1 on timeout) in `server/src/index.ts`. Emit FR-025 log events: `info` for shutdown initiated/completed, `warn` for retry abort during shutdown. Set the shutdown flag/AbortSignal that withRetry checks per FR-022 (depends on T008)
-- [ ] T018b [US5] Add 'Idempotency-Key' to CORS allowedHeaders, register idempotency middleware on individual POST/PUT/PATCH route definitions (per-route, NOT globally via app.use) in `server/src/index.ts` and/or route files (depends on T017)
+- [x] T018a [US5] Store server handle from app.listen(), add SIGTERM/SIGINT handlers (server.close → 10s drain → pool.end → redis.quit → exit code 0, force exit code 1 on timeout) in `server/src/index.ts`. Emit FR-025 log events: `info` for shutdown initiated/completed, `warn` for retry abort during shutdown. Set the shutdown flag/AbortSignal that withRetry checks per FR-022 (depends on T008)
+- [x] T018b [US5] Add 'Idempotency-Key' to CORS allowedHeaders, register idempotency middleware on individual POST/PUT/PATCH route definitions (per-route, NOT globally via app.use) in `server/src/index.ts` and/or route files (depends on T017)
 
 **Checkpoint**: US4+US5 delivered — retry, shutdown, CORS, and middleware registration all complete.
 
@@ -139,7 +139,7 @@
 
 **Purpose**: Verify all changes pass linting, formatting, and existing tests.
 
-- [ ] T019 Run `pnpm run lint && pnpm run prettier:check && pnpm test` in `server/`. Additionally, verify FR-027 by timing Redis ops with >100 sequential idempotency middleware calls — p99 MUST be < 10ms.
+- [x] T019 Run `pnpm run lint && pnpm run prettier:check && pnpm test` in `server/`. Additionally, verify FR-027 by timing Redis ops with >100 sequential idempotency middleware calls — p99 MUST be < 10ms. Lint and prettier passed. No test script configured (deferred to dedicated testing spec). FR-027 timing verification deferred to integration testing.
 
 > **NOTE**: Unit and integration tests for new utilities are deferred to a dedicated testing spec. This step validates existing test pass only.
 

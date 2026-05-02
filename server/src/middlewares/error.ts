@@ -1,17 +1,24 @@
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Response } from 'express';
 import config from '../configs/config.js';
+import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { AppError } from '../utilities/appError.js';
 import { classifyPgError } from '../utilities/pgError.js';
 
-const errorMiddleware = (error: Error, req: Request, res: Response, _next: NextFunction) => {
-  // ───── PRIORITY 1: APPEEROR (INTENTIONAL HTTP ERRORS) ──────────────────────────────
+const errorMiddleware = (error: Error, req: ICustomRequest, res: Response, _next: NextFunction) => {
+  const userId = req.user?.id ?? null;
+  const timestamp = new Date().toISOString();
+
+  // ───── PRIORITY 1: APP ERROR (INTENTIONAL HTTP ERRORS) ──────────────────────────────
   if (error instanceof AppError) {
     console.error(
       JSON.stringify({
         level: 'error',
         message: 'Operational error',
         status: error.status,
-        path: `${req.method} ${req.path}`,
+        requestMethod: req.method,
+        requestPath: req.path,
+        userId,
+        timestamp,
         isOperational: error.isOperational,
         ...(config.node_env === 'development' && { stack: error.stack }),
       }),
@@ -35,9 +42,16 @@ const errorMiddleware = (error: Error, req: Request, res: Response, _next: NextF
         message: 'Classified PG error',
         httpStatus: classified.httpStatus,
         pgCode: classified.pgCode,
-        pgDetail: classified.pgDetail,
+        pgConstraint: classified.pgDetail.constraint,
+        pgTable: classified.pgDetail.table,
+        pgSchema: classified.pgDetail.schema,
+        pgDetail: classified.pgDetail.detail,
+        pgColumn: classified.pgDetail.column,
         retryable: classified.retryable,
-        path: `${req.method} ${req.path}`,
+        requestMethod: req.method,
+        requestPath: req.path,
+        userId,
+        timestamp,
         ...(config.node_env === 'development' && { stack: error.stack }),
       }),
     );
@@ -58,10 +72,10 @@ const errorMiddleware = (error: Error, req: Request, res: Response, _next: NextF
       level: 'error',
       message: 'Unhandled error',
       status,
-      path: `${req.method} ${req.path}`,
-      body: req.body,
-      params: req.params,
-      query: req.query,
+      requestMethod: req.method,
+      requestPath: req.path,
+      userId,
+      timestamp,
       ...(config.node_env === 'development' && { stack: error.stack }),
     }),
   );
