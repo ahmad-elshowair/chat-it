@@ -15,7 +15,13 @@ rolesRoute.get(
   rolesController.listPermissions,
 );
 
-rolesRoute.post('/', authorizeUser, requirePermission('roles.manage'), idempotency, rolesController.createRole);
+rolesRoute.post(
+  '/',
+  authorizeUser,
+  requirePermission('roles.manage'),
+  idempotency,
+  rolesController.createRole,
+);
 
 rolesRoute.put(
   '/:id',

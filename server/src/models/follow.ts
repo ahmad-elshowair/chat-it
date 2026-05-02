@@ -111,10 +111,7 @@ export default class FollowModel {
         DELETE FROM follows
         WHERE user_id_following = $1 AND user_id_followed = $2
       `;
-      const deleteResult = await connection.query(deleteSql, [
-        user_id_following,
-        user_id_followed,
-      ]);
+      const deleteResult = await connection.query(deleteSql, [user_id_following, user_id_followed]);
 
       if (deleteResult.rowCount === 1) {
         await connection.query(

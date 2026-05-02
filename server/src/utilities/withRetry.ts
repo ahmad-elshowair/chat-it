@@ -2,7 +2,6 @@ import { classifyPgError } from './pgError.js';
 
 // ───── RETRY WRAPPER ──────────────────────────────
 
-const RETRYABLE_CODES = new Set(['40001', '40P01']);
 const MAX_ATTEMPTS = 3;
 const BASE_DELAY_MS = 100;
 
@@ -57,7 +56,7 @@ export async function withRetry<T>(
       );
 
       if (signal?.aborted) {
-        throw new Error('Service shutting down');
+        throw new Error('Service shutting down', { cause: error });
       }
 
       await new Promise<void>((resolve, reject) => {
@@ -65,12 +64,12 @@ export async function withRetry<T>(
         if (signal) {
           const onAbort = () => {
             clearTimeout(timer);
-            reject(new Error('Service shutting down'));
+            reject(new Error('Service shutting down', { cause: error }));
           };
           signal.addEventListener('abort', onAbort, { once: true });
         }
-      }).catch(() => {
-        throw new Error('Service shutting down');
+      }).catch((err) => {
+        throw new Error('Service shutting down', { cause: err });
       });
     }
   }

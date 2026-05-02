@@ -7,7 +7,13 @@ import { loginValidation, registerValidation } from '../../middlewares/validatio
 
 const authRouter = Router();
 
-authRouter.post('/register', registerValidation, validationMiddleware, idempotency, authController.register);
+authRouter.post(
+  '/register',
+  registerValidation,
+  validationMiddleware,
+  idempotency,
+  authController.register,
+);
 
 authRouter.post('/login', loginValidation, validationMiddleware, idempotency, authController.login);
 

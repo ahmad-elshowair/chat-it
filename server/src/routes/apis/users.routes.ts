@@ -22,7 +22,13 @@ userRoute.get(
   userController.getUserByUsername,
 );
 
-userRoute.put('/update/:user_id', authorizeUser, idempotency, validateUpdateUser, userController.update);
+userRoute.put(
+  '/update/:user_id',
+  authorizeUser,
+  idempotency,
+  validateUpdateUser,
+  userController.update,
+);
 
 userRoute.delete('/delete/:user_id', authorizeUser, validateDeleteUser, userController.deleteUser);
 

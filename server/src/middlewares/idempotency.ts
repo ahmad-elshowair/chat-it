@@ -5,8 +5,7 @@ import { IdempotencyRecord } from '../types/idempotency.js';
 
 // ───── CONSTANTS ──────────────────────────────
 
-const UUID_V4_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_KEY_LENGTH = 128;
 const TTL_SECONDS = 86400;
 const MAX_CACHE_SIZE_BYTES = 1024 * 1024;
@@ -53,7 +52,7 @@ export const idempotency = async (req: Request, res: Response, next: NextFunctio
     return next();
   }
 
-  const routePath = req.baseUrl + (req.route?.path || '');  
+  const routePath = req.baseUrl + (req.route?.path || '');
   const redisKey = `idem:${userId}:${req.method}:${routePath}:${key}`;
 
   try {
@@ -107,11 +106,9 @@ export const idempotency = async (req: Request, res: Response, next: NextFunctio
             contentType: 'application/json',
           };
 
-          redisClient
-            .setex(redisKey, TTL_SECONDS, JSON.stringify(record))
-            .catch(() => {
-              // Silent fail — response already sent
-            });
+          redisClient.setex(redisKey, TTL_SECONDS, JSON.stringify(record)).catch(() => {
+            // Silent fail — response already sent
+          });
         } else {
           console.warn(
             JSON.stringify({

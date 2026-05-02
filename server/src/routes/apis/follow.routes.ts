@@ -11,7 +11,13 @@ import {
 
 const followRouter = Router();
 
-followRouter.post('/follow', authorize_user, idempotency, validateFollowAction, followController.followUser);
+followRouter.post(
+  '/follow',
+  authorize_user,
+  idempotency,
+  validateFollowAction,
+  followController.followUser,
+);
 
 followRouter.delete(
   '/unfollow',
