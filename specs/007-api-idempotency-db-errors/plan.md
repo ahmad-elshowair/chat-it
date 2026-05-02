@@ -1,11 +1,11 @@
-# Implementation Plan: API Idempotency & DB Error Handling
-
 **Branch**: `007-api-idempotency-db-errors` | **Date**: 2026-05-02 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/007-api-idempotency-db-errors/spec.md`
 
 ## Summary
 
 Harden the post-it API against duplicate mutations, race conditions, and unclassified database errors. This is a cross-cutting infrastructure spec that introduces a PostgreSQL error classifier, automatic retry for transient errors, Redis-backed idempotency, and unified error handling across all controllers — with no new database tables.
+
+**Scope**: 6 new files, 12 modified files, 0 database migrations, 20 implementation steps.
 
 ## Technical Context
 
@@ -107,7 +107,7 @@ server/src/
 | # | File | Action | Dependencies | FR |
 |---|------|--------|--------------|----|
 | 6 | `configs/config.ts` | MODIFY | — | FR-009 |
-| 7 | `middlewares/error.ts` | MODIFY | appError, pgError | FR-001–003, FR-018 |
+| 7 | `middlewares/error.ts` | MODIFY | appError, pgError | FR-001–003, FR-018 (cause-chain) |
 | 8 | `database/pool.ts` | MODIFY | config.ts | FR-009, FR-011 |
 
 ### Phase 3 — Model Race Condition Fixes
@@ -132,8 +132,9 @@ server/src/
 
 | # | File | Action | Dependencies | FR |
 |---|------|--------|--------------|----|
-| 17 | `middlewares/idempotency.ts` | CREATE | types/idempotency, redis | FR-006, FR-007, FR-019–024 |
-| 18 | `index.ts` | MODIFY | pool, redis, idempotency, server | FR-010, FR-015, FR-022 |
+| 17 | `middlewares/idempotency.ts` | CREATE | types/idempotency, redis | FR-006, FR-007, FR-019–024, FR-028 |
+| 18a | `index.ts` | MODIFY | pool, redis, server | FR-010, FR-022 |
+| 18b | `index.ts` + route files | MODIFY | idempotency | FR-015, FR-020 |
 
 ### Phase 6 — Validation
 
@@ -143,6 +144,8 @@ server/src/
 
 > **Note**: Unit and integration tests for the new utilities (classifyPgError, withRetry, idempotency middleware, error middleware, model race conditions, controller error flow) are deferred to a dedicated testing spec. This spec focuses on implementation + existing test pass.
 
+**Total: 20 steps across 6 phases.**
+
 ## Key Design Decisions
 
 1. **AppError is a class in `utilities/`, not `types/`** — it contains constructor logic, not just type definitions. The error middleware uses `instanceof` for runtime checking.
@@ -151,7 +154,7 @@ server/src/
 
 3. **handleAuthError is refactored, handleInvalidToken is NOT** — `handleInvalidToken` returns intentional 401/403 for auth validation (not database errors). It stays as a direct response. `handleAuthError` catches database errors and must flow through the error middleware.
 
-4. **Like model keeps the post existence check** — the current SELECT+JOIN validates the post_id FK. ON CONFLICT DO NOTHING is added to the INSERT path only. The post check prevents creating likes for non-existent posts.
+4. **Like model keeps the post existence check** — the current SELECT+JOIN validates the post_id FK. ON CONFLICT DO NOTHING is added to the INSERT path only. The post check prevents creating likes for non-existent posts. Toggles retain a direction check (INSERT vs DELETE) but use ON CONFLICT on the INSERT path to prevent 23505 violations.
 
 5. **Follow model drops isFollowing() from the write path** — the entire cross-connection bug is eliminated by using ON CONFLICT DO NOTHING. The `isFollowing()` method is kept for GET endpoints (checking follow status) but removed from `follow()` and `unFollow()`.
 

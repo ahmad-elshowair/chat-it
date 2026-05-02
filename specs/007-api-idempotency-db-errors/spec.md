@@ -19,7 +19,7 @@ A user or client application encounters a database error (duplicate follow, miss
 
 1. **Given** a user tries to follow someone they already follow, **When** the follow request is submitted, **Then** the response is HTTP 409 with message "Resource already exists" (no constraint names or SQL fragments exposed)
 2. **Given** a database connection failure occurs, **When** any request is processed, **Then** the response is HTTP 503 with message "Service temporarily unavailable"
-3. **Given** a database foreign key violation occurs, **When** the request references a non-existent related record, **Then** the response is HTTP 400 with message "Invalid reference to a related resource"
+3. **Given** a database foreign key violation occurs, **When** the request references a non-existent related record, **Then** the response is HTTP 400 with message "Referenced resource not found"
 4. **Given** any database error occurs, **When** server logs are reviewed, **Then** the full structured log includes the error code, constraint name, table name, and detail
 5. **Given** a non-database error (e.g., validation failure), **When** the error reaches the error handler, **Then** the existing error handling behavior is preserved
 
@@ -134,6 +134,8 @@ An admin or user attempts to update or delete a post that has been removed. The 
 - **Pool exhaustion**: Max connections reached — queued requests wait up to `connectionTimeoutMillis` (5s default), then receive 503 (standard pg behavior + FR-009)
 - **Shutdown mid-retry**: SIGTERM/SIGINT during backoff — abort retry, return 503 "Service shutting down" (FR-022)
 - **Follow ON CONFLICT existing row**: Return success with "already following" message, no counter change. `rowCount === 0` means already existed.
+- **Like toggle rowCount === 0 (already liked/unliked)**: Idempotent success — return `{ message: "Post liked successfully", action: "liked" }` (INSERT path) or `{ message: "Post unliked successfully", action: "unliked" }` (DELETE path). No counter change when `rowCount === 0`.
+- **Bookmark toggle rowCount === 0 (already bookmarked/unbookmarked)**: Idempotent success — return `{ message: "Post bookmarked successfully", action: "bookmarked" }` (INSERT path) or `{ message: "Post unbookmarked successfully", action: "unbookmarked" }` (DELETE path). No counter change when `rowCount === 0`.
 - **Concurrent like toggles**: One INSERTs, one DELETEs — net neutral state, counters remain correct because each path runs in its own transaction with rowCount-driven counter updates
 - **Failed response caching**: 4xx responses ARE cached (client made the same bad request). 5xx responses are NOT cached (server error may be transient). FR-023 governs this.
 - **Idempotency-Key on GET/DELETE**: Silently ignored — no error, no caching (FR-020)
@@ -166,7 +168,7 @@ An admin or user attempts to update or delete a post that has been removed. The 
 
 #### Race Condition Fixes
 
-- **FR-004**: System MUST replace read-then-write patterns with atomic single-statement SQL per model:
+- **FR-004**: System MUST eliminate race-condition-prone read-then-write patterns per model. Toggles (like, bookmark) retain a direction check to determine INSERT vs DELETE, but use ON CONFLICT DO NOTHING on the INSERT path to prevent 23505 violations:
   - **like.ts**: INSERT uses `INSERT INTO likes (user_id, post_id) VALUES ($1, $2) ON CONFLICT (user_id, post_id) DO NOTHING`. DELETE uses `DELETE FROM likes WHERE user_id = $1 AND post_id = $2`. Check `rowCount === 1` for counter direction. Counter update within same transaction.
   - **follow.ts**: `INSERT INTO follows (...) VALUES ($1, $2) ON CONFLICT (user_id_following, user_id_followed) DO NOTHING` — eliminates cross-connection bug where `isFollowing()` used a separate PoolClient. Delete uses direct `DELETE ... WHERE`. Check `rowCount`.
   - **bookmark.ts**: Same pattern as like — INSERT with ON CONFLICT DO NOTHING, DELETE for remove, `rowCount` for counter direction.
@@ -239,7 +241,11 @@ An admin or user attempts to update or delete a post that has been removed. The 
 
 - **FR-018**: System MUST define an `AppError` class extending `Error`:
   - Fields: `status: number` (HTTP status), `isOperational: boolean` (expected error vs programmer error)
-  - Error middleware priority: (1) `error instanceof AppError` → use `error.status`, (2) `error.code` exists (PG error) → classify via FR-001, (3) fallback → 500
+  - Error middleware classification priority:
+    1. `error instanceof AppError` → use `error.status` and `error.message` directly
+    2. Walk `.cause` chain (up to 5 levels) to find an error with a `.code` property matching a PG error code pattern (`/^[0-9A-Z]{5}$/`). If found → classify via FR-001. This is required because all model catch blocks rethrow as `new Error('...', { cause: originalPgError })` per AGENTS.md `preserve-caught-error` rule — the `.code` property lives on `error.cause`, not `error`.
+    3. Check `error.code` directly (for unwrapped PG errors that bypass model catch blocks)
+    4. Fallback → 500 "An unexpected error occurred"
   - `{ cause: error }` preserved on all rethrows per AGENTS.md
 
 #### Bug Fix
@@ -252,7 +258,7 @@ An admin or user attempts to update or delete a post that has been removed. The 
 
 #### Constraints
 
-- **FR-016**: No new database tables. Idempotency keys stored in Redis. `types/appError.ts` and `types/pgError.ts` are application-layer TypeScript types, not database entities. Compliant with Article I (raw SQL), Article VII (no new tables).
+- **FR-016**: No new database tables. Idempotency keys stored in Redis. `utilities/appError.ts` and `types/pgError.ts` are application-layer TypeScript constructs, not database entities. Compliant with Article I (raw SQL), Article VII (no new tables).
 
 - **FR-017**: Preserve toggle semantics for like/bookmark — ON CONFLICT DO NOTHING on INSERT path, DELETE WHERE on remove path.
 
@@ -272,7 +278,7 @@ An admin or user attempts to update or delete a post that has been removed. The 
 
 #### Performance
 
-- **FR-027**: Idempotency middleware MUST add < 10ms p99 latency for Redis ops (one SET NX on miss, one GET on hit).
+- **FR-027**: Idempotency middleware MUST add < 10ms p99 latency for Redis ops (one SET NX on miss, one GET on hit). Verified during T019 validation by timing Redis ops in development mode with >100 sequential middleware calls.
 
 - **FR-028**: Cached idempotency responses capped at 1MB per entry. Responses exceeding this skip caching (log warning) but proceed normally. Combined with 24h TTL and per-user scoping, this bounds Redis memory growth.
 

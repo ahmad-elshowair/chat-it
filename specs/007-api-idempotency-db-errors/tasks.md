@@ -19,6 +19,8 @@
 
 **Purpose**: Create the foundational types and utilities that all user stories depend on. No existing files modified.
 
+> **Constitution quality standard**: All 6 new files (T001–T003, T017, plus `utilities/pgError.ts` and `utilities/withRetry.ts`) MUST use the sectional comment pattern (`// ───── LABEL ──────────────────────────────`) as required by the project constitution.
+
 - [ ] T001 [P] Create PgClassifiedError and PgErrorDetail interfaces in `server/src/types/pgError.ts`
 - [ ] T002 [P] Create IdempotencyRecord interface in `server/src/types/idempotency.ts`
 - [ ] T003 [P] Create AppError class (status + isOperational + cause) in `server/src/utilities/appError.ts`
@@ -34,9 +36,9 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [ ] T004 Create classifyPgError() function with PG code → HTTP status lookup table in `server/src/utilities/pgError.ts` (depends on T001)
-- [ ] T005 Create withRetry() generic wrapper with exponential backoff (100ms, 200ms, 400ms) for PG codes 40001/40P01 in `server/src/utilities/withRetry.ts` (depends on T004)
+- [ ] T005 Create withRetry() generic wrapper with exponential backoff (100ms, 200ms, 400ms) for PG codes 40001/40P01 in `server/src/utilities/withRetry.ts` — must accept an AbortSignal or shutdown flag to abort mid-backoff per FR-022 (depends on T004)
 - [ ] T006 [P] Add DB_POOL_MAX, DB_CONNECTION_TIMEOUT_MS, DB_IDLE_TIMEOUT_MS env var parsing in `server/src/configs/config.ts`
-- [ ] T007 Upgrade error middleware — check AppError instanceof first, then classifyPgError for PG errors, structured logging with FR-003 fields, sanitized user messages in `server/src/middlewares/error.ts` (depends on T003, T004)
+- [ ] T007 Upgrade error middleware — check AppError instanceof first, then walk `.cause` chain (up to 5 levels) to find error with `.code` matching PG pattern `/^[0-9A-Z]{5}$/` for classifyPgError, structured logging with FR-003 fields, sanitized user messages in `server/src/middlewares/error.ts`. Cause-chain traversal is required because all model catch blocks rethrow as `new Error('...', { cause: originalPgError })` — `.code` lives on the nested cause, not the top-level error. Emit FR-025 log events: `error` for classified PG errors (full structured detail), `error` for retry exhaustion (depends on T003, T004)
 - [ ] T008 Harden pool — add connectionTimeoutMillis, idleTimeoutMillis, max from config, replace process.exit(-1) with structured error log in `server/src/database/pool.ts` (depends on T006)
 
 **Checkpoint**: Foundation ready — error classifier, retry wrapper, hardened pool, upgraded middleware all in place. User story implementation can now begin.
@@ -110,7 +112,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Create idempotency middleware — validate UUID v4, Redis SET NX EX 86400 for claim, cache response via res.json interception, fail-open on Redis down, 1MB cap, concurrent race → 409 in `server/src/middlewares/idempotency.ts` (depends on T002)
+- [ ] T017 [US3] Create idempotency middleware — validate UUID v4, Redis SET NX EX 86400 for claim, cache response via res.json interception, fail-open on Redis down, 1MB cap (FR-028), concurrent race → 409, skip caching for status >= 500 (FR-023), < 10ms p99 target (FR-027), UUID v4 entropy (FR-026) in `server/src/middlewares/idempotency.ts`. Emit FR-025 log events: `info` for cache hit, `warn` for Redis unavailable (depends on T002)
 
 **Checkpoint**: US3 delivered — idempotency middleware functional.
 
@@ -126,7 +128,8 @@
 
 > **NOTE**: US4 (retry) is fully delivered by Phase 2 foundational work (T005). No additional tasks.
 
-- [ ] T018 [US5] Store server handle from app.listen(), add SIGTERM/SIGINT handlers (server.close → 10s drain → pool.end → redis.quit → exit), add 'Idempotency-Key' to CORS allowedHeaders, register idempotency middleware on mutating routes in `server/src/index.ts` (depends on T008, T017)
+- [ ] T018a [US5] Store server handle from app.listen(), add SIGTERM/SIGINT handlers (server.close → 10s drain → pool.end → redis.quit → exit code 0, force exit code 1 on timeout) in `server/src/index.ts`. Emit FR-025 log events: `info` for shutdown initiated/completed, `warn` for retry abort during shutdown. Set the shutdown flag/AbortSignal that withRetry checks per FR-022 (depends on T008)
+- [ ] T018b [US5] Add 'Idempotency-Key' to CORS allowedHeaders, register idempotency middleware on individual POST/PUT/PATCH route definitions (per-route, NOT globally via app.use) in `server/src/index.ts` and/or route files (depends on T017)
 
 **Checkpoint**: US4+US5 delivered — retry, shutdown, CORS, and middleware registration all complete.
 
@@ -136,7 +139,7 @@
 
 **Purpose**: Verify all changes pass linting, formatting, and existing tests.
 
-- [ ] T019 Run `pnpm run lint && pnpm run prettier:check && pnpm test` in `server/`
+- [ ] T019 Run `pnpm run lint && pnpm run prettier:check && pnpm test` in `server/`. Additionally, verify FR-027 by timing Redis ops with >100 sequential idempotency middleware calls — p99 MUST be < 10ms.
 
 > **NOTE**: Unit and integration tests for new utilities are deferred to a dedicated testing spec. This step validates existing test pass only.
 
@@ -153,7 +156,7 @@
 - **Phase 5 (US7)**: Depends on Phase 2 — single task T012
 - **Phase 6 (US6)**: Depends on Phase 2 — T013 first, then T014 depends on T013, T015+T016 in parallel
 - **Phase 7 (US3)**: Depends on Phase 1 (T002) — single task T017
-- **Phase 8 (US4+US5)**: Depends on Phase 2 (T008) + Phase 7 (T017) — single task T018
+- **Phase 8 (US4+US5)**: Depends on Phase 2 (T008) + Phase 7 (T017) — T018a (shutdown) and T018b (CORS + registration)
 - **Phase 9 (Validation)**: Depends on all phases complete
 
 ### User Story Dependencies
@@ -164,7 +167,7 @@
 - **US6 (P1)**: Independent after Phase 2 — controllers only, no cross-story deps
 - **US3 (P2)**: Independent after Phase 1 — new middleware, no existing code deps
 - **US4 (P2)**: Delivered by foundational work — no story-specific tasks
-- **US5 (P2)**: Depends on Phase 2 (pool) + Phase 7 (idempotency) for full index.ts integration
+- **US5 (P2)**: Depends on Phase 2 (pool) + Phase 7 (idempotency) for full index.ts integration. T018a (shutdown) can start after Phase 2. T018b (CORS + middleware registration) needs Phase 7.
 
 ### Parallel Opportunities
 
@@ -202,10 +205,10 @@ T015 (comments.controller.ts) || T016 (roles.controller.ts)
 ### Incremental Delivery (P2 Stories)
 
 8. Complete Phase 7: US3 (1 task) — idempotency middleware
-9. Complete Phase 8: US4+US5 (1 task) — retry auto-delivered, shutdown handlers
+9. Complete Phase 8: US4+US5 (2 tasks) — retry auto-delivered, shutdown handlers, CORS, route registration
 10. Complete Phase 9: Validation (1 task) — lint + test pass
 
-### Total: 19 tasks across 9 phases
+### Total: 20 tasks across 9 phases
 
 ---
 
