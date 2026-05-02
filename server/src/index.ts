@@ -6,9 +6,12 @@ import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import config from './configs/config.js';
+import pool from './database/pool.js';
+import redisClient from './database/redis.js';
 import errorMiddleware from './middlewares/error.js';
 import routes from './routes/index.js';
 import { scheduledTokenCleanup } from './utilities/scheduledTasks.js';
+import { shutdownController } from './utilities/shutdown.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -85,6 +88,7 @@ app.use(
       'CSRF-Token',
       'Origin',
       'Accept',
+      'Idempotency-Key',
     ],
     exposedHeaders: ['X-CSRF-Token'],
   }),
@@ -108,7 +112,56 @@ app.use((_req: Request, res: Response) => {
 // Start the scheduled token cleanup
 scheduledTokenCleanup();
 
-// add listen to the app
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
+// ───── GRACEFUL SHUTDOWN ──────────────────────────────
+
+let isShuttingDown = false;
+
+const gracefulShutdown = () => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  console.info(
+    JSON.stringify({
+      level: 'info',
+      message: 'Shutdown initiated',
+    }),
+  );
+
+  shutdownController.abort();
+
+  server.close(() => {
+    console.info(
+      JSON.stringify({
+        level: 'info',
+        message: 'Shutdown completed — all connections closed',
+      }),
+    );
+
+    Promise.all([pool.end(), redisClient.quit()])
+      .then(() => {
+        console.info('PostgreSQL pool and Redis connection closed');
+        process.exit(0);
+      })
+      .catch((error) => {
+        console.error('Error closing connections:', error);
+        process.exit(1);
+      });
+  });
+
+  setTimeout(() => {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        message: 'Forced shutdown — grace period expired',
+      }),
+    );
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);

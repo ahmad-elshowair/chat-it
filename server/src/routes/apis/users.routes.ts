@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import userController from '../../controllers/users.controller.js';
 import authorizeUser from '../../middlewares/auth.js';
+import { idempotency } from '../../middlewares/idempotency.js';
 import { paginationValidator } from '../../middlewares/validations/pagination.js';
 import {
   validateDeleteUser,
@@ -21,7 +22,7 @@ userRoute.get(
   userController.getUserByUsername,
 );
 
-userRoute.put('/update/:user_id', authorizeUser, validateUpdateUser, userController.update);
+userRoute.put('/update/:user_id', authorizeUser, idempotency, validateUpdateUser, userController.update);
 
 userRoute.delete('/delete/:user_id', authorizeUser, validateDeleteUser, userController.deleteUser);
 
