@@ -56,6 +56,7 @@ A developer integrating with the API sends a "create post" request that times ou
 2. **Given** a client sends a POST request with an Idempotency-Key that was used 25 hours ago, **When** the request arrives, **Then** the expired key is treated as a new request and the handler executes normally
 3. **Given** two different users send requests with the same Idempotency-Key, **When** both requests arrive, **Then** they are treated as separate requests because the key is scoped to each user
 4. **Given** a client sends a POST request without an Idempotency-Key header, **When** the request arrives, **Then** the request proceeds normally (idempotency is optional)
+5. **Given** a client sends a PUT or PATCH request with an Idempotency-Key header, **When** the request is processed, **Then** the idempotency middleware applies the same caching behavior as POST
 
 ---
 
@@ -93,7 +94,7 @@ The application experiences a spike in traffic that exhausts database connection
 
 ### User Story 6 - Unified Error Handling Across All Controllers (Priority: P1)
 
-A database error occurs in any controller — auth (register, login), comments (create, update, delete), roles (create, assign) — and is processed through the same error classification pipeline. No controller bypasses the centralized error handler with inline error responses that leak raw database messages.
+A database error occurs in any controller — auth (register, login, logout, refreshToken, checkAuthStatus), comments (all 5 methods), roles (create, update, delete, assign, revoke) — and is processed through the same error classification pipeline. No controller bypasses the centralized error handler with inline error responses that leak raw database messages. This includes shared utility functions like `handleAuthError` in `utilities/auth-helpers.ts` that also use inline `sendResponse.error()`.
 
 **Why this priority**: Without this, the error classifier from User Story 1 only protects some endpoints. Auth and comments controllers currently bypass the error middleware entirely, continuing to leak raw error messages. Roles controller uses fragile string matching instead of error code classification. This is P1 because it's a security gap.
 
@@ -105,6 +106,7 @@ A database error occurs in any controller — auth (register, login), comments (
 2. **Given** a user creates a comment and a database error occurs, **When** the error is caught, **Then** it flows through the error middleware (not an inline response) and returns a sanitized message
 3. **Given** an admin creates a role with a duplicate name, **When** the unique constraint fires, **Then** the response is 409 from the error middleware (no ad-hoc string matching in the controller)
 4. **Given** a banned user tries to log in, **When** authentication succeeds but ban is detected, **Then** the response is still 403 with "Account is suspended" (intentional status code is preserved)
+5. **Given** the `refreshToken` or `checkAuthStatus` endpoint encounters a database error, **When** the error is caught by `handleAuthError`, **Then** it flows through the centralized error middleware (not inline `sendResponse.error()`)
 
 ---
 
@@ -125,54 +127,173 @@ An admin or user attempts to update or delete a post that has been removed. The 
 
 ### Edge Cases
 
-- What happens when two requests with the same Idempotency-Key arrive at the exact same millisecond (Redis SETNX handles atomic claim)?
-- What happens when Redis is down — idempotency middleware falls through gracefully (fail-open, consistent with rate limiter behavior)?
-- What happens when a retryable error (deadlock) occurs inside a transaction that has already partially completed (retry re-acquires entire transaction)?
-- What happens when the post existence check fails because the post was deleted between the check and the update?
-- What happens when the pool max connections is reached — queued requests wait (standard pg behavior)?
-- What happens when a graceful shutdown is triggered while a retry loop is mid-backoff (abort retry, proceed with shutdown)?
-- What happens when the follow ON CONFLICT detects an existing row — return success with "already following" message, no counter change?
-- What happens when two concurrent like toggles arrive — one INSERTs, one DELETEs, net neutral state, counters remain correct?
+- **Concurrent Idempotency-Key**: Two requests with the same key at the same millisecond — first claims via Redis `SET NX`, second gets HTTP 409 "already being processed" (FR-024)
+- **Redis down**: Idempotency middleware fails open — proceeds without caching, logs warning (FR-021). Consistent with rate limiter behavior.
+- **Retry mid-transaction**: A retryable error (deadlock) inside a partially completed transaction — retry re-acquires the entire transaction from BEGIN (FR-008)
+- **Post deleted between check and write**: TOCTOU accepted — `rowCount === 0` triggers 404 AppError (FR-014)
+- **Pool exhaustion**: Max connections reached — queued requests wait up to `connectionTimeoutMillis` (5s default), then receive 503 (standard pg behavior + FR-009)
+- **Shutdown mid-retry**: SIGTERM/SIGINT during backoff — abort retry, return 503 "Service shutting down" (FR-022)
+- **Follow ON CONFLICT existing row**: Return success with "already following" message, no counter change. `rowCount === 0` means already existed.
+- **Concurrent like toggles**: One INSERTs, one DELETEs — net neutral state, counters remain correct because each path runs in its own transaction with rowCount-driven counter updates
+- **Failed response caching**: 4xx responses ARE cached (client made the same bad request). 5xx responses are NOT cached (server error may be transient). FR-023 governs this.
+- **Idempotency-Key on GET/DELETE**: Silently ignored — no error, no caching (FR-020)
+- **Empty/invalid Idempotency-Key**: Returns HTTP 400 (FR-019)
+- **Oversized cached response**: Responses > 1MB skip caching, log warning, proceed normally (FR-028)
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST classify database errors by error code and return the appropriate HTTP status code (409 for unique violations, 400 for foreign key violations, 422 for check constraint violations, 503 for transient failures, 500 for unclassified errors)
-- **FR-002**: System MUST sanitize all error messages sent to clients — never exposing constraint names, table names, column names, or SQL query text
-- **FR-003**: System MUST preserve full database error detail (code, constraint, table, detail) in server-side structured logs
-- **FR-004**: System MUST replace read-then-write patterns with atomic database operations — for create-only endpoints (follow) use single INSERT ... ON CONFLICT DO NOTHING; for toggle endpoints (like, bookmark) add ON CONFLICT DO NOTHING to the INSERT path and keep the DELETE path, using rowCount to determine counter direction
-- **FR-005**: System MUST maintain accurate counters (like count, follower count, following count, bookmark count) even under concurrent operations
-- **FR-006**: System MUST support an Idempotency-Key header on mutating requests (POST, PUT, PATCH) that caches responses for 24 hours
-- **FR-007**: System MUST scope idempotency keys to the authenticated user to prevent cross-user response replay
-- **FR-008**: System MUST automatically retry transient database errors (deadlocks, serialization failures) up to 3 times with exponential backoff before surfacing the error
-- **FR-009**: System MUST configure the database connection pool with explicit connection timeout (5s), idle timeout (30s), and maximum connections (configurable, default 20)
-- **FR-010**: System MUST handle SIGTERM and SIGINT signals by draining active database connections and closing the Redis connection before exiting
-- **FR-011**: System MUST NOT crash (exit) on idle client errors — it must log the error and continue serving requests
-- **FR-012**: System MUST route all controller errors through the centralized error handler — no controller may bypass it with inline error responses that expose raw messages
-- **FR-013**: System MUST preserve intentional status codes (403 for banned users, 404 for not-found resources) when converting inline error handling to centralized error handling
-- **FR-014**: System MUST fix the post model existence check so that update and delete operations correctly verify the post exists before proceeding
-- **FR-015**: System MUST accept the Idempotency-Key header in CORS configuration
-- **FR-016**: System MUST NOT create any new database tables — idempotency keys are stored in the existing Redis infrastructure
-- **FR-017**: System MUST preserve toggle semantics for like and bookmark endpoints — the same handler handles both create and remove directions, with ON CONFLICT DO NOTHING protecting the INSERT path and DELETE WHERE protecting the remove path
+#### Error Classification & Sanitization
+
+- **FR-001**: System MUST classify database errors by PostgreSQL error code and return the mapped HTTP status:
+
+  | PG Code | Class | HTTP Status | Sanitized Message |
+  |---------|-------|-------------|-------------------|
+  | 23505 | unique_violation | 409 | "Resource already exists" |
+  | 23503 | foreign_key_violation | 400 | "Referenced resource not found" |
+  | 23514 | check_violation | 422 | "Data validation failed" |
+  | 40001 | serialization_failure | 503 | "Service temporarily unavailable" |
+  | 40P01 | deadlock_detected | 503 | "Service temporarily unavailable" |
+  | 08006 | connection_failure | 503 | "Service temporarily unavailable" |
+  | 57014 | query_canceled | 503 | "Request timed out" |
+  | 53300 | too_many_connections | 503 | "Service temporarily unavailable" |
+  | (other) | unclassified | 500 | "An unexpected error occurred" |
+
+- **FR-002**: "Sanitize" means: replace the entire PG error message with the fixed lookup string from the FR-001 table — never strip/modify substrings. No constraint names, table names, column names, schema names, or SQL query text may appear in any HTTP response body.
+
+- **FR-003**: System MUST log structured error detail server-side for every classified PG error. Required fields: `pgCode` (string), `pgConstraint` (string | null), `pgTable` (string | null), `pgSchema` (string | null), `pgDetail` (string | null), `pgColumn` (string | null), `httpStatus` (number), `requestMethod` (string), `requestPath` (string), `userId` (string | null), `timestamp` (ISO 8601).
+
+#### Race Condition Fixes
+
+- **FR-004**: System MUST replace read-then-write patterns with atomic single-statement SQL per model:
+  - **like.ts**: INSERT uses `INSERT INTO likes (user_id, post_id) VALUES ($1, $2) ON CONFLICT (user_id, post_id) DO NOTHING`. DELETE uses `DELETE FROM likes WHERE user_id = $1 AND post_id = $2`. Check `rowCount === 1` for counter direction. Counter update within same transaction.
+  - **follow.ts**: `INSERT INTO follows (...) VALUES ($1, $2) ON CONFLICT (user_id_following, user_id_followed) DO NOTHING` — eliminates cross-connection bug where `isFollowing()` used a separate PoolClient. Delete uses direct `DELETE ... WHERE`. Check `rowCount`.
+  - **bookmark.ts**: Same pattern as like — INSERT with ON CONFLICT DO NOTHING, DELETE for remove, `rowCount` for counter direction.
+
+- **FR-005**: System MUST maintain accurate counters for all four types under concurrent operations: `number_of_likes` (posts), `number_of_followers` (users), `number_of_followings` (users), `number_of_bookmarks` (posts). Counter updates MUST occur within the same transaction as the INSERT/DELETE.
+
+#### Idempotency
+
+- **FR-006**: System MUST support an `Idempotency-Key` header on mutating requests (POST, PUT, PATCH) with lifecycle:
+  - **Header**: `Idempotency-Key` (case-insensitive per HTTP spec)
+  - **Value format**: UUID v4, validated via regex. Invalid values return HTTP 400.
+  - **Redis key schema**: `idem:{userId}:{httpMethod}:{routePath}:{idempotencyKey}`
+  - **Cached response shape**: `{ statusCode: number, body: string, contentType: string }`
+  - **TTL**: 24 hours (86400 seconds), automatic Redis expiration
+  - **Claim mechanism**: Redis `SET key value NX EX 86400` (atomic set-if-not-exists with TTL)
+  - **Enforcement**: Optional — requests without the header proceed normally ("support", not "enforce")
+
+- **FR-007**: System MUST scope idempotency keys to `{userId}:{httpMethod}:{routePath}` to prevent: (a) cross-user replay, (b) cross-endpoint reuse, (c) cross-method reuse.
+
+- **FR-019**: System MUST validate `Idempotency-Key` values: empty strings, whitespace-only, and values exceeding 128 characters return HTTP 400. Values not matching UUID v4 format return HTTP 400.
+
+- **FR-020**: System MUST silently ignore the `Idempotency-Key` header on GET and DELETE requests — no error, no caching. These methods are naturally idempotent.
+
+- **FR-021**: When Redis is unavailable, the idempotency middleware MUST fail open — proceed without caching, log a warning (`level: warn`, message: "Idempotency middleware Redis unavailable"), consistent with rate limiter's `passOnStoreError` behavior.
+
+- **FR-023**: System MUST NOT cache responses with HTTP status >= 500 (server errors). Responses with 4xx (client errors) and 2xx/3xx (success) MUST be cached — the client made the same request and should get the same result.
+
+- **FR-024**: When two requests with the same key arrive concurrently, the first claims via `SET NX`. The second sees the key exists but no cached response yet — return HTTP 409 "A request with this idempotency key is already being processed".
+
+#### Retry
+
+- **FR-008**: System MUST retry transient database errors up to 3 attempts with exponential backoff: `100ms × 2^(attempt-1)` (100ms, 200ms, 400ms). No jitter (deterministic for testability). Retryable codes: 40001 (serialization_failure), 40P01 (deadlock_detected). Connection failures (08006) are NOT retried — they indicate infrastructure issues, not transient contention.
+
+- **FR-022**: If SIGTERM/SIGINT arrives while a retry loop is mid-backoff, the retry MUST abort immediately. The request returns HTTP 503 "Service shutting down". The backoff timer is cleared and shutdown proceeds.
+
+#### Pool & Shutdown
+
+- **FR-009**: System MUST configure the pool with explicit parameters, each overridable via environment variable:
+
+  | Parameter | Env Var | Default |
+  |-----------|---------|---------|
+  | connectionTimeoutMillis | `DB_CONNECTION_TIMEOUT_MS` | 5000 |
+  | idleTimeoutMillis | `DB_IDLE_TIMEOUT_MS` | 30000 |
+  | max | `DB_POOL_MAX` | 20 |
+
+- **FR-010**: System MUST handle SIGTERM/SIGINT with ordered shutdown: (1) log "Shutdown signal received", (2) stop accepting new HTTP connections via `server.close()`, (3) wait up to 10s for in-flight requests to complete ("drain"), (4) `pool.end()`, (5) `redis.quit()`, (6) exit code 0. If grace period expires, force-close and exit code 1.
+
+- **FR-011**: System MUST NOT crash on idle client errors — log the error and continue. Replace `process.exit(-1)` with structured error logging.
+
+#### Controller Unification
+
+- **FR-012**: System MUST route all controller errors through the centralized error handler. Exhaustive refactoring list:
+  - **auth.controller.ts**: `register`, `login`, `logout` (direct `sendResponse.error()` in catch)
+  - **auth.controller.ts**: `refreshToken`, `checkAuthStatus` (use `handleAuthError` utility)
+  - **utilities/auth-helpers.ts**: `handleAuthError` (must throw AppError instead of calling `sendResponse.error()`)
+  - **comments.controller.ts**: all 5 methods — `createComment`, `updateComment`, `deleteComment`, `getCommentsByPostId`, `getRepliesByCommentId`
+  - **roles.controller.ts**: `createRole`, `assignRole` (string matching `'duplicate key'`), `updateRole`, `deleteRole` (`'Role not found'`), `revokeRole` (`'Role assignment not found'`)
+
+- **FR-013**: Intentional status codes that MUST be preserved via `throw new AppError(message, status)`:
+
+  | Controller | Condition | Status | Message |
+  |------------|-----------|--------|---------|
+  | auth (login) | User is banned | 403 | "Account is suspended" |
+  | comments (update/delete) | Comment not found | 404 | "Comment not found or you don't have permission" |
+  | roles (update/delete) | Role not found | 404 | "Role not found" |
+  | roles (delete) | System role | 403 | "Cannot delete system-defined role" |
+  | roles (revoke) | Assignment not found | 404 | "Role assignment not found" |
+
+#### AppError Type
+
+- **FR-018**: System MUST define an `AppError` class extending `Error`:
+  - Fields: `status: number` (HTTP status), `isOperational: boolean` (expected error vs programmer error)
+  - Error middleware priority: (1) `error instanceof AppError` → use `error.status`, (2) `error.code` exists (PG error) → classify via FR-001, (3) fallback → 500
+  - `{ cause: error }` preserved on all rethrows per AGENTS.md
+
+#### Bug Fix
+
+- **FR-014**: Fix `this.checkPostExist` → `await this.checkPostExist(id)` in post model `update()` and `delete()`. The TOCTOU window is accepted — if the post is deleted between check and write, `rowCount === 0` triggers a 404 AppError.
+
+#### CORS
+
+- **FR-015**: Add `'Idempotency-Key'` to CORS `allowedHeaders` in `index.ts`. `exposedHeaders` does NOT need updating — it's a request header only, not a response header the client reads.
+
+#### Constraints
+
+- **FR-016**: No new database tables. Idempotency keys stored in Redis. `types/appError.ts` and `types/pgError.ts` are application-layer TypeScript types, not database entities. Compliant with Article I (raw SQL), Article VII (no new tables).
+
+- **FR-017**: Preserve toggle semantics for like/bookmark — ON CONFLICT DO NOTHING on INSERT path, DELETE WHERE on remove path.
+
+#### Observability
+
+- **FR-025**: System MUST log operational events at specified levels:
+  - `info`: Idempotency cache hit (key, userId, cachedStatus)
+  - `warn`: Idempotency Redis unavailable (fail-open triggered)
+  - `warn`: Retry attempt (pgCode, attemptNumber, delayMs, requestPath)
+  - `error`: Classified PG errors (full structured detail per FR-003)
+  - `error`: Retry exhaustion (pgCode, totalAttempts, requestPath)
+  - `info`: Shutdown initiated / completed
+
+#### Security
+
+- **FR-026**: Minimum entropy enforced via UUID v4 format requirement (FR-019). Per-user scoping (FR-007) prevents cross-user enumeration — a valid key from User A returns no data when sent by User B.
+
+#### Performance
+
+- **FR-027**: Idempotency middleware MUST add < 10ms p99 latency for Redis ops (one SET NX on miss, one GET on hit).
+
+- **FR-028**: Cached idempotency responses capped at 1MB per entry. Responses exceeding this skip caching (log warning) but proceed normally. Combined with 24h TTL and per-user scoping, this bounds Redis memory growth.
 
 ### Key Entities
 
-- **Classified Error**: A database error mapped to an HTTP status, a sanitized user-facing message, and a structured server-side log entry. Attributes: original error code, HTTP status, user message, full detail for logging.
-- **Idempotency Record**: A cached API response keyed by user ID and client-provided idempotency key. Attributes: user ID, idempotency key, HTTP status code, response body, expiration timestamp.
-- **Retry Attempt**: A record of a transient error that was retried. Not persisted — tracked in memory during the retry loop. Attributes: attempt number, delay, error code, final outcome.
+- **Classified Error**: Type shape: `{ httpStatus: number, userMessage: string, pgCode: string, pgDetail: { constraint: string | null, table: string | null, schema: string | null, detail: string | null, column: string | null }, retryable: boolean }`. Maps a PG error to an HTTP response + structured server log.
+- **AppError**: Class extending `Error`. Shape: `{ status: number, message: string, isOperational: boolean, cause?: Error }`. Used by controllers to throw intentional HTTP errors (403, 404) that the centralized handler respects.
+- **Idempotency Record**: Redis-stored cached response. Shape: `{ statusCode: number, body: string, contentType: string }`. Keyed by `idem:{userId}:{method}:{route}:{key}`, TTL 86400s.
+- **Retry Attempt**: In-memory only. Shape: `{ attempt: number, delayMs: number, pgCode: string, outcome: 'retry' | 'success' | 'exhausted' }`.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: Zero raw database error messages (constraint names, table names, SQL fragments) appear in any HTTP response body or error message
-- **SC-002**: 100% of database unique constraint violations return HTTP 409 instead of HTTP 500
-- **SC-003**: Concurrent duplicate requests (like, follow, bookmark) produce zero duplicate rows and maintain correct counter values
-- **SC-004**: Transient database errors (deadlock, serialization) are retried automatically and users only see an error if all 3 attempts fail
-- **SC-005**: Server shuts down cleanly within 10 seconds of receiving a termination signal, with zero orphaned database connections
-- **SC-006**: All existing automated tests continue to pass without modification
-- **SC-007**: Every mutating endpoint (POST, PUT, PATCH) processes errors through the centralized error handler — no inline error responses bypass it
+- **SC-001**: Zero raw database error messages in any HTTP response. **Measured by**: grep all controller/model catch blocks and error middleware for constraint names, table names, or SQL fragments in response bodies; integration tests that trigger each mapped PG error code and assert response body matches FR-001 sanitized message exactly.
+- **SC-002**: 100% of database unique constraint violations return HTTP 409 instead of HTTP 500. **Measured by**: integration tests triggering 23505 on likes, follows, bookmarks, roles, and user registration.
+- **SC-003**: Concurrent duplicate requests produce zero duplicate rows and correct counter values. **Measured by**: integration tests sending 2 simultaneous requests (using `Promise.all`) for the same like/follow/bookmark action and asserting exactly 1 row exists + counter incremented by exactly 1.
+- **SC-004**: Transient database errors retried automatically — users only see error if all 3 attempts fail. **Measured by**: unit tests mocking PG errors with codes 40001/40P01, verifying retry count and final outcome.
+- **SC-005**: Server shuts down within 10 seconds with zero orphaned connections. **Measured by**: integration test sending SIGTERM, asserting `pool.totalCount === 0` and `pool.idleCount === 0` after shutdown, and process exit code 0.
+- **SC-006**: All existing automated tests continue to pass. **Note**: Tests that assert on raw error message strings or inline `sendResponse.error()` response shapes in auth/comments/roles controllers MAY need updating to match the new centralized error response format. This is expected and acceptable — the test updates are part of the refactoring scope, not a regression.
+- **SC-007**: Every mutating endpoint processes errors through the centralized handler. **Measured by**: static analysis — grep for `sendResponse.error` in catch blocks across all controllers; the only permitted usage is in validation checks (before async operations), not in error catch blocks.
 
 ## Clarifications
 
@@ -190,8 +311,8 @@ An admin or user attempts to update or delete a post that has been removed. The 
 
 ## Assumptions
 
-- The existing Redis infrastructure (already used for rate limiting and permission caching) is suitable for storing idempotency keys
-- Idempotency key enforcement is optional — requests without the header proceed normally and are not rejected
+- The existing Redis infrastructure (already used for rate limiting and permission caching) is suitable for storing idempotency keys. No specific Redis version, persistence mode (RDB/AOF), or eviction policy requirements — the existing configuration is sufficient. Idempotency keys use standard TTL expiration, not eviction-policy-dependent.
+- Idempotency key enforcement is optional — requests without the header proceed normally and are not rejected. A migration path from optional to mandatory MAY be added in a future spec if adoption metrics warrant it, but is explicitly out of scope for Spec 007.
 - When Redis is unavailable, the idempotency middleware fails open (proceeds without caching) — consistent with the rate limiter's passOnStoreError behavior
 - The retry wrapper operates at the model layer because it must re-acquire the full transaction, not just the query
 - The follow model's existence check (isFollowing) currently uses a separate database connection from the follow/unfollow write operation, and the ON CONFLICT fix will eliminate this cross-connection pattern entirely
@@ -199,4 +320,7 @@ An admin or user attempts to update or delete a post that has been removed. The 
 - Post existence check in update/delete is a method reference bug (missing parentheses) that needs fixing alongside the broader error handling changes
 - Environment variables for pool configuration (max connections) will use sensible defaults (20) when not set
 - The 24-hour TTL for idempotency keys is sufficient for typical retry scenarios without excessive memory usage
-- Client applications will be updated separately to send the Idempotency-Key header — server-side enforcement does not reject missing keys
+- Client applications will be updated separately to send the Idempotency-Key header — server-side changes are explicitly decoupled. Client-side work (API interceptors, UUID generation, header attachment) is out of scope for Spec 007.
+- UNIQUE constraints on `likes(user_id, post_id)`, `follows(user_id_following, user_id_followed)`, and `bookmarks(user_id, post_id)` are confirmed present — they were added in Spec 003. The ON CONFLICT DO NOTHING approach depends on these constraints.
+- All SQL uses raw queries via `pg` (Article I compliant). No ORM abstractions for ON CONFLICT, SETNX, or error handling utilities.
+- `types/appError.ts` and `types/pgError.ts` are application-layer TypeScript types, not database entities (Article VII compliant).
