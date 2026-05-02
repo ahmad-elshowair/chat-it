@@ -30,58 +30,63 @@ class LikeModel {
       await connection.query('BEGIN');
 
       const postCheckSql = `
-	  	SELECT 
-	  		p.*,
-			l.user_id AS liked_by_user 
-		FROM
-			posts p 
-		LEFT JOIN
-			likes l ON p.post_id = l.post_id AND l.user_id = $2
-		WHERE p.post_id = $1`;
+        SELECT p.post_id
+        FROM posts p
+        WHERE p.post_id = $1
+      `;
 
-      const postAndLikeStatus: QueryResult = await connection.query(postCheckSql, [
-        like.post_id,
-        like.user_id,
-      ]);
+      const postCheck: QueryResult = await connection.query(postCheckSql, [like.post_id]);
 
-      // If the post does not exist, return an error message
-      if (postAndLikeStatus.rowCount === 0) {
+      if (postCheck.rowCount === 0) {
         throw new Error('Post not found');
       }
 
-      const post = postAndLikeStatus.rows[0];
-      const isAlreadyLiked = !!post.liked_by_user;
+      const likeStatusSql = `
+        SELECT 1
+        FROM likes
+        WHERE user_id = $1 AND post_id = $2
+      `;
+      const likeStatus: QueryResult = await connection.query(likeStatusSql, [
+        like.user_id,
+        like.post_id,
+      ]);
+
+      const isAlreadyLiked = likeStatus.rowCount !== null && likeStatus.rowCount > 0;
       let message: string;
       let action: 'liked' | 'unliked';
+      let counterDelta: number;
 
       if (isAlreadyLiked) {
-        // UNLIKE THE POST.
         const unlikeSql = `
-			    DELETE FROM likes
-			    WHERE post_id = $1 AND user_id = $2
-			`;
-        await connection.query(unlikeSql, [like.post_id, like.user_id]);
+          DELETE FROM likes
+          WHERE post_id = $1 AND user_id = $2
+        `;
+        const deleteResult = await connection.query(unlikeSql, [like.post_id, like.user_id]);
         message = 'Like removed successfully';
         action = 'unliked';
+        counterDelta = deleteResult.rowCount === 1 ? -1 : 0;
       } else {
-        // LIKE THE POST.
         const likeSql = `
-				  INSERT INTO likes (user_id, post_id)
-				  VALUES ($1, $2)`;
-
-        await connection.query(likeSql, [like.user_id, like.post_id]);
+          INSERT INTO likes (user_id, post_id)
+          VALUES ($1, $2)
+          ON CONFLICT (user_id, post_id) DO NOTHING
+        `;
+        const insertResult = await connection.query(likeSql, [like.user_id, like.post_id]);
         message = 'Post liked successfully';
         action = 'liked';
+        counterDelta = insertResult.rowCount === 1 ? 1 : 0;
       }
 
-      // UPDATE THE number_of_likes OF A POST.
-      const updateLikeCountSql = `
-			UPDATE posts
-			SET
-				number_of_likes = number_of_likes ${isAlreadyLiked ? '-1' : '+1'},
-				updated_at = NOW()
-			WHERE post_id = $1`;
-      await connection.query(updateLikeCountSql, [like.post_id]);
+      if (counterDelta !== 0) {
+        const updateLikeCountSql = `
+          UPDATE posts
+          SET
+            number_of_likes = number_of_likes + $2,
+            updated_at = NOW()
+          WHERE post_id = $1
+        `;
+        await connection.query(updateLikeCountSql, [like.post_id, counterDelta]);
+      }
 
       await connection.query('COMMIT');
       return { message, action };
