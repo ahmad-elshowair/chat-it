@@ -2,6 +2,7 @@ import { QueryResult } from 'pg';
 import pool from '../database/pool.js';
 import { IFeedPost } from '../interfaces/IPost.js';
 import { Post } from '../types/post.js';
+import { AppError } from '../utilities/appError.js';
 
 class PostModel {
   /**
@@ -189,13 +190,17 @@ class PostModel {
     const connection = await pool.connect();
     try {
       await connection.query('BEGIN');
-      if (!this.checkPostExist) {
-        throw new Error('Post not found');
+      const exists = await this.checkPostExist(id);
+      if (!exists) {
+        throw new AppError('Post not found', 404);
       }
       const updatePost: QueryResult<Post> = await connection.query(
         'UPDATE posts SET description = $1, image = $2, updated_at = $3 WHERE post_id = $4 RETURNING *',
         [post.description, post.image, post.updated_at, id],
       );
+      if (updatePost.rowCount === 0) {
+        throw new AppError('Post not found', 404);
+      }
       await connection.query('COMMIT');
       return updatePost.rows[0];
     } catch (error) {
@@ -215,11 +220,15 @@ class PostModel {
     const connection = await pool.connect();
     try {
       await connection.query('BEGIN');
-      if (!this.checkPostExist) {
-        throw new Error('Post not found');
+      const exists = await this.checkPostExist(id);
+      if (!exists) {
+        throw new AppError('Post not found', 404);
       }
 
-      await connection.query('DELETE FROM posts WHERE post_id = $1', [id]);
+      const deleteResult = await connection.query('DELETE FROM posts WHERE post_id = $1', [id]);
+      if (deleteResult.rowCount === 0) {
+        throw new AppError('Post not found', 404);
+      }
       await connection.query('COMMIT');
       return { message: `POST: ${id} HAS BEEN DELETED !` };
     } catch (error) {

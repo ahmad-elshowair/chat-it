@@ -36,6 +36,7 @@ class BookmarkModel {
         action: 'bookmarked';
       }
     | { bookmark_id: string; action: 'unbookmarked' }
+    | { message: string; action: 'bookmarked' | 'unbookmarked' }
   > {
     this.validateRequiredFields({ user_id: userId, post_id: postId }, ['user_id', 'post_id']);
 
@@ -43,52 +44,78 @@ class BookmarkModel {
     try {
       await connection.query('BEGIN');
 
-      const checkSql = `
-        SELECT
-          p.post_id,
-          b.user_id AS bookmarked_by_user,
-          b.bookmark_id
-        FROM
-          posts p
-        LEFT JOIN
-          bookmarks b ON p.post_id = b.post_id AND b.user_id = $2
+      const postCheckSql = `
+        SELECT p.post_id
+        FROM posts p
         WHERE p.post_id = $1
       `;
+      const postCheck: QueryResult = await connection.query(postCheckSql, [postId]);
 
-      const status: QueryResult = await connection.query(checkSql, [postId, userId]);
-
-      if (status.rowCount === 0) {
+      if (postCheck.rowCount === 0) {
         throw new Error('Post not found');
       }
 
-      const row = status.rows[0];
-      const isAlreadyBookmarked = !!row.bookmarked_by_user;
+      const bookmarkStatusSql = `
+        SELECT bookmark_id
+        FROM bookmarks
+        WHERE user_id = $1 AND post_id = $2
+      `;
+      const statusCheck: QueryResult = await connection.query(bookmarkStatusSql, [userId, postId]);
+
+      const isAlreadyBookmarked = statusCheck.rowCount !== null && statusCheck.rowCount > 0;
 
       if (isAlreadyBookmarked) {
+        const existingBookmarkId = statusCheck.rows[0].bookmark_id;
         const deleteSql = `
           DELETE FROM bookmarks
           WHERE post_id = $1 AND user_id = $2
-          RETURNING bookmark_id
         `;
-        const deleted: QueryResult = await connection.query(deleteSql, [postId, userId]);
+        const deleteResult = await connection.query(deleteSql, [postId, userId]);
+
+        if (deleteResult.rowCount === 1) {
+          const updateCounterSql = `
+            UPDATE posts
+            SET number_of_bookmarks = number_of_bookmarks - 1, updated_at = NOW()
+            WHERE post_id = $1
+          `;
+          await connection.query(updateCounterSql, [postId]);
+        }
+
         await connection.query('COMMIT');
-        return { bookmark_id: deleted.rows[0].bookmark_id, action: 'unbookmarked' };
+        if (deleteResult.rowCount === 1) {
+          return { bookmark_id: existingBookmarkId, action: 'unbookmarked' };
+        }
+        return { message: 'Post unbookmarked successfully', action: 'unbookmarked' };
       } else {
         const insertSql = `
           INSERT INTO bookmarks (user_id, post_id)
           VALUES ($1, $2)
+          ON CONFLICT (user_id, post_id) DO NOTHING
           RETURNING bookmark_id, post_id, user_id, created_at
         `;
-        const inserted: QueryResult = await connection.query(insertSql, [userId, postId]);
+        const insertResult: QueryResult = await connection.query(insertSql, [userId, postId]);
+
+        if (insertResult.rowCount === 1) {
+          const row = insertResult.rows[0];
+          const updateCounterSql = `
+            UPDATE posts
+            SET number_of_bookmarks = number_of_bookmarks + 1, updated_at = NOW()
+            WHERE post_id = $1
+          `;
+          await connection.query(updateCounterSql, [postId]);
+
+          await connection.query('COMMIT');
+          return {
+            bookmark_id: row.bookmark_id,
+            post_id: row.post_id,
+            user_id: row.user_id,
+            created_at: row.created_at,
+            action: 'bookmarked',
+          };
+        }
+
         await connection.query('COMMIT');
-        const row = inserted.rows[0];
-        return {
-          bookmark_id: row.bookmark_id,
-          post_id: row.post_id,
-          user_id: row.user_id,
-          created_at: row.created_at,
-          action: 'bookmarked',
-        };
+        return { message: 'Post bookmarked successfully', action: 'bookmarked' };
       }
     } catch (error) {
       await connection.query('ROLLBACK');

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { contentCreationLimiter } from '../../middlewares/rateLimiter.js';
 import commentController from '../../controllers/comments.controller.js';
 import authorize_user from '../../middlewares/auth.js';
+import { idempotency } from '../../middlewares/idempotency.js';
 import {
   createCommentValidator,
   deleteCommentValidator,
@@ -17,6 +18,7 @@ router.post(
   '/create',
   authorize_user,
   contentCreationLimiter,
+  idempotency,
   createCommentValidator,
   commentController.createComment,
 );
@@ -25,6 +27,7 @@ router.put(
   '/update/:comment_id',
   authorize_user,
   contentCreationLimiter,
+  idempotency,
   updateCommentValidator,
   commentController.updateComment,
 );

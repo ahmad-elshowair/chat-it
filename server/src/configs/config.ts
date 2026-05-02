@@ -15,6 +15,9 @@ export default {
   pg_user: process.env.PG_USER,
   pg_password: process.env.PG_PASSWORD,
   pg_database: process.env.PG_DATABASE,
+  db_pool_max: Number(process.env.DB_POOL_MAX || 20),
+  db_connection_timeout_ms: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 5000),
+  db_idle_timeout_ms: Number(process.env.DB_IDLE_TIMEOUT_MS || 30000),
 
   // ───── AUTHENTICATION SECURITY SETTINGS ──────────────────────────────
   jwt_access_secret: String(process.env.JWT_ACCESS_SECRET),

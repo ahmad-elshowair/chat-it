@@ -31,7 +31,7 @@ const toggle = async (req: ICustomRequest, res: Response, next: NextFunction) =>
     if (result.action === 'unbookmarked') {
       return sendResponse.success<{ bookmark_id: string; action: 'unbookmarked' }>(
         res,
-        result,
+        result as { bookmark_id: string; action: 'unbookmarked' },
         200,
       );
     }
@@ -42,7 +42,17 @@ const toggle = async (req: ICustomRequest, res: Response, next: NextFunction) =>
       user_id: string;
       created_at: Date;
       action: 'bookmarked';
-    }>(res, result, 200);
+    }>(
+      res,
+      result as {
+        bookmark_id: string;
+        post_id: string;
+        user_id: string;
+        created_at: Date;
+        action: 'bookmarked';
+      },
+      200,
+    );
   } catch (error) {
     if ((error as Error).message === 'Post not found') {
       return sendResponse.error(res, 'Post not found', 404);

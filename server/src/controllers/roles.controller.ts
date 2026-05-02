@@ -4,6 +4,7 @@ import pool from '../database/pool.js';
 import { emitAudit } from '../services/auditEmitter.js';
 import permissionCache from '../services/permissionCache.js';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
+import { AppError } from '../utilities/appError.js';
 import { sendResponse } from '../utilities/response.js';
 
 const roleModel = new RoleModel();
@@ -85,7 +86,7 @@ const createRole = async (req: ICustomRequest, res: Response, next: NextFunction
       (error as Error).message.includes('duplicate key') ||
       (error as Error).message.includes('unique')
     ) {
-      return sendResponse.error(res, 'A role with this name already exists', 409);
+      return next(new AppError('A role with this name already exists', 409));
     }
     next(error);
   }
@@ -145,7 +146,7 @@ const updateRole = async (req: ICustomRequest, res: Response, next: NextFunction
     }
   } catch (error) {
     if ((error as Error).message === 'Role not found') {
-      return sendResponse.error(res, 'Role not found', 404);
+      return next(new AppError('Role not found', 404));
     }
     next(error);
   }
@@ -198,10 +199,10 @@ const deleteRole = async (req: ICustomRequest, res: Response, next: NextFunction
   } catch (error) {
     const msg = (error as Error).message;
     if (msg === 'Role not found') {
-      return sendResponse.error(res, 'Role not found', 404);
+      return next(new AppError('Role not found', 404));
     }
     if (msg.includes('Cannot delete system-defined role')) {
-      return sendResponse.error(res, msg, 403);
+      return next(new AppError('Cannot delete system-defined role', 403));
     }
     next(error);
   }
@@ -260,7 +261,7 @@ const assignRole = async (req: ICustomRequest, res: Response, next: NextFunction
       (error as Error).message.includes('duplicate key') ||
       (error as Error).message.includes('unique')
     ) {
-      return sendResponse.error(res, 'User already has this role', 409);
+      return next(new AppError('User already has this role', 409));
     }
     next(error);
   }
@@ -326,7 +327,7 @@ const revokeRole = async (req: ICustomRequest, res: Response, next: NextFunction
     }
   } catch (error) {
     if ((error as Error).message === 'Role assignment not found') {
-      return sendResponse.error(res, 'Role assignment not found', 404);
+      return next(new AppError('Role assignment not found', 404));
     }
     next(error);
   }

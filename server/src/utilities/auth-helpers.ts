@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import config from '../configs/config.js';
 import { refresh_token_model, user_model } from '../controllers/factory.js';
 import { IUserPayload } from '../interfaces/IUserPayload.js';
+import { AppError } from './appError.js';
 import {
   calculateExpirationDate,
   clearAuthCookies,
@@ -140,14 +141,9 @@ export const sendAuthStatusResponse = async (
   });
 };
 
-export const handleAuthError = (res: Response, error: unknown) => {
+export const handleAuthError = (error: unknown): never => {
   console.error('[AUTH HELPERS] handleAuthError: ', error);
-
-  return res.status(500).json({
-    message: `server error during authentication`,
-    error: error instanceof Error ? error.message : String(error),
-    authenticated: false,
-  });
+  throw new AppError('Authentication error', 500);
 };
 
 export const rotateTokens = async (user: IUserPayload, oldFingerprint: string) => {

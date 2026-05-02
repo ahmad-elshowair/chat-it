@@ -4,6 +4,7 @@ import commentsController from '../../controllers/comments.controller.js';
 import likeController from '../../controllers/likes.controller.js';
 import postController from '../../controllers/posts.controller.js';
 import authorize_user from '../../middlewares/auth.js';
+import { idempotency } from '../../middlewares/idempotency.js';
 import { getCommentsByPostIdValidator } from '../../middlewares/validations/comments.js';
 import { validateLikeAction } from '../../middlewares/validations/likes.js';
 import { paginationValidator } from '../../middlewares/validations/pagination.js';
@@ -24,6 +25,7 @@ postRoute.post(
   '/create',
   authorize_user,
   contentCreationLimiter,
+  idempotency,
   createPostValidator,
   postController.create,
 );
@@ -32,6 +34,7 @@ postRoute.put(
   '/update/:post_id',
   authorize_user,
   contentCreationLimiter,
+  idempotency,
   updatePostValidator,
   postController.update,
 );
@@ -40,6 +43,7 @@ postRoute.post(
   '/like/:post_id',
   authorize_user,
   contentCreationLimiter,
+  idempotency,
   validateLikeAction,
   likeController.handleLike,
 );

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import followController from '../../controllers/follows.controller.js';
 import authorize_user from '../../middlewares/auth.js';
+import { idempotency } from '../../middlewares/idempotency.js';
 import {
   validateFollowAction,
   validateIsFollowedAction,
@@ -10,7 +11,13 @@ import {
 
 const followRouter = Router();
 
-followRouter.post('/follow', authorize_user, validateFollowAction, followController.followUser);
+followRouter.post(
+  '/follow',
+  authorize_user,
+  idempotency,
+  validateFollowAction,
+  followController.followUser,
+);
 
 followRouter.delete(
   '/unfollow',

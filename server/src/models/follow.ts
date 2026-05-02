@@ -56,31 +56,26 @@ export default class FollowModel {
     try {
       await connection.query('BEGIN');
 
-      const isFollowing = await this.isFollowing(user_id_following, user_id_followed);
-      if (!isFollowing.is_following) {
-        // FOLLOW THE USER.
-        await connection.query(
-          `INSERT INTO follows (user_id_following, user_id_followed) VALUES ($1, $2)`,
-          [user_id_following, user_id_followed],
-        );
+      const insertSql = `
+        INSERT INTO follows (user_id_following, user_id_followed)
+        VALUES ($1, $2)
+        ON CONFLICT (user_id_following, user_id_followed) DO NOTHING
+      `;
+      const insertResult = await connection.query(insertSql, [user_id_following, user_id_followed]);
 
-        // INCREMENT THE "number_of_followings" FOR THE FOLLOWING USER.
+      if (insertResult.rowCount === 1) {
         await connection.query(
           'UPDATE users SET number_of_followings = number_of_followings + 1 WHERE user_id = $1',
           [user_id_following],
         );
-
-        // INCREMENT THE "number_of_followers" FOR THE FOLLOWED USER.
         await connection.query(
           'UPDATE users SET number_of_followers = number_of_followers + 1 WHERE user_id = $1',
           [user_id_followed],
         );
-
         await connection.query('COMMIT');
-
         return { message: `Followed successfully!` };
       } else {
-        await connection.query('ROLLBACK');
+        await connection.query('COMMIT');
         return { message: `Already Following this User!` };
       }
     } catch (error) {
@@ -112,30 +107,25 @@ export default class FollowModel {
     try {
       await connection.query('BEGIN');
 
-      const isFollowing = await this.isFollowing(user_id_following, user_id_followed);
-      if (isFollowing.is_following) {
-        await connection.query(
-          'DELETE FROM follows WHERE user_id_following = $1 AND user_id_followed = $2',
-          [user_id_following, user_id_followed],
-        );
+      const deleteSql = `
+        DELETE FROM follows
+        WHERE user_id_following = $1 AND user_id_followed = $2
+      `;
+      const deleteResult = await connection.query(deleteSql, [user_id_following, user_id_followed]);
 
-        // DECREMENT THE "number_of_followings" FOR THE FOLLOWING USER.
+      if (deleteResult.rowCount === 1) {
         await connection.query(
-          'UPDATE users SET number_of_followings = number_of_followings - 1 WHERE user_id= ($1) AND number_of_followings > 0',
+          'UPDATE users SET number_of_followings = number_of_followings - 1 WHERE user_id = $1 AND number_of_followings > 0',
           [user_id_following],
         );
-
-        // DECREMENT THE "number_of_followers" FOR THE FOLLOWED USER.
         await connection.query(
-          'UPDATE users SET number_of_followers = number_of_followers - 1 WHERE user_id = ($1) AND number_of_followers > 0',
+          'UPDATE users SET number_of_followers = number_of_followers - 1 WHERE user_id = $1 AND number_of_followers > 0',
           [user_id_followed],
         );
-
         await connection.query('COMMIT');
-
         return { message: `Unfollowed successfully!` };
       } else {
-        await connection.query('ROLLBACK');
+        await connection.query('COMMIT');
         return { message: `Not currently following this user!` };
       }
     } catch (error) {

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bookmarksController from '../../controllers/bookmarks.controller.js';
 import authorize_user from '../../middlewares/auth.js';
 import { contentCreationLimiter } from '../../middlewares/rateLimiter.js';
+import { idempotency } from '../../middlewares/idempotency.js';
 import { paginationValidator } from '../../middlewares/validations/pagination.js';
 import { validateBookmarkAction } from '../../middlewares/validations/bookmarks.js';
 
@@ -21,6 +22,7 @@ bookmarkRoute.post(
   '/:post_id',
   authorize_user,
   contentCreationLimiter,
+  idempotency,
   validateBookmarkAction,
   bookmarksController.toggle,
 );

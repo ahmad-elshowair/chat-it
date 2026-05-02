@@ -3,13 +3,13 @@ import config from '../configs/config.js';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { IUserPayload } from '../interfaces/IUserPayload.js';
 import {
-  handleAuthError,
   handleInvalidToken,
   rotateTokens,
   sendAuthStatusResponse,
   validateAuthToken,
   validateFingerprint,
 } from '../utilities/auth-helpers.js';
+import { AppError } from '../utilities/appError.js';
 import { sendResponse } from '../utilities/response.js';
 import {
   calculateExpirationDate,
@@ -21,7 +21,7 @@ import {
 } from '../utilities/tokens.js';
 import { auth_model, refresh_token_model, user_model } from './factory.js';
 
-const register = async (req: Request, res: Response, _next: NextFunction) => {
+const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Generate a fingerprint for additional security
     const fingerprint = generateFingerprint();
@@ -81,21 +81,11 @@ const register = async (req: Request, res: Response, _next: NextFunction) => {
     );
   } catch (error) {
     console.error('[AUTH]: Register Error: ', error);
-    let errorMessage = 'Registration Failed';
-    let statusCode = 500;
-    if (error instanceof Error) {
-      errorMessage = error.message || errorMessage;
-    }
-
-    if (typeof error === 'object' && error !== null && 'status' in error) {
-      statusCode = (error as { status: number }).status || statusCode;
-    }
-
-    return sendResponse.error(res, errorMessage, statusCode, error);
+    next(error);
   }
 };
 
-const login = async (req: Request, res: Response, _next: NextFunction) => {
+const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
     const user = await auth_model.login(email, password);
@@ -160,60 +150,43 @@ const login = async (req: Request, res: Response, _next: NextFunction) => {
     );
   } catch (error) {
     console.error('[AUTH]: Login Error: ', error);
-    let errorMessage = 'Login Failed';
-    let statusCode = 500;
-    if (error instanceof Error) {
-      errorMessage = error.message || errorMessage;
-      if (errorMessage === 'BANNED') {
-        return sendResponse.error(res, 'Account is suspended', 403);
-      }
+    if (error instanceof Error && error.message === 'BANNED') {
+      return next(new AppError('Account is suspended', 403));
     }
-
-    if (typeof error === 'object' && error !== null && 'status' in error) {
-      statusCode = (error as { status: number }).status || statusCode;
-    }
-
-    return sendResponse.error(res, errorMessage, statusCode, error);
+    next(error);
   }
 };
 
-const logout = async (req: ICustomRequest, res: Response) => {
+const logout = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user?.id;
 
-    // CHECK IF userId EXISTS BEFORE PROCEEDING.
     if (!userId) {
-      console.error('[AUTH]: User Id is MISSING!');
-      return sendResponse.error(res, 'Unauthorized: User ID is Missing!', 401);
+      return next(new AppError('Unauthorized: User ID is Missing!', 401));
     }
 
-    // Update online status to false if user ID is available
     try {
       await user_model.updateOnlineStatus(userId, false);
     } catch (error) {
       console.warn(`Failed to update online status for user: ${userId}`, error);
     }
 
-    // Revoke all refresh tokens for this user
     try {
       await refresh_token_model.revokeAllUserTokens(userId);
     } catch (error) {
       console.warn(`Failed to revoke all refresh tokens for user: ${userId}`, error);
     }
 
-    // Clear all auth cookies
     clearAuthCookies(res);
-    // Return success message
     return sendResponse.success(res, 'Logout Successfully!', 200);
   } catch (error) {
     console.error('Logout Error:', error);
-    return sendResponse.error(res, 'Error during logout', 500, error);
+    next(error);
   }
 };
 
-const refreshToken = async (req: Request, res: Response) => {
+const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // 1- VALIDATE AUTH TOKEN.
     const tokeValidationResult = validateAuthToken(req);
     if (!tokeValidationResult.valid) {
       return handleInvalidToken(res, tokeValidationResult.reason);
@@ -225,13 +198,11 @@ const refreshToken = async (req: Request, res: Response) => {
       return handleInvalidToken(res, 'Invalid token payload');
     }
 
-    // 2- VALIDATE FINGERPRINT.
     const fingerprintValidationResult = validateFingerprint(req, decodeUser);
     if (!fingerprintValidationResult.valid) {
       return handleInvalidToken(res, fingerprintValidationResult.reason, decodeUser.id);
     }
 
-    // 3- VERIFY TOKEN IN DATABASE.
     const isTokenValid = await refresh_token_model.verifyToken(
       decodeUser.id,
       hashFingerprint(fingerprintValidationResult.fingerprint!),
@@ -240,19 +211,16 @@ const refreshToken = async (req: Request, res: Response) => {
       return handleInvalidToken(res, 'Token has been revoked or expired!', decodeUser.id);
     }
 
-    // 4- ROTATE TOKENS FOR ENHANCED SECURITY.
     const tokenRotation = await rotateTokens(decodeUser, fingerprintValidationResult.fingerprint!);
 
-    // 5- SEND AUTH STATUS RESPONSE WITH USER DATA.
     return await sendAuthStatusResponse(res, decodeUser.id, tokenRotation);
   } catch (error) {
-    return handleAuthError(res, error);
+    next(error);
   }
 };
 
-const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
+const checkAuthStatus = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    // 1- VALIDATE AUTH TOKEN
     const tokenValidationResult = validateAuthToken(req);
     if (!tokenValidationResult.valid) {
       return handleInvalidToken(res, tokenValidationResult.reason);
@@ -264,13 +232,11 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
       return handleInvalidToken(res, 'Invalid token payload');
     }
 
-    // 2- VALIDATE FINGERPRINT
     const fingerprintValidationResult = validateFingerprint(req, decodeUser);
     if (!fingerprintValidationResult.valid) {
       return handleInvalidToken(res, fingerprintValidationResult.reason, decodeUser.id);
     }
 
-    // 3- VERIFY TOKEN IN DATABASE.
     const isTokenValid = await refresh_token_model.verifyToken(
       decodeUser.id,
       hashFingerprint(fingerprintValidationResult.fingerprint!),
@@ -283,13 +249,11 @@ const checkAuthStatus = async (req: ICustomRequest, res: Response) => {
       );
     }
 
-    // 4- ROTATE TOKENS FOR ENHANCED SECURITY.
     const tokenRotation = await rotateTokens(decodeUser, fingerprintValidationResult.fingerprint!);
 
-    // 5- SEND AUTH STATUS RESPONSE WITH USER DATA.
     return await sendAuthStatusResponse(res, decodeUser.id, tokenRotation);
   } catch (error) {
-    return handleAuthError(res, error);
+    next(error);
   }
 };
 
