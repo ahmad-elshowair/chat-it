@@ -46,7 +46,10 @@ export default class FollowModel {
    * @returns {Promise<{ message: string }>}
    * @throws {Error} Error if required fields are missing or operation fails
    */
-  async follow(user_id_following: string, user_id_followed: string): Promise<{ message: string }> {
+  async follow(
+    user_id_following: string,
+    user_id_followed: string,
+  ): Promise<{ message: string; action: 'followed' | 'already_following' }> {
     if (!user_id_following || !user_id_followed) {
       throw new Error(
         'Missing required fields: user_id_following and user_id_followed are required',
@@ -73,10 +76,10 @@ export default class FollowModel {
           [user_id_followed],
         );
         await connection.query('COMMIT');
-        return { message: `Followed successfully!` };
+        return { message: `Followed successfully!`, action: 'followed' };
       } else {
         await connection.query('COMMIT');
-        return { message: `Already Following this User!` };
+        return { message: `Already Following this User!`, action: 'already_following' };
       }
     } catch (error) {
       await connection.query('ROLLBACK');

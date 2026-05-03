@@ -30,7 +30,6 @@ const createComment = async (req: ICustomRequest, res: Response, next: NextFunct
     const createdComment = await comment_model.create(comment);
     return sendResponse.success<IComment>(res, createdComment, 201);
   } catch (error) {
-    console.error('[CommentController]: createComment error: ', error);
     next(error);
   }
 };
@@ -60,7 +59,6 @@ const updateComment = async (req: ICustomRequest, res: Response, next: NextFunct
       throw error;
     }
   } catch (error) {
-    console.error('[CommentController]: updateComment error: ', error);
     next(error);
   }
 };
@@ -90,7 +88,6 @@ const deleteComment = async (req: ICustomRequest, res: Response, next: NextFunct
       throw error;
     }
   } catch (error) {
-    console.error('[CommentController]: deleteComment error: ', error);
     next(error);
   }
 };
@@ -123,7 +120,6 @@ const getCommentsByPostId = async (req: Request, res: Response, next: NextFuncti
       200,
     );
   } catch (error) {
-    console.error('[CommentController]: getCommentsByPostId error: ', error);
     next(error);
   }
 };
@@ -144,7 +140,6 @@ const getRepliesByCommentId = async (req: Request, res: Response, next: NextFunc
     const replies = await comment_model.getRepliesByCommentId(comment_id);
     return sendResponse.success<IComment[]>(res, replies, 200);
   } catch (error) {
-    console.error('[CommentController]: getRepliesByCommentId error: ', error);
     next(error);
   }
 };
