@@ -118,8 +118,8 @@
 
 **Purpose**: Validation gates and final verification.
 
-- [ ] T017 Run migration: `cd server && npx db-migrate up`, verify schema with `\d reports` shows all columns, constraints, and indexes. Verify ON DELETE CASCADE on reporter_id (delete a user → their reports removed; reports against that user remain). Verify ON DELETE SET NULL on resolved_by (delete admin → resolved_by NULL, resolution_note/resolved_at preserved). Optional: seed 1000+ reports and verify GET /api/reports responds within 2s (SC-003).
-- [ ] T018 Run `pnpm run lint && pnpm run prettier:check && pnpm test` — all must pass before merge
+- [x] T017 Run migration: `cd server && npx db-migrate up`, verify schema with `\d reports` shows all columns, constraints, and indexes. Verify ON DELETE CASCADE on reporter_id (delete a user → their reports removed; reports against that user remain). Verify ON DELETE SET NULL on resolved_by (delete admin → resolved_by NULL, resolution_note/resolved_at preserved). Optional: seed 1000+ reports and verify GET /api/reports responds within 2s (SC-003).
+- [x] T018 Run `pnpm run lint && pnpm run prettier:check && pnpm test` — all must pass before merge
 
 ---
 

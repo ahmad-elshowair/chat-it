@@ -22,10 +22,7 @@ const createReport = async (req: ICustomRequest, res: Response, next: NextFuncti
       return sendResponse.error(res, 'Authentication required', 401);
     }
 
-    const exists = await report_model.targetExists(
-      target_type as TargetType,
-      target_id as string,
-    );
+    const exists = await report_model.targetExists(target_type as TargetType, target_id as string);
     if (!exists) {
       return sendResponse.error(res, 'Target not found', 404);
     }
@@ -64,11 +61,7 @@ const listReports = async (req: ICustomRequest, res: Response, next: NextFunctio
     const limit = (req.query.limit as number | undefined) ?? 20;
     const offset = (req.query.offset as number | undefined) ?? 0;
 
-    const result = await report_model.list(
-      { status, targetType },
-      limit,
-      offset,
-    );
+    const result = await report_model.list({ status, targetType }, limit, offset);
 
     return sendResponse.success(res, result, 200);
   } catch (error) {
@@ -95,12 +88,7 @@ const dismissReport = async (req: ICustomRequest, res: Response, next: NextFunct
     try {
       await connection.query('BEGIN');
 
-      const report = await report_model.dismiss(
-        connection,
-        id,
-        actorId,
-        resolution_note,
-      );
+      const report = await report_model.dismiss(connection, id, actorId, resolution_note);
 
       if (!report) {
         await connection.query('ROLLBACK');
@@ -155,12 +143,7 @@ const resolveReport = async (req: ICustomRequest, res: Response, next: NextFunct
     try {
       await connection.query('BEGIN');
 
-      const report = await report_model.resolve(
-        connection,
-        id,
-        actorId,
-        resolution_note,
-      );
+      const report = await report_model.resolve(connection, id, actorId, resolution_note);
 
       if (!report) {
         await connection.query('ROLLBACK');

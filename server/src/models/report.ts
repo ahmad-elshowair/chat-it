@@ -3,10 +3,7 @@ import pool from '../database/pool.js';
 import { TargetType, TReport, TReportInput, ReportStatus } from '../types/report.js';
 
 class ReportModel {
-  private validateRequiredFields(
-    fields: Record<string, unknown>,
-    fieldNames: string[],
-  ): void {
+  private validateRequiredFields(fields: Record<string, unknown>, fieldNames: string[]): void {
     const missingFields = fieldNames.filter((name) => !fields[name]);
     if (missingFields.length > 0) {
       throw new Error(`Missing required fields: ${missingFields.join(', ')} are required`);
@@ -88,7 +85,12 @@ class ReportModel {
    */
   async create(input: TReportInput): Promise<TReport> {
     this.validateRequiredFields(
-      { reporter_id: input.reporter_id, target_type: input.target_type, target_id: input.target_id, reason: input.reason },
+      {
+        reporter_id: input.reporter_id,
+        target_type: input.target_type,
+        target_id: input.target_id,
+        reason: input.reason,
+      },
       ['reporter_id', 'target_type', 'target_id', 'reason'],
     );
 
@@ -168,10 +170,7 @@ class ReportModel {
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
       const countSql = `SELECT COUNT(*) AS total FROM reports ${whereClause}`;
-      const countResult: QueryResult<{ total: string }> = await connection.query(
-        countSql,
-        params,
-      );
+      const countResult: QueryResult<{ total: string }> = await connection.query(countSql, params);
       const total = parseInt(countResult.rows[0].total, 10);
 
       const dataSql = `
