@@ -42,6 +42,7 @@ export async function withRetry<T>(
             ...(requestPath && { requestPath }),
           }),
         );
+        (lastError as Error & { pgClassified?: boolean }).pgClassified = true;
         throw lastError;
       }
 

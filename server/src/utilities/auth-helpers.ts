@@ -143,7 +143,7 @@ export const sendAuthStatusResponse = async (
 
 export const handleAuthError = (error: unknown): never => {
   console.error('[AUTH HELPERS] handleAuthError: ', error);
-  throw new AppError('Authentication error', 500);
+  throw new AppError('Authentication error', 500, true, { cause: error });
 };
 
 export const rotateTokens = async (user: IUserPayload, oldFingerprint: string) => {
