@@ -34,7 +34,7 @@ A registered user discovers a post, comment, or user profile that violates commu
 
 1. **Given** a user is logged in and viewing a post, **When** they submit a report with reason "spam", **Then** the report is recorded with status "pending" and the user receives confirmation
 2. **Given** a user has already reported a specific comment, **When** they attempt to report the same comment again, **Then** the system rejects the duplicate report and shows an appropriate message
-3. **Given** a user is viewing their own post, **When** they attempt to report it, **Then** the system rejects the self-report and explains that users cannot report their own content
+3. **Given** a user is viewing their own post, **When** they attempt to report it, **Then** the system rejects with 403 Forbidden and message "You cannot report your own content"
 4. **Given** a user submits a report with reason "other", **When** no description is provided, **Then** the system accepts the report (description is optional)
 5. **Given** a user submits a report, **When** the target content does not exist, **Then** the system rejects the report and shows a not-found message
 
@@ -114,6 +114,7 @@ An admin views aggregate report statistics showing counts grouped by status (pen
 - What happens when multiple users report the same content? Each report is stored independently — admins see all individual reports for the same target.
 - What happens when a user tries to report their own content? The system rejects the report at the application level with a clear error message.
 - What happens when an admin tries to act on a report that another admin has already handled concurrently? The second action is rejected because the report is no longer in "pending" status.
+- What happens when a report is submitted with an unsupported target_type (e.g., "message" or "group")? The system rejects it with a 400 Bad Request error indicating the valid target types are post, comment, and user.
 
 ## Requirements *(mandatory)*
 
@@ -123,10 +124,11 @@ An admin views aggregate report statistics showing counts grouped by status (pen
 - **FR-002**: System MUST require a reason category for each report from a predefined list: spam, harassment, hate speech, inappropriate content, impersonation, other
 - **FR-003**: System MUST accept an optional free-text description with each report
 - **FR-004**: System MUST prevent duplicate reports — a user cannot report the same target (same target type + target ID combination) more than once
-- **FR-005**: System MUST prevent users from reporting their own content (posts, comments) or their own profile
-- **FR-006**: System MUST validate that the reported target actually exists before accepting the report
+- **FR-005**: System MUST prevent users from reporting their own content (posts, comments) or their own profile — rejected with a 403 Forbidden error and message "You cannot report your own content"
+- **FR-006**: System MUST validate that the reported target actually exists before accepting the report — checking the posts table for target_type "post", the comments table for "comment", and the users table for "user"
+- **FR-006a**: System MUST reject reports with an unsupported target_type value (any value not in: post, comment, user) with a 400 Bad Request error
 - **FR-007**: System MUST restrict report viewing, dismissing, and resolving to users with moderation permissions (admins and moderators)
-- **FR-008**: System MUST provide a paginated moderation queue ordered by report creation date (newest first)
+- **FR-008**: System MUST provide a paginated moderation queue ordered by report creation date (newest first), with a default page size of 20 and a maximum page size of 100
 - **FR-009**: System MUST support filtering the moderation queue by status and target type
 - **FR-010**: System MUST allow admins to dismiss a pending report with an optional resolution note
 - **FR-011**: System MUST allow admins to resolve a pending report with an optional resolution note
@@ -135,6 +137,8 @@ An admin views aggregate report statistics showing counts grouped by status (pen
 - **FR-014**: System MUST provide aggregate report counts grouped by status for admin dashboard
 - **FR-015**: System MUST preserve report history even if the admin who handled the report is later deleted
 - **FR-016**: System MUST record all moderation actions (dismiss, resolve) in the system audit log for traceability
+- **FR-017**: System MUST apply rate limiting to report creation using the existing contentCreationLimiter middleware to prevent abuse
+- **FR-018**: System MUST return a 409 Conflict (via the pgError classifier mapping PG error code 23505) when a duplicate report is attempted
 
 ### Key Entities
 
@@ -159,7 +163,8 @@ An admin views aggregate report statistics showing counts grouped by status (pen
 - Reports are anonymous to the reported user — only admins can see reporter identity
 - "Resolving" a report is flag-only and does NOT automatically delete the reported content in V1
 - Auto-action thresholds (e.g., 5 reports auto-hides content) are out of scope for V1
-- The existing role-based access control system (from Spec 005) is available for permission checks
+- The existing role-based access control system (from Spec 005) is available and deployed — no fallback to is_admin is needed
+- The requirePermission middleware uses the permission string "reports.manage" to gate all admin/moderator report endpoints
 - Rate limiting on report creation is needed to prevent report spam abuse
 - Duplicate report prevention relies on the database UNIQUE constraint — duplicate attempts return a conflict error, no additional idempotency middleware is required
 - Report retention is indefinite — no automatic purging of old reports
