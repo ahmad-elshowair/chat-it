@@ -46,9 +46,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Add `createReport` handler in `server/src/controllers/reports.controller.ts` — validate target_type/target_id/reason with express-validator, check target existence via model.targetExists(targetType, targetId) returning 404 if not found (FR-006), check self-report (FR-005): if target_type='post' query posts.user_id, if 'comment' query comments.user_id, if 'user' compare reporter_id === target_id — return 403 if match. Then call model.create, return 201. DB 23505 error surfaces as 409 via next(error).
-- [ ] T007 [US1] Create `server/src/routes/apis/reports.routes.ts` — define POST /api/reports route with authorizeUser + contentCreationLimiter + express-validator middleware. Add validators for target_type (one of post/comment/user), target_id (UUID), reason (one of 6 categories), description (optional, max 1000 chars).
-- [ ] T008 [US1] Register report routes in `server/src/routes/index.ts` — import reports routes and mount under `/reports` (following existing bookmark/role pattern).
+- [x] T006 [US1] Add `createReport` handler — validate target_type/target_id/reason with express-validator, check target existence via model.targetExists(targetType, targetId) returning 404 if not found (FR-006), check self-report (FR-005): if target_type='post' query posts.user_id, if 'comment' query comments.user_id, if 'user' compare reporter_id === target_id — return 403 if match. Then call model.create, return 201. DB 23505 error surfaces as 409 via next(error).
+- [x] T007 [US1] Create `server/src/routes/apis/reports.routes.ts` — define POST /api/reports route with authorizeUser + contentCreationLimiter + express-validator middleware. Add validators for target_type (one of post/comment/user), target_id (UUID), reason (one of 6 categories), description (optional, max 1000 chars).
+- [x] T008 [US1] Register report routes in `server/src/routes/index.ts` — import reports routes and mount under `/reports` (following existing bookmark/role pattern).
 
 **Checkpoint**: POST /api/reports is fully functional. Users can create reports. MVP deliverable.
 
@@ -62,8 +62,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [P] [US2] Add `listReports` handler in `server/src/controllers/reports.controller.ts` — extract query params (status, targetType, limit, offset), apply defaults (limit=20, max=100), call model.list, return paginated response.
-- [ ] T010 [US2] Add GET / route in `server/src/routes/apis/reports.routes.ts` — with authorizeUser + requirePermission('reports.manage') + paginationValidator middleware.
+- [x] T009 [P] [US2] Add `listReports` handler — extract query params (status, targetType, limit, offset), apply defaults (limit=20, max=100), call model.list, return paginated response.
+- [x] T010 [US2] Add GET / route — with authorizeUser + requirePermission('reports.manage') + paginationValidator middleware.
 
 **Checkpoint**: Admins can view and filter the moderation queue.
 
@@ -77,8 +77,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T011 [P] [US3] Add `dismissReport` handler in `server/src/controllers/reports.controller.ts` — acquire PoolClient via pool.connect(), BEGIN transaction. UPDATE reports SET status='dismissed', resolved_by, resolved_at, resolution_note, updated_at WHERE report_id=$1 AND status='pending'. If rowCount=0 → ROLLBACK, release, return 409. On success, call emitAudit({ client, action:'report.dismiss', entityType:'report', ... }) within same transaction. COMMIT, release in finally. Return updated report.
-- [ ] T012 [US3] Add PATCH /:id/dismiss route in `server/src/routes/apis/reports.routes.ts` — with authorizeUser + requirePermission('reports.manage') + UUID param validator + optional resolution_note validator.
+- [x] T011 [P] [US3] Add `dismissReport` handler — acquire PoolClient via pool.connect(), BEGIN transaction. UPDATE reports SET status='dismissed', resolved_by, resolved_at, resolution_note, updated_at WHERE report_id=$1 AND status='pending'. If rowCount=0 → ROLLBACK, release, return 409. On success, call emitAudit({ client, action:'report.dismiss', entityType:'report', ... }) within same transaction. COMMIT, release in finally. Return updated report.
+- [x] T012 [US3] Add PATCH /:id/dismiss route — with authorizeUser + requirePermission('reports.manage') + UUID param validator + optional resolution_note validator.
 
 **Checkpoint**: Admins can dismiss pending reports.
 
@@ -92,8 +92,8 @@
 
 ### Implementation for User Story 4
 
-- [ ] T013 [P] [US4] Add `resolveReport` handler in `server/src/controllers/reports.controller.ts` — same transaction+audit pattern as dismiss (T011) but sets status='resolved'. Does NOT delete reported content (V1 flag-only). Acquire PoolClient, BEGIN, UPDATE WHERE status='pending', emitAudit({ client, action:'report.resolve', ... }), COMMIT, release in finally.
-- [ ] T014 [US4] Add PATCH /:id/resolve route in `server/src/routes/apis/reports.routes.ts` — with authorizeUser + requirePermission('reports.manage') + UUID param validator + optional resolution_note validator.
+- [x] T013 [P] [US4] Add `resolveReport` handler — same transaction+audit pattern as dismiss (T011) but sets status='resolved'. Does NOT delete reported content (V1 flag-only). Acquire PoolClient, BEGIN, UPDATE WHERE status='pending', emitAudit({ client, action:'report.resolve', ... }), COMMIT, release in finally.
+- [x] T014 [US4] Add PATCH /:id/resolve route — with authorizeUser + requirePermission('reports.manage') + UUID param validator + optional resolution_note validator.
 
 **Checkpoint**: Admins can resolve pending reports. Report content is NOT deleted.
 
@@ -107,8 +107,8 @@
 
 ### Implementation for User Story 5
 
-- [ ] T015 [US5] Add `getReportStats` handler in `server/src/controllers/reports.controller.ts` — call model.countByStatus, return grouped counts.
-- [ ] T016 [US5] Add GET /stats route in `server/src/routes/apis/reports.routes.ts` — with authorizeUser + requirePermission('reports.manage'). MUST be registered BEFORE /:id routes to avoid route collision.
+- [x] T015 [US5] Add `getReportStats` handler — call model.countByStatus, return grouped counts.
+- [x] T016 [US5] Add GET /stats route — with authorizeUser + requirePermission('reports.manage'). MUST be registered BEFORE /:id routes to avoid route collision.
 
 **Checkpoint**: Admins can view report statistics dashboard.
 
