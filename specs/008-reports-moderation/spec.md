@@ -5,6 +5,23 @@
 **Status**: Draft
 **Input**: User description: "Enable users to report posts, comments, and other users for policy violations. Provide admins with a moderation queue to review and act on reports (dismiss, warn, or remove content)."
 
+## Clarifications
+
+### Session 2026-05-03
+
+- Q: Should moderation actions (dismiss, resolve) be recorded in the system audit log? → A: Yes, log all moderation actions in the system audit log.
+
+## Clarifications
+
+### Session 2026-05-02
+
+- Q: Should there be an auto-action threshold (e.g., 5 reports auto-hides)? → A: Out of scope for V1
+- Q: Should reports be anonymous to the reported user? → A: Yes — only admins can see reporter identity
+- Q: Report reason categories? → A: spam, harassment, hate_speech, inappropriate_content, impersonation, other
+- Q: Should POST /api/reports use idempotency middleware from Spec 007? → A: No — the 409 from the UNIQUE constraint is sufficient
+- Q: Should resolving a report auto-delete the reported content? → A: No — resolving is flag-only in V1; content removal is a separate manual action
+- Q: Should the app validate that target_id exists before inserting? → A: Yes — verify target exists by target_type, return 404 if not found
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Report Content (Priority: P1)
@@ -119,6 +136,7 @@ An admin views aggregate report statistics showing counts grouped by status (pen
 - **FR-013**: System MUST reject moderation actions on reports that are no longer in pending status
 - **FR-014**: System MUST provide aggregate report counts grouped by status for admin dashboard
 - **FR-015**: System MUST preserve report history even if the admin who handled the report is later deleted
+- **FR-016**: System MUST record all moderation actions (dismiss, resolve) in the system audit log for traceability
 
 ### Key Entities
 
@@ -145,5 +163,6 @@ An admin views aggregate report statistics showing counts grouped by status (pen
 - Auto-action thresholds (e.g., 5 reports auto-hides content) are out of scope for V1
 - The existing role-based access control system (from Spec 005) is available for permission checks
 - Rate limiting on report creation is needed to prevent report spam abuse
+- Duplicate report prevention relies on the database UNIQUE constraint — duplicate attempts return a conflict error, no additional idempotency middleware is required
 - Report retention is indefinite — no automatic purging of old reports
 - Each report reason category has clear boundaries; "other" serves as a catch-all for uncategorized violations
