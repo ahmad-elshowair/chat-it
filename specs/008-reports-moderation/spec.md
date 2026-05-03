@@ -7,12 +7,6 @@
 
 ## Clarifications
 
-### Session 2026-05-03
-
-- Q: Should moderation actions (dismiss, resolve) be recorded in the system audit log? → A: Yes, log all moderation actions in the system audit log.
-
-## Clarifications
-
 ### Session 2026-05-02
 
 - Q: Should there be an auto-action threshold (e.g., 5 reports auto-hides)? → A: Out of scope for V1
@@ -21,6 +15,10 @@
 - Q: Should POST /api/reports use idempotency middleware from Spec 007? → A: No — the 409 from the UNIQUE constraint is sufficient
 - Q: Should resolving a report auto-delete the reported content? → A: No — resolving is flag-only in V1; content removal is a separate manual action
 - Q: Should the app validate that target_id exists before inserting? → A: Yes — verify target exists by target_type, return 404 if not found
+
+### Session 2026-05-03
+
+- Q: Should moderation actions (dismiss, resolve) be recorded in the system audit log? → A: Yes, log all moderation actions in the system audit log.
 
 ## User Scenarios & Testing *(mandatory)*
 
