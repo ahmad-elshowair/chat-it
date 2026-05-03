@@ -11,6 +11,7 @@ import bookmarks from './apis/bookmarks.routes.js';
 import comments from './apis/comments.routes.js';
 import follows from './apis/follow.routes.js';
 import posts from './apis/posts.routes.js';
+import reports from './apis/reports.routes.js';
 import roles from './apis/roles.routes.js';
 import uploadRouter from './apis/upload.routes.js';
 import users from './apis/users.routes.js';
@@ -34,6 +35,7 @@ routes.use('/posts', posts);
 routes.use('/bookmarks', bookmarks);
 routes.use('/comments', comments);
 routes.use('/follows', follows);
+routes.use('/reports', reports);
 routes.use('/roles', roles);
 routes.use('/upload', uploadRouter);
 
