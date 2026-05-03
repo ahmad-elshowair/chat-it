@@ -6,7 +6,6 @@ import FollowModel from '../models/follow.js';
 import LikeModel from '../models/like.js';
 import PostModel from '../models/post.js';
 import RefreshTokenModel from '../models/refreshToken.js';
-import ReportModel from '../models/report.js';
 import UserModel from '../models/user.js';
 
 const post_model = new PostModel();
@@ -18,7 +17,6 @@ const auth_model = new AuthModel();
 const refresh_token_model = new RefreshTokenModel();
 const bookmark_model = new BookmarkModel();
 const audit_model = new AuditModel();
-const report_model = new ReportModel();
 
 export {
   auth_model,
@@ -29,6 +27,5 @@ export {
   like_model,
   post_model,
   refresh_token_model,
-  report_model,
   user_model,
 };
