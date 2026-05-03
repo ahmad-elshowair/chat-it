@@ -19,10 +19,10 @@
 
 **Purpose**: Create database migration and TypeScript types — shared by all user stories.
 
-- [ ] T001 Create migration scaffold: `cd server && npx db-migrate create reports --sql-file`
-- [ ] T002 [P] Write `server/migrations/sqls/*-reports-up.sql` — CREATE TABLE reports with all columns, FKs, CHECKs, UNIQUE constraint, 4 indexes per data-model.md. Also create trigger `trg_reports_updated_at` (with shared `update_updated_at_column()` function — CREATE OR REPLACE if not exists) to auto-maintain updated_at on every UPDATE.
-- [ ] T003 [P] Write `server/migrations/sqls/*-reports-down.sql` — DROP indexes then DROP TABLE reports CASCADE
-- [ ] T004 [P] Create `server/src/types/report.ts` — export TReport, TReportInput, TargetType, ReportReason, ReportStatus per data-model.md TypeScript types section
+- [x] T001 Create migration scaffold: `cd server && npx db-migrate create reports --sql-file`
+- [x] T002 [P] Write `server/migrations/sqls/*-reports-up.sql` — CREATE TABLE reports with all columns, FKs, CHECKs, UNIQUE constraint, 4 indexes per data-model.md. Also create trigger `trg_reports_updated_at` (with shared `update_updated_at_column()` function — CREATE OR REPLACE if not exists) to auto-maintain updated_at on every UPDATE.
+- [x] T003 [P] Write `server/migrations/sqls/*-reports-down.sql` — DROP indexes then DROP TABLE reports CASCADE
+- [x] T004 [P] Create `server/src/types/report.ts` — export TReport, TReportInput, TargetType, ReportReason, ReportStatus per data-model.md TypeScript types section
 
 ---
 
@@ -32,7 +32,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Create `server/src/models/report.ts` — ReportModel class following existing pattern (pool.connect, parameterized SQL, connection.release in finally, factory export). Methods: create, getById, list (paginated with status/targetType filters — uses SELECT COUNT(*) for `total` in pagination envelope; acceptable for admin-only offset pagination), dismiss (accepts PoolClient for caller-transaction join), resolve (accepts PoolClient for caller-transaction join), countByStatus, targetExists (private helper — queries posts/comments/users table based on targetType, returns boolean). DB constraint violations (23505) bubble up to pgError middleware. Register singleton in `server/src/controllers/factory.ts` as `report_model`.
+- [x] T005 Create `server/src/models/report.ts` — ReportModel class following existing pattern (pool.connect, parameterized SQL, connection.release in finally, factory export). Methods: create, getById, list (paginated with status/targetType filters — uses SELECT COUNT(*) for `total` in pagination envelope; acceptable for admin-only offset pagination), dismiss (accepts PoolClient for caller-transaction join), resolve (accepts PoolClient for caller-transaction join), countByStatus, targetExists (private helper — queries posts/comments/users table based on targetType, returns boolean). DB constraint violations (23505) bubble up to pgError middleware. Register singleton in `server/src/controllers/factory.ts` as `report_model`.
 
 **Checkpoint**: Foundation ready — user story implementation can begin.
 
