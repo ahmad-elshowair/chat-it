@@ -33,28 +33,31 @@ const errorMiddleware = (error: Error, req: ICustomRequest, res: Response, _next
   }
 
   // ───── PRIORITY 2: PG ERROR CLASSIFICATION ──────────────────────────────
+  const alreadyClassified = (error as Error & { pgClassified?: boolean }).pgClassified === true;
   const classified = classifyPgError(error);
 
   if (classified.pgCode !== 'UNKNOWN') {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        message: 'Classified PG error',
-        httpStatus: classified.httpStatus,
-        pgCode: classified.pgCode,
-        pgConstraint: classified.pgDetail.constraint,
-        pgTable: classified.pgDetail.table,
-        pgSchema: classified.pgDetail.schema,
-        pgDetail: classified.pgDetail.detail,
-        pgColumn: classified.pgDetail.column,
-        retryable: classified.retryable,
-        requestMethod: req.method,
-        requestPath: req.path,
-        userId,
-        timestamp,
-        ...(config.node_env === 'development' && { stack: error.stack }),
-      }),
-    );
+    if (!alreadyClassified) {
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          message: 'Classified PG error',
+          httpStatus: classified.httpStatus,
+          pgCode: classified.pgCode,
+          pgConstraint: classified.pgDetail.constraint,
+          pgTable: classified.pgDetail.table,
+          pgSchema: classified.pgDetail.schema,
+          pgDetail: classified.pgDetail.detail,
+          pgColumn: classified.pgDetail.column,
+          retryable: classified.retryable,
+          requestMethod: req.method,
+          requestPath: req.path,
+          userId,
+          timestamp,
+          ...(config.node_env === 'development' && { stack: error.stack }),
+        }),
+      );
+    }
 
     return res.status(classified.httpStatus).json({
       success: false,

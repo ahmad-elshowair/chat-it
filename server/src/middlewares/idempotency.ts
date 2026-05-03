@@ -9,16 +9,25 @@ const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[
 const MAX_KEY_LENGTH = 128;
 const TTL_SECONDS = 86400;
 const MAX_CACHE_SIZE_BYTES = 1024 * 1024;
+const CLAIM_SENTINEL = 'PENDING';
 
 // ───── MIDDLEWARE ──────────────────────────────
 
 /**
- * Idempotency-Key middleware for POST/PUT/PATCH routes.
- * Validates UUID v4 header, claims via Redis SET NX, caches response
- * on success. Fail-open on Redis unavailability.
+ * Idempotency-Key middleware for POST/PUT/PATCH routes only.
+ * Validates UUID v4 header, claims via Redis SET NX with 'PENDING' sentinel,
+ * caches non-5xx response on completion. Fail-open on Redis unavailability.
+ *
+ * NOTE: Only intercepts res.json(). If a handler uses res.send() or res.end()
+ * directly, the response will not be cached. All project controllers use
+ * sendResponse utility which calls res.json() internally.
  * @route Applied per-route to mutating endpoints only
  */
 export const idempotency = async (req: Request, res: Response, next: NextFunction) => {
+  if (req.method === 'GET' || req.method === 'DELETE') {
+    return next();
+  }
+
   const rawKey = req.headers['idempotency-key'];
 
   if (!rawKey || typeof rawKey !== 'string') {
@@ -56,12 +65,12 @@ export const idempotency = async (req: Request, res: Response, next: NextFunctio
   const redisKey = `idem:${userId}:${req.method}:${routePath}:${key}`;
 
   try {
-    const claimed = await redisClient.set(redisKey, '', 'EX', TTL_SECONDS, 'NX');
+    const claimed = await redisClient.set(redisKey, CLAIM_SENTINEL, 'EX', TTL_SECONDS, 'NX');
 
     if (!claimed) {
       const cached = await redisClient.get(redisKey);
 
-      if (cached && cached.startsWith('{')) {
+      if (cached && cached !== CLAIM_SENTINEL && cached.startsWith('{')) {
         try {
           const record: IdempotencyRecord = JSON.parse(cached);
           console.info(
