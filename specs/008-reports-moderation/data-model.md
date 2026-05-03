@@ -12,7 +12,7 @@ Represents a user's complaint about content. Single table with polymorphic targe
 |-------|------|-------------|-------|
 | report_id | UUID | PK, DEFAULT uuid_generate_v4() | Primary key |
 | reporter_id | UUID | NOT NULL, FK→users(user_id) ON DELETE CASCADE | Reporter; cascading delete when user deleted |
-| target_type | VARCHAR(20) | NOT NULL, CHECK IN ('post','comment','user') | Polymorphic discriminator |
+| target_type | VARCHAR(20) | NOT NULL, CHECK IN ('post','comment','user') | Polymorphic discriminator. `'user'` maps to the spec's "user profile" concept — the target_id references `users.user_id` |
 | target_id | UUID | NOT NULL | References different tables based on target_type |
 | reason | VARCHAR(50) | NOT NULL, CHECK IN ('spam','harassment','hate_speech','inappropriate_content','impersonation','other') | Predefined reason category |
 | description | TEXT | NULLABLE | Optional free-text description |
@@ -43,6 +43,12 @@ Represents a user's complaint about content. Single table with polymorphic targe
 | idx_reports_reporter_id | (reporter_id) | User's report history |
 | idx_reports_target | (target_type, target_id) | Lookup reports for a specific target |
 | idx_reports_created_at | (created_at DESC) | Chronological queue ordering |
+
+### Trigger
+
+| Name | Definition | Purpose |
+|------|------------|---------|
+| trg_reports_updated_at | `CREATE TRIGGER trg_reports_updated_at BEFORE UPDATE ON reports FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()` | Auto-maintains `updated_at` on every row update. Requires shared `update_updated_at_column()` function (create if not exists in migration). |
 
 ### State Transitions
 

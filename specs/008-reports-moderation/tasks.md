@@ -20,7 +20,7 @@
 **Purpose**: Create database migration and TypeScript types — shared by all user stories.
 
 - [ ] T001 Create migration scaffold: `cd server && npx db-migrate create reports --sql-file`
-- [ ] T002 [P] Write `server/migrations/sqls/*-reports-up.sql` — CREATE TABLE reports with all columns, FKs, CHECKs, UNIQUE constraint, and 4 indexes per data-model.md
+- [ ] T002 [P] Write `server/migrations/sqls/*-reports-up.sql` — CREATE TABLE reports with all columns, FKs, CHECKs, UNIQUE constraint, 4 indexes per data-model.md. Also create trigger `trg_reports_updated_at` (with shared `update_updated_at_column()` function — CREATE OR REPLACE if not exists) to auto-maintain updated_at on every UPDATE.
 - [ ] T003 [P] Write `server/migrations/sqls/*-reports-down.sql` — DROP indexes then DROP TABLE reports CASCADE
 - [ ] T004 [P] Create `server/src/types/report.ts` — export TReport, TReportInput, TargetType, ReportReason, ReportStatus per data-model.md TypeScript types section
 
@@ -32,7 +32,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Create `server/src/models/report.ts` — ReportModel class following existing pattern (pool.connect, parameterized SQL, connection.release in finally, factory export). Methods: create, getById, list (paginated with status/targetType filters), dismiss, resolve, countByStatus. DB constraint violations (23505) bubble up to pgError middleware.
+- [ ] T005 Create `server/src/models/report.ts` — ReportModel class following existing pattern (pool.connect, parameterized SQL, connection.release in finally, factory export). Methods: create, getById, list (paginated with status/targetType filters — uses SELECT COUNT(*) for `total` in pagination envelope; acceptable for admin-only offset pagination), dismiss (accepts PoolClient for caller-transaction join), resolve (accepts PoolClient for caller-transaction join), countByStatus, targetExists (private helper — queries posts/comments/users table based on targetType, returns boolean). DB constraint violations (23505) bubble up to pgError middleware. Register singleton in `server/src/controllers/factory.ts` as `report_model`.
 
 **Checkpoint**: Foundation ready — user story implementation can begin.
 
@@ -46,7 +46,7 @@
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Add `createReport` handler in `server/src/controllers/reports.controller.ts` — validate target_type/target_id/reason with express-validator, check target existence per target_type (FR-006), check self-report (FR-005), call model.create, return 201. DB 23505 error surfaces as 409 via next(error).
+- [ ] T006 [US1] Add `createReport` handler in `server/src/controllers/reports.controller.ts` — validate target_type/target_id/reason with express-validator, check target existence via model.targetExists(targetType, targetId) returning 404 if not found (FR-006), check self-report (FR-005): if target_type='post' query posts.user_id, if 'comment' query comments.user_id, if 'user' compare reporter_id === target_id — return 403 if match. Then call model.create, return 201. DB 23505 error surfaces as 409 via next(error).
 - [ ] T007 [US1] Create `server/src/routes/apis/reports.routes.ts` — define POST /api/reports route with authorizeUser + contentCreationLimiter + express-validator middleware. Add validators for target_type (one of post/comment/user), target_id (UUID), reason (one of 6 categories), description (optional, max 1000 chars).
 - [ ] T008 [US1] Register report routes in `server/src/routes/index.ts` — import reports routes and mount under `/reports` (following existing bookmark/role pattern).
 
@@ -77,7 +77,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T011 [P] [US3] Add `dismissReport` handler in `server/src/controllers/reports.controller.ts` — validate report exists and is pending (WHERE status='pending' in UPDATE), set resolved_by/resolved_at/resolution_note, log to audit log (FR-016), return updated report.
+- [ ] T011 [P] [US3] Add `dismissReport` handler in `server/src/controllers/reports.controller.ts` — acquire PoolClient via pool.connect(), BEGIN transaction. UPDATE reports SET status='dismissed', resolved_by, resolved_at, resolution_note, updated_at WHERE report_id=$1 AND status='pending'. If rowCount=0 → ROLLBACK, release, return 409. On success, call emitAudit({ client, action:'report.dismiss', entityType:'report', ... }) within same transaction. COMMIT, release in finally. Return updated report.
 - [ ] T012 [US3] Add PATCH /:id/dismiss route in `server/src/routes/apis/reports.routes.ts` — with authorizeUser + requirePermission('reports.manage') + UUID param validator + optional resolution_note validator.
 
 **Checkpoint**: Admins can dismiss pending reports.
@@ -92,7 +92,7 @@
 
 ### Implementation for User Story 4
 
-- [ ] T013 [P] [US4] Add `resolveReport` handler in `server/src/controllers/reports.controller.ts` — same pattern as dismiss but sets status='resolved'. Does NOT delete reported content (V1 flag-only). Log to audit log (FR-016).
+- [ ] T013 [P] [US4] Add `resolveReport` handler in `server/src/controllers/reports.controller.ts` — same transaction+audit pattern as dismiss (T011) but sets status='resolved'. Does NOT delete reported content (V1 flag-only). Acquire PoolClient, BEGIN, UPDATE WHERE status='pending', emitAudit({ client, action:'report.resolve', ... }), COMMIT, release in finally.
 - [ ] T014 [US4] Add PATCH /:id/resolve route in `server/src/routes/apis/reports.routes.ts` — with authorizeUser + requirePermission('reports.manage') + UUID param validator + optional resolution_note validator.
 
 **Checkpoint**: Admins can resolve pending reports. Report content is NOT deleted.
@@ -118,7 +118,7 @@
 
 **Purpose**: Validation gates and final verification.
 
-- [ ] T017 Run migration: `cd server && npx db-migrate up`, verify schema with `\d reports` shows all columns, constraints, and indexes
+- [ ] T017 Run migration: `cd server && npx db-migrate up`, verify schema with `\d reports` shows all columns, constraints, and indexes. Verify ON DELETE CASCADE on reporter_id (delete a user → their reports removed; reports against that user remain). Verify ON DELETE SET NULL on resolved_by (delete admin → resolved_by NULL, resolution_note/resolved_at preserved). Optional: seed 1000+ reports and verify GET /api/reports responds within 2s (SC-003).
 - [ ] T018 Run `pnpm run lint && pnpm run prettier:check && pnpm test` — all must pass before merge
 
 ---
@@ -207,6 +207,6 @@ Task: "Add getReportStats handler in controllers/reports.controller.ts"
 - US2–US5 all modify the same routes file — route registrations are sequential within the file
 - T016 (GET /stats) MUST be registered before /:id routes to avoid Express path collision
 - All controllers use `next(error)` pattern — pgError middleware handles DB errors (Spec 007)
-- Audit log calls (FR-016) in dismiss/resolve handlers — use existing AuditModel within same connection
+- Audit log calls (FR-016) in dismiss/resolve handlers — controllers acquire PoolClient, BEGIN transaction, call model.dismiss/resolve (passing client), then emitAudit({ client, ... }) within same transaction, COMMIT, release in finally. Matches existing roles.controller.ts + auditEmitter.ts pattern.
 - contentCreationLimiter on POST only — admin GET/PATCH routes don't need it
 - Commit after each task or logical group

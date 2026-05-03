@@ -32,7 +32,7 @@ Build a user-facing content reporting system and admin moderation queue. Users c
 | V. Predictable RESTful API Design | ✅ Pass | RESTful endpoints under `/api/reports`, standardized response envelope via `sendResponse` |
 | VI. Tiered Rate Limiting | ✅ Pass | `contentCreationLimiter` (25 req/min) on POST /api/reports |
 | VII. File Upload Validation | N/A | No file uploads in this spec |
-| VIII. Frontend Efficiency | N/A | Backend-only spec; pagination uses limit/offset (admin queue — not cursor-paginated feed) |
+| VIII. Frontend Efficiency | N/A | Backend-only spec; admin moderation queue uses offset (limit/offset) pagination — not a user-facing feed. Justification: admin-only endpoint, moderate volume, filterable by status/targetType makes cursor-based pagination impractical (filters invalidate cursors). SELECT COUNT(*) used for `total` in pagination envelope — acceptable for admin-only access. |
 
 **Pre-Phase 0 Gate**: PASS — no violations, no NEEDS CLARIFICATION.
 
@@ -70,6 +70,7 @@ server/
 │   ├── models/
 │   │   └── report.ts                          # [NEW] ReportModel class
 │   ├── controllers/
+│   │   ├── factory.ts                           # [MODIFY] add report_model singleton
 │   │   └── reports.controller.ts              # [NEW] 5 endpoint handlers
 │   ├── routes/
 │   │   ├── apis/
