@@ -3,11 +3,12 @@
 Auto-generated from all feature plans. Last updated: 2026-04-30
 
 ## Active Technologies
+
 - TypeScript 5.x (strict mode), Node.js + Express 4, express-rate-limit, rate-limit-redis, Redis, pg 8 (002-fix-auth-rate-limit)
 - Redis (rate limit counters), PostgreSQL (user data) (002-fix-auth-rate-limit)
 - TypeScript 5.x (strict mode), Node.js + Express 4, pg (node-postgres), db-migrate, express-rate-limit, rate-limit-redis, express-validator (004-bookmark-posts)
 - PostgreSQL 15+ (primary), Redis (rate limiting) (004-bookmark-posts)
-- TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limi (006-system-audit-log)
+- TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit (006-system-audit-log)
 - PostgreSQL 15+ (primary), Redis (RBAC permission cache — reused) (006-system-audit-log)
 
 - TypeScript 5.x (strict mode), Node.js + Express 4, React 18, Zustand 5, Multer 1.4, Helmet 7, pg 8, jsonwebtoken 9, bcryptjs 3 (001-rate-limit-security)
@@ -35,10 +36,12 @@ tests/
 - Always run `pnpm run lint` and `pnpm run prettier:check` before committing
 
 ### Error Handling Rules
+
 - **Always preserve caught errors**: When rethrowing after a catch, use `throw new CustomError('message', { cause: error })` to preserve the original stack trace (`preserve-caught-error` rule)
 - **No useless try/catch**: Do not wrap code in try/catch if you only rethrow the error without adding context (`no-useless-catch` rule)
 
 ### TypeScript Rules
+
 - **No non-null assertions on optional chains**: Never use `!` after `?.` (e.g., `obj?.prop!`). Handle `undefined` explicitly with checks or defaults (`@typescript-eslint/no-non-null-asserted-optional-chain`)
 - **No explicit `any`**: Avoid `any` type. Use proper types, `unknown`, or generics instead (`@typescript-eslint/no-explicit-any`)
 - **Unused parameters**: Prefix unused parameters with `_` (e.g., `_next`) (`@typescript-eslint/no-unused-vars` with `argsIgnorePattern: "^_"`)
@@ -71,6 +74,7 @@ tests/
 **Skip**: components (props types suffice), pages (composition layer), stores (Zustand interface is the documentation), hooks that are pure store selectors (useAuthState, useAuthActions, usePost), configs, types
 
 ### General Rules
+
 - Use `const` over `let` when the variable is never reassigned (`prefer-const`)
 - Do not use unnecessary escape characters in regex/string literals (`no-useless-escape`)
 
@@ -79,6 +83,9 @@ tests/
 - 004-bookmark-posts: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg (node-postgres), db-migrate, express-rate-limit, rate-limit-redis, express-validator
 - 002-fix-auth-rate-limit: Added TypeScript 5.x (strict mode), Node.js + Express 4, express-rate-limit, rate-limit-redis, Redis, pg 8
 
+- 008-reports-moderation: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit
+- 006-system-audit-log: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit
+- 004-bookmark-posts: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg (node-postgres), db-migrate, express-rate-limit, rate-limit-redis, express-validator
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
