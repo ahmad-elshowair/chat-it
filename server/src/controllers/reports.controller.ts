@@ -7,6 +7,75 @@ import { AppError } from '../utilities/appError.js';
 import { sendResponse } from '../utilities/response.js';
 import { TargetType, ReportStatus } from '../types/report.js';
 
+type ModerationAction = 'report.dismiss' | 'report.resolve';
+type ModerationStatus = 'dismissed' | 'resolved';
+
+/**
+ * Shared handler for dismiss/resolve moderation actions.
+ * Acquires a PoolClient, begins transaction, calls the model method,
+ * emits audit event within same transaction, then commits.
+ *
+ * If model returns null (report not pending), rolls back and opens a
+ * separate connection via getById() to distinguish 404 (not found)
+ * from 409 (already handled). This second connection is self-managed
+ * by the model's pool.connect/finally-release pattern.
+ */
+const handleModerationAction = (
+  action: ModerationAction,
+  status: ModerationStatus,
+  modelMethod: 'dismiss' | 'resolve',
+) => {
+  return async (req: ICustomRequest, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { resolution_note } = req.body;
+      const actorId = req.user?.id;
+
+      if (!actorId) {
+        return sendResponse.error(res, 'Authentication required', 401);
+      }
+
+      const connection = await pool.connect();
+      try {
+        await connection.query('BEGIN');
+
+        const report = await report_model[modelMethod](connection, id, actorId, resolution_note);
+
+        if (!report) {
+          await connection.query('ROLLBACK');
+          const existing = await report_model.getById(id);
+          if (!existing) {
+            return next(new AppError('Report not found', 404));
+          }
+          return next(new AppError('Report is no longer pending', 409));
+        }
+
+        await emitAudit({
+          client: connection,
+          actorId,
+          actorType: 'user',
+          action,
+          entityType: 'report',
+          entityId: id,
+          previousValues: { status: 'pending' },
+          newValues: { status, resolution_note: resolution_note ?? null },
+          ipAddress: req.ip,
+        });
+
+        await connection.query('COMMIT');
+        return sendResponse.success(res, report, 200);
+      } catch (error) {
+        await connection.query('ROLLBACK');
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
 /**
  * Create a new report against a post, comment, or user profile.
  * Validates target existence and prevents self-reporting.
@@ -69,115 +138,9 @@ const listReports = async (req: ICustomRequest, res: Response, next: NextFunctio
   }
 };
 
-/**
- * Dismiss a pending report with an optional resolution note.
- * @route PATCH /api/reports/:id/dismiss
- * @returns 200 with updated report, 404 if not found, 409 if not pending
- */
-const dismissReport = async (req: ICustomRequest, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
-    const { resolution_note } = req.body;
-    const actorId = req.user?.id;
+const dismissReport = handleModerationAction('report.dismiss', 'dismissed', 'dismiss');
 
-    if (!actorId) {
-      return sendResponse.error(res, 'Authentication required', 401);
-    }
-
-    const connection = await pool.connect();
-    try {
-      await connection.query('BEGIN');
-
-      const report = await report_model.dismiss(connection, id, actorId, resolution_note);
-
-      if (!report) {
-        await connection.query('ROLLBACK');
-        const existing = await report_model.getById(id);
-        if (!existing) {
-          return next(new AppError('Report not found', 404));
-        }
-        return next(new AppError('Report is no longer pending', 409));
-      }
-
-      await emitAudit({
-        client: connection,
-        actorId,
-        actorType: 'user',
-        action: 'report.dismiss',
-        entityType: 'report',
-        entityId: id,
-        previousValues: { status: 'pending' },
-        newValues: { status: 'dismissed', resolution_note: resolution_note ?? null },
-        ipAddress: req.ip,
-      });
-
-      await connection.query('COMMIT');
-      return sendResponse.success(res, report, 200);
-    } catch (error) {
-      await connection.query('ROLLBACK');
-      throw error;
-    } finally {
-      connection.release();
-    }
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * Resolve a pending report with an optional resolution note. Flag-only in V1.
- * @route PATCH /api/reports/:id/resolve
- * @returns 200 with updated report, 404 if not found, 409 if not pending
- */
-const resolveReport = async (req: ICustomRequest, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
-    const { resolution_note } = req.body;
-    const actorId = req.user?.id;
-
-    if (!actorId) {
-      return sendResponse.error(res, 'Authentication required', 401);
-    }
-
-    const connection = await pool.connect();
-    try {
-      await connection.query('BEGIN');
-
-      const report = await report_model.resolve(connection, id, actorId, resolution_note);
-
-      if (!report) {
-        await connection.query('ROLLBACK');
-        const existing = await report_model.getById(id);
-        if (!existing) {
-          return next(new AppError('Report not found', 404));
-        }
-        return next(new AppError('Report is no longer pending', 409));
-      }
-
-      await emitAudit({
-        client: connection,
-        actorId,
-        actorType: 'user',
-        action: 'report.resolve',
-        entityType: 'report',
-        entityId: id,
-        previousValues: { status: 'pending' },
-        newValues: { status: 'resolved', resolution_note: resolution_note ?? null },
-        ipAddress: req.ip,
-      });
-
-      await connection.query('COMMIT');
-      return sendResponse.success(res, report, 200);
-    } catch (error) {
-      await connection.query('ROLLBACK');
-      throw error;
-    } finally {
-      connection.release();
-    }
-  } catch (error) {
-    next(error);
-  }
-};
+const resolveReport = handleModerationAction('report.resolve', 'resolved', 'resolve');
 
 /**
  * Get aggregate report counts grouped by status.

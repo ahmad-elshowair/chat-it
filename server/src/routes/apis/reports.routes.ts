@@ -3,6 +3,7 @@ import reportsController from '../../controllers/reports.controller.js';
 import authorizeUser from '../../middlewares/auth.js';
 import requirePermission from '../../middlewares/auth/requirePermission.js';
 import { contentCreationLimiter } from '../../middlewares/rateLimiter.js';
+import { validationMiddleware } from '../../middlewares/validation.js';
 import {
   validateCreateReport,
   validateReportId,
@@ -18,6 +19,7 @@ reportRoute.post(
   authorizeUser,
   contentCreationLimiter,
   validateCreateReport,
+  validationMiddleware,
   reportsController.createReport,
 );
 
@@ -33,6 +35,7 @@ reportRoute.get(
   authorizeUser,
   requirePermission('reports.manage'),
   validateReportListQuery,
+  validationMiddleware,
   reportsController.listReports,
 );
 
@@ -42,6 +45,7 @@ reportRoute.patch(
   requirePermission('reports.manage'),
   validateReportId,
   validateResolutionNote,
+  validationMiddleware,
   reportsController.dismissReport,
 );
 
@@ -51,6 +55,7 @@ reportRoute.patch(
   requirePermission('reports.manage'),
   validateReportId,
   validateResolutionNote,
+  validationMiddleware,
   reportsController.resolveReport,
 );
 
