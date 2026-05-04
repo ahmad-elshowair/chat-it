@@ -5,7 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Add PostgreSQL full-text search (FTS) capability to enable users to search posts by content in the post-it social app. Uses PostgreSQL's built-in tsvector/tsquery with GIN indexes."
 
-## User Scenarios & Testing *(mandatory)*
+## Clarifications
+
+### Session 2026-05-04
+
+- Q: Include comments in search or only posts? → A: Posts only for V1. Comments and user profiles are out of scope.
+- Q: Public posts only or all? → A: All posts searchable for now. Visibility filtering will be added when Spec 005 (roles & permissions) is integrated.
+- Q: Materialized view or real-time tsvector? → A: Real-time tsvector via trigger — simpler, always current, no refresh scheduling needed.
+- Q: How should cursor pagination work for ranked search results (rank changes per query, unlike timestamp-based cursors)? → A: Composite cursor encoding (rank + post_id) to preserve rank ordering across pages.
+
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Search Posts by Keywords (Priority: P1)
 
@@ -37,7 +46,7 @@ As a user, I want search results ranked by a combination of text relevance and r
 
 1. **Given** two posts match "hiking adventure" where one description contains both words and the other only one, **When** results are returned, **Then** the post with both matching words ranks higher
 2. **Given** two posts with equal text relevance, **When** results are returned, **Then** the more recently created post ranks higher
-3. **Given** a search returns many results, **When** a user paginates through results, **Then** ranking order is preserved across pages
+3. **Given** a search returns many results, **When** a user paginates through results, **Then** ranking order is preserved across pages using a composite cursor (rank + post_id)
 
 ---
 
@@ -51,7 +60,7 @@ As a user, I want to paginate through search results so I can browse large resul
 
 **Acceptance Scenarios**:
 
-1. **Given** a search returns more results than the requested limit, **When** the first page is returned, **Then** a `nextCursor` is provided to fetch the next page
+1. **Given** a search returns more results than the requested limit, **When** the first page is returned, **Then** a `nextCursor` (composite of rank + post_id) is provided to fetch the next page
 2. **Given** a user is on page 2 of results, **When** the response is returned, **Then** a `previousCursor` is provided to go back
 3. **Given** a user requests 10 results per page, **When** only 5 posts match, **Then** no next cursor is provided and `hasMore` is false
 
@@ -66,7 +75,7 @@ As a user, I want to paginate through search results so I can browse large resul
 - What happens when a user searches for common stop words (e.g., "the", "a", "is")? The system should handle this gracefully and return relevant results or an empty set.
 - What happens with concurrent search requests under load? The system should handle concurrent searches without degradation.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -74,21 +83,23 @@ As a user, I want to paginate through search results so I can browse large resul
 - **FR-002**: The system MUST perform word stemming so that variants of a word match (e.g., "running" matches "run", "traveling" matches "travel")
 - **FR-003**: The system MUST reject search queries shorter than 2 characters with a clear validation error
 - **FR-004**: The system MUST rank search results by a combination of text relevance and post recency
-- **FR-005**: The system MUST support cursor-based pagination for search results, consistent with the existing pagination pattern
+- **FR-005**: The system MUST support cursor-based pagination using a composite cursor (rank + post_id) to preserve ranking order across pages
 - **FR-006**: Each search result MUST include the post data and author data (post content, image, like count, comment count, author name, author picture, user's like/bookmark status)
-- **FR-007**: The system MUST automatically update the search index whenever a post is created or its description is updated
+- **FR-007**: The system MUST automatically update the search index whenever a post is created or its description is updated, using a real-time trigger
 - **FR-008**: The system MUST return an empty result set (not an error) when no posts match the query
 - **FR-009**: The system MUST impose a maximum query length to prevent abuse
 - **FR-010**: The search endpoint MUST require authentication — only logged-in users can search
 - **FR-011**: The system MUST respect the existing rate limiting infrastructure to prevent search abuse
+- **FR-012**: Search scope is limited to post descriptions only — comments, user profiles, and other content are excluded in V1
+- **FR-013**: All posts are searchable regardless of visibility; post-level visibility filtering will be deferred to integration with the roles & permissions system (Spec 005)
 
 ### Key Entities
 
 - **Search Result**: A post matching the query, enriched with author information and the user's interaction state (liked, bookmarked). Follows the existing feed post data shape.
 - **Search Query**: The user-provided text input, validated for minimum length and maximum length, processed for stemming.
-- **Search Vector**: An automatically maintained, optimized representation of each post's description content used for fast text matching.
+- **Search Vector**: An automatically maintained, real-time optimized representation of each post's description content, updated via trigger on every INSERT or UPDATE of description.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -100,12 +111,12 @@ As a user, I want to paginate through search results so I can browse large resul
 
 ## Assumptions
 
-- Only post descriptions are searchable (comments, user profiles, and other content are out of scope)
+- Only post descriptions are searchable (comments, user profiles, and other content are out of scope for V1)
 - English language stemming is sufficient for the initial launch; multilingual support is a future enhancement
 - The existing authentication middleware and rate limiting infrastructure will be reused
-- The existing cursor pagination utilities will be reused for search results
+- The existing cursor pagination utilities will be adapted for search results using a composite (rank + post_id) cursor
 - Search is available to all authenticated users regardless of role
 - Searching is a read-only operation with no side effects
 - The maximum query length is capped at 200 characters (a reasonable limit for keyword-based search)
 - Search does not need to support boolean operators (AND, OR, NOT) in the initial version — all query words are combined with AND logic implicitly
-- Private or deleted posts are excluded from search results through existing data access patterns
+- Post-level visibility filtering is deferred to Spec 005 integration; all posts are searchable for now
