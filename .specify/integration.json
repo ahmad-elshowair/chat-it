@@ -1,7 +1,18 @@
 {
-  "integration": "opencode",
-  "version": "0.4.5.dev0",
-  "scripts": {
-    "update-context": ".specify/integrations/opencode/scripts/update-context.sh"
-  }
+  "version": "0.8.5.dev0",
+  "integration_state_schema": 1,
+  "installed_integrations": [
+    "agy"
+  ],
+  "integration_settings": {
+    "agy": {
+      "script": "sh",
+      "parsed_options": {
+        "skills": true
+      },
+      "invoke_separator": "-"
+    }
+  },
+  "integration": "agy",
+  "default_integration": "agy"
 }
