@@ -17,9 +17,9 @@
 
 **Purpose**: Database migration for search_vector column, index, trigger, and backfill
 
-- [ ] T001 Create migration files in `server/migrations/` via `cd server && npx db-migrate create full-text-search --sql-file`
-- [ ] T002 Write `server/migrations/sqls/*-full-text-search-up.sql` — ALTER TABLE ADD COLUMN search_vector tsvector (IF NOT EXISTS), CREATE INDEX idx_posts_search GIN (IF NOT EXISTS), CREATE OR REPLACE FUNCTION posts_search_vector_update(), CREATE TRIGGER trg_posts_search_vector BEFORE INSERT OR UPDATE OF description, idempotent backfill UPDATE WHERE search_vector IS NULL (FR-016, FR-020)
-- [ ] T003 Write `server/migrations/sqls/*-full-text-search-down.sql` — DROP TRIGGER IF EXISTS, DROP FUNCTION IF EXISTS, DROP INDEX IF EXISTS, ALTER TABLE DROP COLUMN IF EXISTS — zero data loss per FR-019
+- [x] T001 Create migration files in `server/migrations/` via `cd server && npx db-migrate create full-text-search --sql-file`
+- [x] T002 Write `server/migrations/sqls/*-full-text-search-up.sql` — ALTER TABLE ADD COLUMN search_vector tsvector (IF NOT EXISTS), CREATE INDEX idx_posts_search GIN (IF NOT EXISTS), CREATE OR REPLACE FUNCTION posts_search_vector_update(), CREATE TRIGGER trg_posts_search_vector BEFORE INSERT OR UPDATE OF description, idempotent backfill UPDATE WHERE search_vector IS NULL (FR-016, FR-020)
+- [x] T003 Write `server/migrations/sqls/*-full-text-search-down.sql` — DROP TRIGGER IF EXISTS, DROP FUNCTION IF EXISTS, DROP INDEX IF EXISTS, ALTER TABLE DROP COLUMN IF EXISTS — zero data loss per FR-019
 
 ---
 
