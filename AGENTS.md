@@ -80,8 +80,9 @@ tests/
 - Do not use unnecessary escape characters in regex/string literals (`no-useless-escape`)
 
 ## Recent Changes
-- 008-reports-moderation: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limi
-- 006-system-audit-log: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limi
+
+- 008-reports-moderation: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit
+- 006-system-audit-log: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit
 - 004-bookmark-posts: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg (node-postgres), db-migrate, express-rate-limit, rate-limit-redis, express-validator
 
 - 008-reports-moderation: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit
