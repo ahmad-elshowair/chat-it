@@ -79,7 +79,7 @@ As a user, I want to paginate through search results so I can browse large resul
 - What happens with posts that have empty or null descriptions? These posts should not appear in search results. The trigger converts NULL descriptions to empty tsvector.
 - What happens when a user searches for common stop words (e.g., "the", "a", "is")? The system should handle this gracefully and return relevant results or an empty set.
 - What happens with concurrent search requests under load? The system should handle concurrent searches without degradation.
-- What happens when a user searches for unbalanced quotes (e.g., `"coffee shop`)? The websearch-style parser handles malformed syntax gracefully by ignoring unpaired quotes and treating them as plain keywords.
+- What happens when a user searches for unbalanced quotes (e.g., `"coffee shop`)? The websearch-style parser handles malformed syntax gracefully by ignoring unpaired quotes and treating them as plain keywords. (See also US1 Acceptance Scenario 8)
 - What happens when a user searches with mixed-language content (e.g., English + Spanish)? The English stemmer processes English words normally and passes non-English words through as-is without stemming.
 - What happens when a cursor references a post that has been deleted? The system should return a validation error indicating the cursor is invalid, prompting the client to restart the search from the beginning.
 

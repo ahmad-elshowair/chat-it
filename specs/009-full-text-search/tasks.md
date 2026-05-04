@@ -30,7 +30,7 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [ ] T004 Create `server/src/types/search.ts` — TSearchResult extending IFeedPost with `rank: number` for internal sorting; rank MUST be stripped before API response per FR-015
-- [ ] T005 Create `server/src/models/search.ts` — SearchModel class with `search(userId, query, limit, cursor?, direction?)` method using `websearch_to_tsquery('english', $1)`, composite cursor (Base64 JSON of `{rank, post_id}`), LEFT JOIN likes + bookmarks for user interaction state, `pool.query()` for single-statement reads, `console.error('[SEARCH MODEL]')` for error logging, `throw new Error('...', { cause: error })` for rethrow (preserve-caught-error rule)
+- [ ] T005 Create `server/src/models/search.ts` — SearchModel class with `search(userId, query, limit, cursor?, direction?)` method using `websearch_to_tsquery('english', $1)`, `ORDER BY rank DESC, p.created_at DESC` per FR-004 (implement in initial creation — not deferred), composite cursor (Base64 JSON of `{rank, post_id}`), LEFT JOIN likes + bookmarks for user interaction state, `pool.query()` for single-statement reads, `console.error('[SEARCH MODEL]')` for error logging, `throw new Error('...', { cause: error })` for rethrow (preserve-caught-error rule)
 - [ ] T006 Add `search_model` singleton to `server/src/controllers/factory.ts` — import SearchModel, instantiate, export
 
 **Checkpoint**: Foundation ready — type, model, and factory registration complete. User story implementation can begin.
@@ -62,7 +62,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 Update `server/src/models/search.ts` — verify ORDER BY clause is `rank DESC, p.created_at DESC` per FR-004 (relevance primary, recency tiebreaker); verify composite cursor WHERE clause uses `(rank, post_id) < (cursor_rank, cursor_post_id)` for next and `>` for previous direction
+- [ ] T011 Update `server/src/models/search.ts` — verify ORDER BY clause `rank DESC, p.created_at DESC` is correctly implemented from T005 per FR-004; verify composite cursor WHERE clause uses `(rank, post_id) < (cursor_rank, cursor_post_id)` for next and `>` for previous direction
 
 **Checkpoint**: Search results are now correctly ranked by relevance then recency. Composite cursor preserves order across pages.
 
@@ -91,7 +91,7 @@
 - [ ] T015 Verify trigger works — `INSERT INTO posts (user_id, description) VALUES ('<uuid>', 'full-text search test'); SELECT search_vector FROM posts WHERE description LIKE '%full-text%';` — should return stemmed tsvector
 - [ ] T016 Run `EXPLAIN ANALYZE` on search query to confirm GIN index scan is used (not sequential scan): `EXPLAIN ANALYZE SELECT * FROM posts WHERE search_vector @@ websearch_to_tsquery('english', 'test');`
 - [ ] T017 Run `pnpm run lint`, `pnpm run prettier:check` in both client and server — fix any issues
-- [ ] T018 Validate full search flow via curl: search with valid query, verify ranking, verify pagination with cursor, verify invalid cursor returns 400, verify empty results return 200
+- [ ] T018 Validate full search flow via curl: search with valid query, verify ranking, verify pagination with cursor, verify invalid cursor returns 400, verify empty results return 200, verify rate limiting is applied (FR-011 — global limiter active on `/api/search`), verify response time is acceptable (SC-002 — target < 1 second)
 
 ---
 
