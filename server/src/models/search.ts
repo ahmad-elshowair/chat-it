@@ -54,7 +54,7 @@ class SearchModel {
       const userIdParam = `$${paramIdx}`;
       paramIdx++;
 
-      // ───── Cursor handling ──────────────────────────────
+      // ───── Main search query (subquery wrapper for cursor on rank alias) ──────
       let cursorCondition = '';
       if (cursor) {
         const cursorData = this.decodeCursor(cursor);
@@ -74,28 +74,29 @@ class SearchModel {
         paramIdx++;
 
         if (direction === 'next') {
-          cursorCondition = ` AND (rank, p.post_id) < (${rankParam}, ${postIdParam})`;
+          cursorCondition = ` AND (rank, post_id) < (${rankParam}, ${postIdParam})`;
         } else {
-          cursorCondition = ` AND (rank, p.post_id) > (${rankParam}, ${postIdParam})`;
+          cursorCondition = ` AND (rank, post_id) > (${rankParam}, ${postIdParam})`;
         }
       }
 
-      // ───── Main search query ──────────────────────────────
       const sql = `
-        SELECT
-          p.post_id, p.description, p.updated_at, p.image, p.number_of_likes,
-          p.number_of_comments, p.created_at,
-          u.user_id, u.user_name, u.picture, u.first_name, u.last_name,
-          CASE WHEN l.user_id IS NOT NULL THEN true ELSE false END AS is_liked,
-          CASE WHEN b.user_id IS NOT NULL THEN true ELSE false END AS is_bookmarked,
-          ts_rank(p.search_vector, websearch_to_tsquery('english', ${queryParam})) AS rank
-        FROM posts p
-        JOIN users u ON p.user_id = u.user_id
-        LEFT JOIN likes l ON l.post_id = p.post_id AND l.user_id = ${userIdParam}
-        LEFT JOIN bookmarks b ON b.post_id = p.post_id AND b.user_id = ${userIdParam}
-        WHERE p.search_vector @@ websearch_to_tsquery('english', ${queryParam})
-          ${cursorCondition}
-        ORDER BY rank DESC, p.created_at DESC
+        SELECT * FROM (
+          SELECT
+            p.post_id, p.description, p.updated_at, p.image, p.number_of_likes,
+            p.number_of_comments,
+            u.user_id, u.user_name, u.picture, u.first_name, u.last_name,
+            CASE WHEN l.user_id IS NOT NULL THEN true ELSE false END AS is_liked,
+            CASE WHEN b.user_id IS NOT NULL THEN true ELSE false END AS is_bookmarked,
+            ts_rank(p.search_vector, websearch_to_tsquery('english', ${queryParam})) AS rank
+          FROM posts p
+          JOIN users u ON p.user_id = u.user_id
+          LEFT JOIN likes l ON l.post_id = p.post_id AND l.user_id = ${userIdParam}
+          LEFT JOIN bookmarks b ON b.post_id = p.post_id AND b.user_id = ${userIdParam}
+          WHERE p.search_vector @@ websearch_to_tsquery('english', ${queryParam})
+        ) sub
+        WHERE 1=1${cursorCondition}
+        ORDER BY rank DESC, post_id DESC
         LIMIT $${paramIdx}
       `;
       params.push(limit);
