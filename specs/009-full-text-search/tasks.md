@@ -45,10 +45,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 Create `server/src/middlewares/validations/search.ts` — express-validator array: `query('q').isLength({ min: 2 }).withMessage('...').isLength({ max: 200 }).withMessage('...')`, `query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('...').toInt()`, `query('cursor').optional().isString()`, `query('direction').optional().isIn(['next', 'previous'])` (FR-003, FR-009, FR-017)
-- [ ] T008 Create `server/src/controllers/search.controller.ts` — import `search_model` from factory, `async (req: ICustomRequest, res, next)` pattern: validate `req.user?.id` (401 if missing), validate `validationResult(req)` (400 if errors), decode cursor if provided (catch invalid → 400 per FR-018), call `search_model.search(...)`, strip `rank` from results per FR-015, return `sendResponse.success<IPaginatedResult<IFeedPost>>(res, result)`. JSDoc with `@route GET /api/search`
-- [ ] T009 Create `server/src/routes/apis/search.routes.ts` — import searchController, authorize_user, searchValidators, paginationValidator; `router.get('/', authorize_user, searchValidators, paginationValidator, validationMiddleware, searchController.search)`; export default
-- [ ] T010 Register search routes in `server/src/routes/index.ts` — import search from `./apis/search.routes.js`, add `routes.use('/search', search)` after existing route mounts
+- [x] T007 Create `server/src/middlewares/validations/search.ts` — express-validator chain: `query('q').trim().notEmpty().isLength({min:2,max:200}).escape()`, `query('limit').optional().isInt({min:1,max:50}).toInt()`, `query('cursor').optional().isString()`, `query('direction').optional().isIn(['next','previous'])` per FR-002, FR-014
+- [x] T008 Create `server/src/controllers/search.controller.ts` — `search` handler: validation check → 400, auth check → 401, parse q/limit/cursor/direction from query, call `search_model.search()`, detect hasMore (fetched limit+1), strip `rank` from response per FR-015, build nextCursor/previousCursor via `search_model.encodeCursor(rank, post_id)`, return via `sendResponse.success()` with `{data, pagination}` shape, handle AppError cursor errors → 400, `console.error('[searchController]')` for logging per FR-013
+- [x] T009 Create `server/src/routes/apis/search.routes.ts` — `Router()`, `GET /` with `authorize_user` + `validateSearch` + `searchController.search`, export default
+- [x] T010 Register search route in `server/src/routes/index.ts` — `import search from './apis/search.routes.js'`, `routes.use('/search', search)` per FR-001
 
 **Checkpoint**: At this point, `GET /api/search?q=travel` returns matching posts with author data. Query validation works (< 2 chars → 400, > 200 chars → 400). Empty results return 200 with `[]`.
 
