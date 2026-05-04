@@ -13,6 +13,7 @@
 - Q: Public posts only or all? → A: All posts searchable for now. Visibility filtering will be added when Spec 005 (roles & permissions) is integrated.
 - Q: Materialized view or real-time tsvector? → A: Real-time tsvector via trigger — simpler, always current, no refresh scheduling needed.
 - Q: How should cursor pagination work for ranked search results (rank changes per query, unlike timestamp-based cursors)? → A: Composite cursor encoding (rank + post_id) to preserve rank ordering across pages.
+- Q: Which text search query parser should we use for the search input? → A: websearch_to_tsquery — supports exact phrases (`"coffee shop"`), exclusions (`coffee -tea`), and OR (`coffee OR tea`), and sanitizes user input safely.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -31,6 +32,8 @@ As a user, I want to type keywords into a search bar and see posts whose content
 3. **Given** a user submits a search query, **When** the query is fewer than 2 characters, **Then** the system rejects it with a validation error
 4. **Given** multiple posts match a search query, **When** results are returned, **Then** each result includes the post content, author name, author picture, like count, comment count, and the user's like/bookmark status
 5. **Given** no posts match the search query, **When** a user searches, **Then** an empty result set is returned with standard pagination metadata
+6. **Given** posts exist with descriptions "best coffee shop downtown" and "tea is great", **When** a user searches for `"coffee shop"` (exact phrase), **Then** only the first post is returned
+7. **Given** posts exist about coffee and tea, **When** a user searches for `coffee -tea`, **Then** only posts about coffee that don't mention tea are returned
 
 ---
 
@@ -92,11 +95,12 @@ As a user, I want to paginate through search results so I can browse large resul
 - **FR-011**: The system MUST respect the existing rate limiting infrastructure to prevent search abuse
 - **FR-012**: Search scope is limited to post descriptions only — comments, user profiles, and other content are excluded in V1
 - **FR-013**: All posts are searchable regardless of visibility; post-level visibility filtering will be deferred to integration with the roles & permissions system (Spec 005)
+- **FR-014**: The system MUST parse search queries using a websearch-style parser that natively supports exact phrases (quoted), exclusions (minus prefix), and OR operators, while sanitizing user input safely
 
 ### Key Entities
 
 - **Search Result**: A post matching the query, enriched with author information and the user's interaction state (liked, bookmarked). Follows the existing feed post data shape.
-- **Search Query**: The user-provided text input, validated for minimum length and maximum length, processed for stemming.
+- **Search Query**: The user-provided text input, validated for minimum length and maximum length, parsed using a websearch-style parser that supports exact phrases, exclusions, and OR operators.
 - **Search Vector**: An automatically maintained, real-time optimized representation of each post's description content, updated via trigger on every INSERT or UPDATE of description.
 
 ## Success Criteria _(mandatory)_
@@ -118,5 +122,5 @@ As a user, I want to paginate through search results so I can browse large resul
 - Search is available to all authenticated users regardless of role
 - Searching is a read-only operation with no side effects
 - The maximum query length is capped at 200 characters (a reasonable limit for keyword-based search)
-- Search does not need to support boolean operators (AND, OR, NOT) in the initial version — all query words are combined with AND logic implicitly
+- Search queries support websearch-style syntax: exact phrases (`"exact phrase"`), exclusions (`-word`), and OR (`word1 OR word2`); plain keywords default to AND logic
 - Post-level visibility filtering is deferred to Spec 005 integration; all posts are searchable for now
