@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from 'express';
-import { validationResult } from 'express-validator';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { IPaginatedResult } from '../interfaces/IPagination.js';
 import { TFriend, TUnknownUser, TUser } from '../types/users.js';
@@ -12,17 +11,22 @@ import { user_model } from './factory.js';
  * @route GET /api/users
  * @returns 200 with the paginated list of users
  */
-export const getUsers = async (req: Request, res: Response, _next: NextFunction) => {
-  const paginationOptions = getCursorPaginationOptions(req);
-  const { users } = await user_model.indexWithPagination(
-    paginationOptions.limit,
-    paginationOptions.cursor!,
-    paginationOptions.direction,
-  );
+export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const paginationOptions = getCursorPaginationOptions(req);
+    const { users } = await user_model.indexWithPagination(
+      paginationOptions.limit,
+      paginationOptions.cursor!,
+      paginationOptions.direction,
+    );
 
-  const result = createPaginationResult(users, paginationOptions, 'user_id');
+    const result = createPaginationResult(users, paginationOptions, 'user_id');
 
-  return sendResponse.success<IPaginatedResult<TUser>>(res, result, 200);
+    return sendResponse.success<IPaginatedResult<TUser>>(res, result, 200);
+  } catch (error) {
+    console.error('[USER CONTROLLER] getUsers error: ', error);
+    next(error);
+  }
 };
 
 /**
@@ -32,10 +36,6 @@ export const getUsers = async (req: Request, res: Response, _next: NextFunction)
  */
 const getUserByUsername = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const error = validationResult(req);
-    if (!error.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, error.array());
-    }
     const { user_name } = req.params;
     const user = await user_model.getUserByUsername(user_name);
     return sendResponse.success<TUser>(res, user, 200);
@@ -52,10 +52,6 @@ const getUserByUsername = async (req: Request, res: Response, next: NextFunction
  */
 const getUserById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const error = validationResult(req);
-    if (!error.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, error.array());
-    }
     const { user_id } = req.params;
     const user = await user_model.getUserById(user_id);
     return sendResponse.success<TUser>(res, user, 200);
@@ -72,10 +68,6 @@ const getUserById = async (req: Request, res: Response, next: NextFunction) => {
  */
 const update = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const error = validationResult(req);
-    if (!error.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, error.array());
-    }
     const { user_id } = req.params;
     const userData = req.body;
 
@@ -102,10 +94,6 @@ const update = async (req: ICustomRequest, res: Response, next: NextFunction) =>
  */
 const deleteUser = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const error = validationResult(req);
-    if (!error.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, error.array());
-    }
     const { user_id } = req.params;
     const logged_in_user_id = req.user?.id;
 
@@ -151,10 +139,6 @@ const getUnknownUsers = async (req: ICustomRequest, res: Response, next: NextFun
  */
 const getFriends = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const error = validationResult(req);
-    if (!error.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, error.array());
-    }
     const user_id = req.params.user_id;
     const isOnline = req.query.is_online === 'true';
 

@@ -1,5 +1,4 @@
 import { NextFunction, Response } from 'express';
-import { validationResult } from 'express-validator';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { IPaginatedResult } from '../interfaces/IPagination.js';
 import { TFollowers, TFollowings } from '../types/follow.js';
@@ -14,11 +13,6 @@ import { follow_model } from './factory.js';
  */
 const followUser = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, errors.array());
-    }
-
     const user_id_following = req.user?.id;
     const user_id_followed = req.body.user_id_followed;
 
@@ -49,11 +43,6 @@ const followUser = async (req: ICustomRequest, res: Response, next: NextFunction
  */
 const unFollowUser = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const error = validationResult(req);
-    if (!error.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, error.array());
-    }
-
     const user_id_following = req.user?.id;
     const user_id_followed = req.body.user_id_followed;
 
@@ -182,10 +171,6 @@ const getFollowers = async (req: ICustomRequest, res: Response, next: NextFuncti
  */
 const isFollowed = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const error = validationResult(req);
-    if (!error.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, error.array());
-    }
     const following_id = req.user?.id;
     const followed_id = req.params.followed_id;
     if (!following_id) {

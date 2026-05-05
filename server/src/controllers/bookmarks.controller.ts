@@ -1,5 +1,4 @@
 import { NextFunction, Response } from 'express';
-import { validationResult } from 'express-validator';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { IPaginatedResult } from '../interfaces/IPagination.js';
 import { TBookmark } from '../types/bookmark.js';
@@ -14,11 +13,6 @@ import { bookmark_model } from './factory.js';
  */
 const toggle = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'UNAUTHENTICATED!', 401, 'USER ID IS REQUIRED!');
@@ -69,11 +63,6 @@ const toggle = async (req: ICustomRequest, res: Response, next: NextFunction) =>
  */
 const getBookmarks = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'UNAUTHENTICATED!', 401, 'USER ID IS REQUIRED!');
@@ -106,11 +95,6 @@ const getBookmarks = async (req: ICustomRequest, res: Response, next: NextFuncti
  */
 const checkBookmark = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'UNAUTHENTICATED!', 401, 'USER ID IS REQUIRED!');

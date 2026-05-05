@@ -54,16 +54,9 @@ class SearchModel {
       const userIdParam = `$${paramIdx}`;
       paramIdx++;
 
-      // ───── Main search query (subquery wrapper for cursor on rank alias) ──────
       let cursorCondition = '';
       if (cursor) {
         const cursorData = this.decodeCursor(cursor);
-        const cursorCheck = await connection.query(`SELECT post_id FROM posts WHERE post_id = $1`, [
-          cursorData.post_id,
-        ]);
-        if (cursorCheck.rows.length === 0) {
-          throw new AppError('Invalid cursor: referenced post not found', 400);
-        }
 
         params.push(cursorData.rank);
         const rankParam = `$${paramIdx}`;

@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from 'express';
-import { validationResult } from 'express-validator';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import CommentModel from '../models/comments.js';
 import { IComment } from '../types/comments.js';
@@ -10,10 +9,6 @@ const comment_model = new CommentModel();
 
 const createComment = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'Validation Error', 400, errors.array());
-    }
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'User Authentication Required', 401);
@@ -36,11 +31,6 @@ const createComment = async (req: ICustomRequest, res: Response, next: NextFunct
 
 const updateComment = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'Validation Error', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'User authentication required', 401);
@@ -65,11 +55,6 @@ const updateComment = async (req: ICustomRequest, res: Response, next: NextFunct
 
 const deleteComment = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'Validation Error', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
 
     if (!user_id) {
@@ -94,15 +79,7 @@ const deleteComment = async (req: ICustomRequest, res: Response, next: NextFunct
 
 const getCommentsByPostId = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'Validation Error', 400, errors.array());
-    }
     const post_id = req.params.post_id;
-
-    if (!post_id) {
-      return sendResponse.error(res, 'Post ID is required', 400);
-    }
 
     const comments = await comment_model.getCommentsByPostId(post_id);
 
@@ -126,16 +103,7 @@ const getCommentsByPostId = async (req: Request, res: Response, next: NextFuncti
 
 const getRepliesByCommentId = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'Validation Error', 400, errors.array());
-    }
-
     const comment_id = req.params.comment_id;
-
-    if (!comment_id) {
-      return sendResponse.error(res, 'Comment ID is required', 400);
-    }
 
     const replies = await comment_model.getRepliesByCommentId(comment_id);
     return sendResponse.success<IComment[]>(res, replies, 200);
