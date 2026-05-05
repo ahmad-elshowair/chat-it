@@ -2,12 +2,11 @@ import { Router } from 'express';
 import followController from '../../controllers/follows.controller.js';
 import authorize_user from '../../middlewares/auth.js';
 import { idempotency } from '../../middlewares/idempotency.js';
+import { validationMiddleware } from '../../middlewares/validation.js';
 import {
   validateFollowAction,
   validateIsFollowedAction,
 } from '../../middlewares/validations/follow.js';
-
-// create an instance of Router for follow
 
 const followRouter = Router();
 
@@ -16,6 +15,7 @@ followRouter.post(
   authorize_user,
   idempotency,
   validateFollowAction,
+  validationMiddleware,
   followController.followUser,
 );
 
@@ -23,6 +23,7 @@ followRouter.delete(
   '/unfollow',
   authorize_user,
   validateFollowAction,
+  validationMiddleware,
   followController.unFollowUser,
 );
 
@@ -38,6 +39,7 @@ followRouter.get(
   '/is-followed/:followed_id',
   authorize_user,
   validateIsFollowedAction,
+  validationMiddleware,
   followController.isFollowed,
 );
 

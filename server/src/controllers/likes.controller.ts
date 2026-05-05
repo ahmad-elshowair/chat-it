@@ -1,5 +1,4 @@
 import { NextFunction, Response } from 'express';
-import { validationResult } from 'express-validator';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { Like } from '../types/like.js';
 import { sendResponse } from '../utilities/response.js';
@@ -12,10 +11,6 @@ import { like_model } from './factory.js';
  */
 const handleLike = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, errors.array());
-    }
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'UNAUTHENTICATED!', 401, 'USER ID IS REQUIRED!');
@@ -42,11 +37,6 @@ const handleLike = async (req: ICustomRequest, res: Response, next: NextFunction
  */
 const checkIfLiked = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR!', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'UNAUTHENTICATED!', 401, 'USER ID IS REQUIRED!');

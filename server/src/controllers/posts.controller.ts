@@ -1,5 +1,4 @@
 import { NextFunction, Response } from 'express';
-import { validationResult } from 'express-validator';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { IPaginatedResult } from '../interfaces/IPagination.js';
 import { IFeedPost } from '../interfaces/IPost.js';
@@ -15,11 +14,6 @@ import { post_model } from './factory.js';
  */
 const create = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'AUTHENTICATION REQUIRED', 401);
@@ -84,9 +78,9 @@ const update = async (req: ICustomRequest, res: Response, next: NextFunction) =>
  */
 const getPostById = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR', 400, errors.array());
+    const user_id = req.user?.id;
+    if (!user_id) {
+      return sendResponse.error(res, 'AUTHENTICATION REQUIRED', 401);
     }
     const post_id = req.params.post_id;
     const userId = req.user?.id;
@@ -113,11 +107,6 @@ const getPostById = async (req: ICustomRequest, res: Response, next: NextFunctio
  */
 const index = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR', 400, errors.array());
-    }
-
     const userId = req.user?.id;
     const paginationOptions = getCursorPaginationOptions(req);
 
@@ -144,11 +133,6 @@ const index = async (req: ICustomRequest, res: Response, next: NextFunction) => 
  */
 const deletePost = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'AUTHENTICATION REQUIRED', 401);
@@ -180,11 +164,6 @@ const deletePost = async (req: ICustomRequest, res: Response, next: NextFunction
  */
 const userPosts = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR', 400, errors.array());
-    }
-
     const user_id = req.params.user_id;
     const userId = req.user?.id;
     const paginationOptions = getCursorPaginationOptions(req);
@@ -213,11 +192,6 @@ const userPosts = async (req: ICustomRequest, res: Response, next: NextFunction)
  */
 const feed = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'AUTHENTICATION REQUIRED', 401);

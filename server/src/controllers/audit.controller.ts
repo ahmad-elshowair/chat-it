@@ -1,5 +1,4 @@
 import { NextFunction, Response } from 'express';
-import { validationResult } from 'express-validator';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
 import { IPaginatedResult } from '../interfaces/IPagination.js';
 import { TAuditRecord } from '../types/audit.js';
@@ -13,11 +12,6 @@ import { audit_model } from './factory.js';
  */
 const getAuditLogs = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'Validation failed', 400, errors.array());
-    }
-
     const limit = parseInt(req.query.limit as string) || 20;
 
     const result: IPaginatedResult<TAuditRecord> = await audit_model.query({
