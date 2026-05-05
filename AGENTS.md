@@ -1,6 +1,6 @@
 # post-it Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-05-03
+Auto-generated from all feature plans. Last updated: 2026-05-04
 
 ## Active Technologies
 
@@ -11,6 +11,7 @@ Auto-generated from all feature plans. Last updated: 2026-05-03
 - TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit (006-system-audit-log)
 - PostgreSQL 15+ (primary), Redis (RBAC permission cache — reused) (006-system-audit-log)
 - PostgreSQL 15+ (reports table), Redis (rate limiting — already in stack) (008-reports-moderation)
+- PostgreSQL 15+ (FTS tsvector/tsquery, GIN index, plpgsql trigger), db-migrate, express-validator, express-rate-limit (009-full-text-search)
 
 - TypeScript 5.x (strict mode), Node.js + Express 4, React 18, Zustand 5, Multer 1.4, Helmet 7, pg 8, jsonwebtoken 9, bcryptjs 3 (001-rate-limit-security)
 
@@ -80,8 +81,9 @@ tests/
 - Do not use unnecessary escape characters in regex/string literals (`no-useless-escape`)
 
 ## Recent Changes
-- 008-reports-moderation: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limi
-- 006-system-audit-log: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limi
+
+- 008-reports-moderation: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit
+- 006-system-audit-log: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit
 - 004-bookmark-posts: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg (node-postgres), db-migrate, express-rate-limit, rate-limit-redis, express-validator
 
 - 008-reports-moderation: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit

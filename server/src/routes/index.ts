@@ -13,6 +13,7 @@ import follows from './apis/follow.routes.js';
 import posts from './apis/posts.routes.js';
 import reports from './apis/reports.routes.js';
 import roles from './apis/roles.routes.js';
+import search from './apis/search.routes.js';
 import uploadRouter from './apis/upload.routes.js';
 import users from './apis/users.routes.js';
 const routes: Router = Router();
@@ -37,6 +38,7 @@ routes.use('/comments', comments);
 routes.use('/follows', follows);
 routes.use('/reports', reports);
 routes.use('/roles', roles);
+routes.use('/search', search);
 routes.use('/upload', uploadRouter);
 
 export default routes;
