@@ -6,8 +6,7 @@ export const validateSearch = [
     .notEmpty()
     .withMessage('Search query is required')
     .isLength({ min: 2, max: 200 })
-    .withMessage('Search query must be between 2 and 200 characters')
-    .escape(),
+    .withMessage('Search query must be between 2 and 200 characters'),
 
   query('limit')
     .optional()

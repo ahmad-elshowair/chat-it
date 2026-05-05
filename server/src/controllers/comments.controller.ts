@@ -81,10 +81,6 @@ const getCommentsByPostId = async (req: Request, res: Response, next: NextFuncti
   try {
     const post_id = req.params.post_id;
 
-    if (!post_id) {
-      return sendResponse.error(res, 'Post ID is required', 400);
-    }
-
     const comments = await comment_model.getCommentsByPostId(post_id);
 
     const topLevelComments = comments.filter((comment) => !comment.parent_comment_id);
@@ -108,10 +104,6 @@ const getCommentsByPostId = async (req: Request, res: Response, next: NextFuncti
 const getRepliesByCommentId = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const comment_id = req.params.comment_id;
-
-    if (!comment_id) {
-      return sendResponse.error(res, 'Comment ID is required', 400);
-    }
 
     const replies = await comment_model.getRepliesByCommentId(comment_id);
     return sendResponse.success<IComment[]>(res, replies, 200);

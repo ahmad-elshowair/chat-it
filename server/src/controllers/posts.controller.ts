@@ -39,11 +39,6 @@ const create = async (req: ICustomRequest, res: Response, next: NextFunction) =>
  */
 const update = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendResponse.error(res, 'VALIDATION ERROR', 400, errors.array());
-    }
-
     const user_id = req.user?.id;
     if (!user_id) {
       return sendResponse.error(res, 'AUTHENTICATION REQUIRED', 401);

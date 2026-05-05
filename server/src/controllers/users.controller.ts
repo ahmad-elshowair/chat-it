@@ -11,17 +11,22 @@ import { user_model } from './factory.js';
  * @route GET /api/users
  * @returns 200 with the paginated list of users
  */
-export const getUsers = async (req: Request, res: Response, _next: NextFunction) => {
-  const paginationOptions = getCursorPaginationOptions(req);
-  const { users } = await user_model.indexWithPagination(
-    paginationOptions.limit,
-    paginationOptions.cursor!,
-    paginationOptions.direction,
-  );
+export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const paginationOptions = getCursorPaginationOptions(req);
+    const { users } = await user_model.indexWithPagination(
+      paginationOptions.limit,
+      paginationOptions.cursor!,
+      paginationOptions.direction,
+    );
 
-  const result = createPaginationResult(users, paginationOptions, 'user_id');
+    const result = createPaginationResult(users, paginationOptions, 'user_id');
 
-  return sendResponse.success<IPaginatedResult<TUser>>(res, result, 200);
+    return sendResponse.success<IPaginatedResult<TUser>>(res, result, 200);
+  } catch (error) {
+    console.error('[USER CONTROLLER] getUsers error: ', error);
+    next(error);
+  }
 };
 
 /**

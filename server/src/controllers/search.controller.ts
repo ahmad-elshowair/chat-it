@@ -1,12 +1,13 @@
 import { NextFunction, Response } from 'express';
 import { ICustomRequest } from '../interfaces/ICustomRequest.js';
+import { AppError } from '../utilities/appError.js';
 import { search_model } from './factory.js';
 import { sendResponse } from '../utilities/response.js';
 
 /**
  * Search posts by keywords using full-text search.
  * @route GET /api/search?q=...&limit=...&cursor=...&direction=...
- * @returns 200 with paginated search results, 400 for validation errors, 401 if unauthenticated
+ * @returns 200 with paginated search results, 400 for validation/cursor errors, 401 if unauthenticated
  */
 const search = async (req: ICustomRequest, res: Response, next: NextFunction) => {
   try {
@@ -36,23 +37,17 @@ const search = async (req: ICustomRequest, res: Response, next: NextFunction) =>
       pagination: {
         hasMore,
         nextCursor:
-          hasMore && lastItem
-            ? search_model.encodeCursor(lastItem.rank, lastItem.post_id!)
+          hasMore && lastItem?.post_id
+            ? search_model.encodeCursor(lastItem.rank, lastItem.post_id)
             : undefined,
-        previousCursor: firstItem
-          ? search_model.encodeCursor(firstItem.rank, firstItem.post_id!)
+        previousCursor: firstItem?.post_id
+          ? search_model.encodeCursor(firstItem.rank, firstItem.post_id)
           : undefined,
       },
     });
   } catch (error) {
-    if ((error as { message?: string }).message === 'Invalid cursor: referenced post not found') {
-      return sendResponse.error(res, 'Invalid cursor', 400);
-    }
-    if ((error as { message?: string }).message === 'Invalid cursor format') {
-      return sendResponse.error(res, 'Invalid cursor', 400);
-    }
-    if ((error as { message?: string }).message === 'Invalid cursor: malformed encoding') {
-      return sendResponse.error(res, 'Invalid cursor', 400);
+    if (error instanceof AppError && error.status === 400) {
+      return sendResponse.error(res, error.message, 400);
     }
     console.error('[searchController] search error:', error);
     next(error);

@@ -7,6 +7,7 @@ import {
   validateFollowAction,
   validateIsFollowedAction,
 } from '../../middlewares/validations/follow.js';
+import { paginationValidator } from '../../middlewares/validations/pagination.js';
 
 const followRouter = Router();
 
@@ -31,9 +32,21 @@ followRouter.get('/num-followings', authorize_user, followController.getNumberOf
 
 followRouter.get('/num-followers', authorize_user, followController.getNumberOfFollowers);
 
-followRouter.get('/followings', authorize_user, followController.getFollowings);
+followRouter.get(
+  '/followings',
+  authorize_user,
+  paginationValidator,
+  validationMiddleware,
+  followController.getFollowings,
+);
 
-followRouter.get('/followers', authorize_user, followController.getFollowers);
+followRouter.get(
+  '/followers',
+  authorize_user,
+  paginationValidator,
+  validationMiddleware,
+  followController.getFollowers,
+);
 
 followRouter.get(
   '/is-followed/:followed_id',
