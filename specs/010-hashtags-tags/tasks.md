@@ -25,13 +25,13 @@
 
 **Purpose**: Migration, types, config, and infrastructure that all stories depend on.
 
-- [ ] T001 Create migration files via `cd server && npx db-migrate create hashtags --sql-file`
-- [ ] T002 Write `server/migrations/sqls/*-hashtags-up.sql` — CREATE EXTENSION pg_trgm, tags table (chk_tags_name + chk_tags_post_count >= 0), indexes idx_tags_post_count on post_count DESC and idx_tags_name_trgm pg_trgm GIN on name, trg_tags_updated_at trigger, post_tags table with uq_post_tag, indexes idx_post_tags_post_id, idx_post_tags_tag_id, idx_post_tags_tag_created
-- [ ] T003 Write `server/migrations/sqls/*-hashtags-down.sql` — drop trg_tags_updated_at trigger, then post_tags CASCADE, then tags CASCADE; leave pg_trgm extension (shared infrastructure). Indexes are cascade-dropped with their tables
-- [ ] T004 [P] Create `server/src/types/tag.ts` — export TTag (tag_id, name, post_count, created_at, updated_at) and TPostTag (post_tag_id, post_id, tag_id, created_at)
-- [ ] T005 [P] Add TAG_TRENDING_WINDOW_HOURS (default 24), RATE_LIMIT_TAG_SEARCH_WINDOW_MS (default 60000), RATE_LIMIT_TAG_SEARCH_MAX (default 30) to `server/src/configs/config.ts` with sectional comment
-- [ ] T006 [P] Add tagSearchLimiter (30 req/min per IP, Redis-backed, prefix rl:tag-search:) to `server/src/middlewares/rateLimiter.ts` following existing contentCreationLimiter pattern
-- [ ] T007 [P] Add tags: string[] field to IFeedPost in `server/src/interfaces/IPost.ts`
+- [x] T001 Create migration files via `cd server && npx db-migrate create hashtags --sql-file`
+- [x] T002 Write `server/migrations/sqls/*-hashtags-up.sql` — CREATE EXTENSION pg_trgm, tags table (chk_tags_name + chk_tags_post_count >= 0), indexes idx_tags_post_count on post_count DESC and idx_tags_name_trgm pg_trgm GIN on name, trg_tags_updated_at trigger, post_tags table with uq_post_tag, indexes idx_post_tags_post_id, idx_post_tags_tag_id, idx_post_tags_tag_created
+- [x] T003 Write `server/migrations/sqls/*-hashtags-down.sql` — drop trg_tags_updated_at trigger, then post_tags CASCADE, then tags CASCADE; leave pg_trgm extension (shared infrastructure). Indexes are cascade-dropped with their tables
+- [x] T004 [P] Create `server/src/types/tag.ts` — export TTag (tag_id, name, post_count, created_at, updated_at) and TPostTag (post_tag_id, post_id, tag_id, created_at)
+- [x] T005 [P] Add TAG_TRENDING_WINDOW_HOURS (default 24), RATE_LIMIT_TAG_SEARCH_WINDOW_MS (default 60000), RATE_LIMIT_TAG_SEARCH_MAX (default 30) to `server/src/configs/config.ts` with sectional comment
+- [x] T006 [P] Add tagSearchLimiter (30 req/min per IP, Redis-backed, prefix rl:tag-search:) to `server/src/middlewares/rateLimiter.ts` following existing contentCreationLimiter pattern
+- [x] T007 [P] Add tags: string[] field to IFeedPost in `server/src/interfaces/IPost.ts`
 
 **Checkpoint**: Migration ready, types defined, config and rate limiter extended, IFeedPost updated.
 
@@ -43,8 +43,8 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T008 Create `server/src/utilities/extractHashtags.ts` — export extractHashtags(description: string): string[] — word-boundary regex /(?<![\/\w#])#([a-zA-Z0-9_]{2,50})\b/g, lowercase results, validate 2-50 chars, reject oversized (never truncate), slice to first 10 in document order, deduplicate case-insensitively, skip URL fragments and ##double
-- [ ] T009 Create `server/src/models/tag.ts` TagModel class with all methods accepting optional PoolClient:
+- [x] T008 Create `server/src/utilities/extractHashtags.ts` — export extractHashtags(description: string): string[] — word-boundary regex /(?<![\/\w#])#([a-zA-Z0-9_]{2,50})\b/g, lowercase results, validate 2-50 chars, reject oversized (never truncate), slice to first 10 in document order, deduplicate case-insensitively, skip URL fragments and ##double
+- [x] T009 Create `server/src/models/tag.ts` TagModel class with all methods accepting optional PoolClient:
   - findOrCreate(name, connection?): CTE INSERT ON CONFLICT DO NOTHING + SELECT fallback, returns tag_id
   - syncPostTags(postId, tagNames, connection): set-diff on lowercased names, DELETE removed + INSERT new + increment/decrement post_count per tag in same transaction, return early if identical sets
   - decrementPostCount(tagId, connection): UPDATE tags SET post_count = post_count - 1 WHERE tag_id = $1 (protected by chk_tags_post_count >= 0)
@@ -66,8 +66,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Modify `server/src/models/post.ts` — create(): after INSERT, call TagModel.syncPostTags(post_id, extractHashtags(description), connection). update(): after UPDATE, call syncPostTags with new description tags. delete(): before DELETE, fetch affected tag_ids from post_tags, then after CASCADE decrement post_count for each via TagModel.decrementPostCount
-- [ ] T011 [US1] Modify `server/src/controllers/factory.ts` — import TagModel, instantiate const tag_model = new TagModel(), add to exports
+- [x] T010 [US1] Modify `server/src/models/post.ts` — create(): after INSERT, call TagModel.syncPostTags(post_id, extractHashtags(description), connection). update(): after UPDATE, call syncPostTags with new description tags. delete(): before DELETE, fetch affected tag_ids from post_tags, then after CASCADE decrement post_count for each via TagModel.decrementPostCount
+- [x] T011 [US1] Modify `server/src/controllers/factory.ts` — import TagModel, instantiate const tag_model = new TagModel(), add to exports
 
 **Checkpoint**: Posts can be created/updated/deleted with automatic tag extraction. Tag counters are accurate. MVP complete.
 
@@ -81,10 +81,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T012 [P] [US2] Create `server/src/middlewares/validations/tags.ts` — express-validator schemas: tagNameValidator (param name matches ^[a-z0-9_]{2,50}$), tagSearchValidator (query q is non-empty string, max 50 chars), paginationValidator (limit int 1-50, cursor optional string, direction optional 'next'|'previous'), trendingValidator (limit int 1-50 optional)
-- [ ] T013 [US2] Create `server/src/controllers/tagController.ts` — three exports: postsByTag (optional auth via req.user?.id, call tag_model.getPostsByTag, return paginated IFeedPost via pagination utility), trending (call tag_model.getTrending with config.tag_trending_window_hours, return array), search (validate q non-empty, call tag_model.search, return array)
-- [ ] T014 [US2] Create `server/src/routes/apis/tags.routes.ts` — Router(); apply tagSearchLimiter + trendingValidator to GET /trending; apply tagSearchLimiter + tagSearchValidator to GET /search; apply tagNameValidator + paginationValidator to GET /:name/posts. Static routes (/trending, /search) registered BEFORE parameterized (/:name). Export default.
-- [ ] T015 [US2] Register tag routes in `server/src/routes/index.ts` — import tags from ./apis/tags.routes.js, add routes.use('/tags', tags)
+- [x] T012 [P] [US2] Create `server/src/middlewares/validations/tags.ts` — express-validator schemas: tagNameValidator (param name matches ^[a-z0-9_]{2,50}$), tagSearchValidator (query q is non-empty string, max 50 chars), paginationValidator (limit int 1-50, cursor optional string, direction optional 'next'|'previous'), trendingValidator (limit int 1-50 optional)
+- [x] T013 [US2] Create `server/src/controllers/tagController.ts` — three exports: postsByTag (optional auth via req.user?.id, call tag_model.getPostsByTag, return paginated IFeedPost via pagination utility), trending (call tag_model.getTrending with config.tag_trending_window_hours, return array), search (validate q non-empty, call tag_model.search, return array)
+- [x] T014 [US2] Create `server/src/routes/apis/tags.routes.ts` — Router(); apply tagSearchLimiter + trendingValidator to GET /trending; apply tagSearchLimiter + tagSearchValidator to GET /search; apply tagNameValidator + paginationValidator to GET /:name/posts. Static routes (/trending, /search) registered BEFORE parameterized (/:name). Export default.
+- [x] T015 [US2] Register tag routes in `server/src/routes/index.ts` — import tags from ./apis/tags.routes.js, add routes.use('/tags', tags)
 
 **Checkpoint**: All three tag endpoints functional. Tag feeds show IFeedPost with interaction state. MVP fully functional.
 
@@ -122,8 +122,8 @@
 
 ### Implementation for User Story 5
 
-- [ ] T016 [US5] Modify `server/src/models/post.ts` — add correlated tags subquery `(SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags` to index(), feed(), userPosts(), fetchPostById() queries
-- [ ] T017 [US5] Modify `server/src/models/search.ts` — add same correlated tags subquery to the search() query's inner SELECT, between existing fields and the rank column
+- [x] T016 [US5] Modify `server/src/models/post.ts` — add correlated tags subquery `(SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags` to index(), feed(), userPosts(), fetchPostById() queries
+- [x] T017 [US5] Modify `server/src/models/search.ts` — add same correlated tags subquery to the search() query's inner SELECT, between existing fields and the rank column
 
 **Checkpoint**: Tags appear on every post across all endpoints. IFeedPost.tags consistently populated.
 
@@ -133,9 +133,9 @@
 
 **Purpose**: Scheduled cleanup, testing, and verification.
 
-- [ ] T018 Modify `server/src/utilities/scheduledTasks.ts` — add hourly orphan tag cleanup: import TagModel, instantiate const tag_model = new TagModel(), cron.schedule('0 * * * *', ...), call tag_model.cleanOrphans(), log deleted count. Follows existing scheduledTokenCleanup pattern
+- [x] T018 Modify `server/src/utilities/scheduledTasks.ts` — add hourly orphan tag cleanup: import TagModel, instantiate const tag_model = new TagModel(), cron.schedule('0 * * * *', ...), call tag_model.cleanOrphans(), log deleted count. Follows existing scheduledTokenCleanup pattern
 - [ ] T019 Run `cd server && npx db-migrate up` — apply migration, verify no errors
-- [ ] T020 Run `cd server && pnpm run lint && pnpm run prettier:check` — fix any violations
+- [x] T020 Run `cd server && pnpm run lint && pnpm run prettier:check` — fix any violations
 - [ ] T021 Verify schema: connect to DB, confirm chk_tags_name, chk_tags_post_count constraints exist on tags; uq_post_tag on post_tags; idx_tags_name_trgm GIN index present; trg_tags_updated_at trigger active
 
 ---

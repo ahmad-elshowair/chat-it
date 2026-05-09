@@ -3,7 +3,9 @@ import { param, query } from 'express-validator';
 export const tagNameValidator = [
   param('name')
     .matches(/^[a-z0-9_]{2,50}$/)
-    .withMessage('Tag name must contain only lowercase alphanumeric characters and underscores (2-50 chars)'),
+    .withMessage(
+      'Tag name must contain only lowercase alphanumeric characters and underscores (2-50 chars)',
+    ),
 ];
 
 export const tagSearchValidator = [

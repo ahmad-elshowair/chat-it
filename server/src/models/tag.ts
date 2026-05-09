@@ -48,11 +48,7 @@ class TagModel {
    * If identical sets, returns early with zero DB writes.
    * All counter updates occur in the same transaction.
    */
-  async syncPostTags(
-    postId: string,
-    tagNames: string[],
-    connection: PoolClient,
-  ): Promise<void> {
+  async syncPostTags(postId: string, tagNames: string[], connection: PoolClient): Promise<void> {
     const currentResult = await connection.query(
       `SELECT t.name, t.tag_id FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = $1`,
       [postId],
@@ -77,10 +73,9 @@ class TagModel {
         postId,
         tagId,
       ]);
-      await connection.query(
-        `UPDATE tags SET post_count = post_count - 1 WHERE tag_id = $1`,
-        [tagId],
-      );
+      await connection.query(`UPDATE tags SET post_count = post_count - 1 WHERE tag_id = $1`, [
+        tagId,
+      ]);
     }
 
     for (const name of toAdd) {
@@ -89,10 +84,9 @@ class TagModel {
         `INSERT INTO post_tags (post_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
         [postId, tagId],
       );
-      await connection.query(
-        `UPDATE tags SET post_count = post_count + 1 WHERE tag_id = $1`,
-        [tagId],
-      );
+      await connection.query(`UPDATE tags SET post_count = post_count + 1 WHERE tag_id = $1`, [
+        tagId,
+      ]);
     }
   }
 

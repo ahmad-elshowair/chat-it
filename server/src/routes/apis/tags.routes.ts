@@ -11,21 +11,9 @@ import {
 
 const tagsRoute: Router = Router();
 
-tagsRoute.get(
-  '/trending',
-  tagSearchLimiter,
-  trendingValidator,
-  validationMiddleware,
-  trending,
-);
+tagsRoute.get('/trending', tagSearchLimiter, trendingValidator, validationMiddleware, trending);
 
-tagsRoute.get(
-  '/search',
-  tagSearchLimiter,
-  tagSearchValidator,
-  validationMiddleware,
-  search,
-);
+tagsRoute.get('/search', tagSearchLimiter, tagSearchValidator, validationMiddleware, search);
 
 tagsRoute.get(
   '/:name/posts',

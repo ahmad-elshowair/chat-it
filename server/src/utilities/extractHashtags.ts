@@ -1,4 +1,4 @@
-const HASHTAG_REGEX = /(?<![\/\w#])#([a-zA-Z0-9_]{2,50})\b/g;
+const HASHTAG_REGEX = /(?<![/\w#])#([a-zA-Z0-9_]{2,50})\b/g;
 
 const MAX_TAGS = 10;
 const MIN_LENGTH = 2;
