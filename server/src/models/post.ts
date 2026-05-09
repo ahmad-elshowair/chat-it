@@ -3,6 +3,10 @@ import pool from '../database/pool.js';
 import { IFeedPost } from '../interfaces/IPost.js';
 import { Post } from '../types/post.js';
 import { AppError } from '../utilities/appError.js';
+import { extractHashtags } from '../utilities/extractHashtags.js';
+import TagModel from './tag.js';
+
+const tag_model = new TagModel();
 
 class PostModel {
   /**
@@ -38,6 +42,11 @@ class PostModel {
         post.description,
         post.image,
       ]);
+      await tag_model.syncPostTags(
+        insertPost.rows[0].post_id!,
+        extractHashtags(post.description),
+        connection,
+      );
       await connection.query('COMMIT');
       return insertPost.rows[0];
     } catch (error) {
@@ -201,6 +210,7 @@ class PostModel {
       if (updatePost.rowCount === 0) {
         throw new AppError('Post not found', 404);
       }
+      await tag_model.syncPostTags(id, extractHashtags(post.description), connection);
       await connection.query('COMMIT');
       return updatePost.rows[0];
     } catch (error) {
@@ -225,9 +235,19 @@ class PostModel {
         throw new AppError('Post not found', 404);
       }
 
+      const tagIdsResult = await connection.query(
+        `SELECT tag_id FROM post_tags WHERE post_id = $1`,
+        [id],
+      );
+      const affectedTagIds = tagIdsResult.rows.map((r) => r.tag_id);
+
       const deleteResult = await connection.query('DELETE FROM posts WHERE post_id = $1', [id]);
       if (deleteResult.rowCount === 0) {
         throw new AppError('Post not found', 404);
+      }
+
+      for (const tagId of affectedTagIds) {
+        await tag_model.decrementPostCount(tagId, connection);
       }
       await connection.query('COMMIT');
       return { message: `POST: ${id} HAS BEEN DELETED !` };
