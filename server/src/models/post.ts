@@ -83,7 +83,8 @@ class PostModel {
         SELECT
           p.post_id, p.description, p.updated_at, p.image, p.number_of_likes,
           p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name,
-          u.last_name${extraSelects}
+          u.last_name${extraSelects},
+          (SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags
         FROM posts p
         JOIN users u ON p.user_id = u.user_id
         ${likeJoin}
@@ -148,7 +149,8 @@ class PostModel {
       p.updated_at,
       u.picture,
       u.first_name,
-      u.last_name${extraSelects}
+      u.last_name${extraSelects},
+      (SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags
 		FROM 
 			posts p
 		JOIN 
@@ -295,7 +297,8 @@ class PostModel {
 
       let sql = `
         SELECT 
-          p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name, u.last_name${extraSelects}
+          p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name, u.last_name${extraSelects},
+          (SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags
         FROM
           posts AS p
         JOIN 
@@ -377,7 +380,8 @@ class PostModel {
 				SELECT 
 					p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name, u.last_name,
 					CASE WHEN l.user_id IS NOT NULL THEN true ELSE false END AS is_liked,
-					CASE WHEN b.user_id IS NOT NULL THEN true ELSE false END AS is_bookmarked
+					CASE WHEN b.user_id IS NOT NULL THEN true ELSE false END AS is_bookmarked,
+					(SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags
 				FROM 
 					posts p
 				JOIN 

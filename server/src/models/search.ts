@@ -81,6 +81,7 @@ class SearchModel {
             u.user_id, u.user_name, u.picture, u.first_name, u.last_name,
             CASE WHEN l.user_id IS NOT NULL THEN true ELSE false END AS is_liked,
             CASE WHEN b.user_id IS NOT NULL THEN true ELSE false END AS is_bookmarked,
+            (SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags,
             ts_rank(p.search_vector, websearch_to_tsquery('english', ${queryParam})) AS rank
           FROM posts p
           JOIN users u ON p.user_id = u.user_id
