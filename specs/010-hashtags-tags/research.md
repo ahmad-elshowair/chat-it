@@ -4,9 +4,9 @@
 
 ## R1: Hashtag Extraction Algorithm
 
-**Decision**: Use a word-boundary-aware regex that matches `#` followed by `[a-zA-Z0-9_]{2,50}`, excludes matches preceded by `/` or within URL-like patterns.
+**Decision**: Use a word-boundary-aware regex that matches `#` followed by `[a-zA-Z0-9_]{2,50}`, excludes matches preceded by `/`, `#`, or word characters.
 
-**Rationale**: The project stores tag names lowercase (FR-003). The extraction pipeline is: (1) extract raw matches, (2) lowercase each match, (3) validate length 2-50, (4) reject invalid matches (never truncate). The regex `/(?<![\/\w])#([a-zA-Z0-9_]{2,50})\b/g` uses a negative lookbehind for `/` to skip URL fragments and `\w` to skip `##double`. Punctuation at the end (`#travel!`) is handled by `\b` word boundary.
+**Rationale**: The project stores tag names lowercase (FR-003). The extraction pipeline is: (1) extract raw matches, (2) lowercase each match, (3) validate length 2-50, (4) reject invalid matches (never truncate). The regex `/(?<![\/\w#])#([a-zA-Z0-9_]{2,50})\b/g` uses a negative lookbehind for `/` to skip URL fragments, `\w` to skip mid-word `#`, and `#` to skip `##double`/`###triple` patterns. Punctuation at the end (`#travel!`) is handled by `\b` word boundary.
 
 **Alternatives considered**:
 - Dedicated parser (e.g., nearley/chevotao): Overkill for simple hashtag extraction, adds dependency.
@@ -17,7 +17,7 @@
 
 **Decision**: Use PostgreSQL `pg_trgm` GIN index with `%` (similarity) operator for tag search.
 
-**Rationale**: The spec requires both prefix AND substring matching (FR-015). A trigram GIN index supports both natively via the `%` similarity operator, while a B-tree `text_pattern_ops` index only supports prefix (`LIKE 'query%'`). For a tag table expected to reach thousands of rows, trigram GIN provides sub-millisecond lookups for both prefix and fuzzy matches. The `pg_trgm` extension is already approved for the migration.
+**Rationale**: The spec requires both prefix AND substring matching (FR-015). A trigram GIN index supports both natively via the `%` similarity operator, while a B-tree `text_pattern_ops` index only supports prefix (`LIKE 'query%'`). For a tag table expected to reach thousands of rows, trigram GIN provides sub-millisecond lookups for both prefix and fuzzy matches. The `pg_trgm` extension is already approved for the migration. Note: the default `pg_trgm.similarity_threshold` is 0.3, which is too aggressive for short queries (2-3 chars). The `search()` method calls `SELECT set_limit(0.1)` before the similarity query to ensure short queries still match relevant tags.
 
 **Alternatives considered**:
 - `LIKE 'query%'` with B-tree prefix index: Fast but only supports prefix, not substring.

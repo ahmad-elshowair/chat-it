@@ -68,9 +68,9 @@ A user types a query into a tag search field and sees matching hashtags returned
 
 **Acceptance Scenarios**:
 
-1. **Given** tags "travel", "traveling", "time-travel" exist, **When** the user searches "travel", **Then** all three tags appear in results
+1. **Given** tags "travel", "traveling", "timetravel" exist, **When** the user searches "travel", **Then** all three tags appear in results (trigram similarity matches shared character sequences)
 2. **Given** the user searches "xyz", **When** no tags match, **Then** an empty result set is returned
-3. **Given** the user searches "fo", **When** tags "food", "football", "photography" exist, **Then** results include "food" and "football" (prefix match) and potentially "photography" if substring matching applies
+3. **Given** the user searches "fo", **When** tags "food", "football", "footwear" exist, **Then** results include all three tags (trigram similarity matches shared "fo" character sequence); tags with no character overlap (e.g., "picture") are excluded
 
 ---
 
