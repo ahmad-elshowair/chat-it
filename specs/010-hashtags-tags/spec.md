@@ -124,6 +124,7 @@ A user viewing any post — in the main feed, their profile posts, the search re
 - **FR-017**: System MUST ignore hashtag-like patterns inside URLs and email addresses during extraction
 - **FR-018**: System MUST ignore consecutive hash symbols (##) during extraction — only single # followed by valid characters constitutes a tag
 - **FR-019**: System MUST make trending and tag search endpoints available to unauthenticated users, while post-by-tag feeds support optional authentication for personalized interaction state
+- **FR-020**: Tag search and full-text search (spec 009) MUST remain independent systems — searching for "#travel" in the general search endpoint does NOT invoke tag-based matching; users use dedicated tag endpoints for hashtag discovery
 
 ### Key Entities
 
@@ -143,6 +144,12 @@ A user viewing any post — in the main feed, their profile posts, the search re
 - **SC-006**: Tags appear consistently on every post across all views (feed, profile, search, detail) with zero missing or stale tags
 - **SC-007**: Post creation and update performance is not degraded by more than 50ms when tags are being extracted and synchronized
 
+## Clarifications
+
+### Session 2026-05-09
+
+- Q: Should the existing full-text search (spec 009) also return hashtag-matched posts when users search for #travel? → A: Separate — tag search and FTS search are independent systems; users use tag endpoints for tag-based discovery.
+
 ## Assumptions
 
 - Tags are extracted from post description text only — not from comments, image metadata, or other content
@@ -151,4 +158,5 @@ A user viewing any post — in the main feed, their profile posts, the search re
 - Orphan tag cleanup runs hourly — stale tags with zero posts may be visible in search for up to one hour after the last associated post is deleted
 - Hashtag extraction uses a word-boundary-aware pattern that ignores hashtags embedded in URLs, email addresses, and HTML fragments
 - Existing authentication and rate limiting infrastructure will be reused; trending and search are public endpoints while post-by-tag supports optional auth
+- Tag search and full-text search are independent systems — no cross-querying between them
 - The post count on each tag is eventually consistent with the scheduled cleanup — it remains accurate for all operations that happen through the application
