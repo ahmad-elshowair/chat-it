@@ -12,4 +12,5 @@ export interface IFeedPost {
   last_name?: string;
   is_liked?: boolean;
   is_bookmarked?: boolean;
+  tags?: string[];
 }

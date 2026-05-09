@@ -66,6 +66,11 @@ export default {
   upload_allowed_mimes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   upload_allowed_folders: ['posts', 'profiles', 'covers'],
 
+  // ───── TAG HASHTAG SETTINGS ──────────────────────────────
+  tag_trending_window_hours: Number(process.env.TAG_TRENDING_WINDOW_HOURS || 24),
+  rate_limit_tag_search_window_ms: Number(process.env.RATE_LIMIT_TAG_SEARCH_WINDOW_MS || 60000),
+  rate_limit_tag_search_max: Number(process.env.RATE_LIMIT_TAG_SEARCH_MAX || 30),
+
   // ───── SESSION MANAGEMENT ──────────────────────────────
   enable_token_rotation: process.env.ENABLE_TOKEN_ROTATION !== 'false',
   enable_fingerprinting: process.env.ENABLE_FINGERPRINTING !== 'false',

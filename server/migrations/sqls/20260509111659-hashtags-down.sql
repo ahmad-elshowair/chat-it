@@ -1,0 +1,4 @@
+DROP TRIGGER IF EXISTS trg_tags_updated_at ON tags;
+
+DROP TABLE IF EXISTS post_tags CASCADE;
+DROP TABLE IF EXISTS tags CASCADE;
