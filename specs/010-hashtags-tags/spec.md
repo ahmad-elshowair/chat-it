@@ -97,34 +97,40 @@ A user viewing any post — in the main feed, their profile posts, the search re
 - What happens when a user includes a hashtag inside a URL (e.g., "https://example.com/#section")? The #section portion is NOT extracted as a tag.
 - What happens with consecutive hash symbols (e.g., "##heading")? These are NOT treated as hashtags — a valid tag requires at least 2 alphanumeric/underscore characters after a single #.
 - What happens when two users simultaneously post using a brand new tag? The tag is created once; both posts link to the same tag. No duplicate tags are created.
-- What happens when a user submits a tag exceeding 50 characters? The tag is truncated or rejected during extraction validation.
+- What happens when a user submits a tag exceeding 50 characters? The tag is rejected (not extracted) during validation — tags are never truncated.
 - What happens when a tag contains only special characters (e.g., "#@@@")? No tag is extracted — tags must contain at least 2 alphanumeric or underscore characters.
 - What happens with punctuation adjacent to a tag (e.g., "#travel!" or "(#food)")? The tag "travel" or "food" is extracted correctly, excluding the punctuation.
+- What happens when a post contains only hashtags and no other text (e.g., "#travel #food")? Tags are extracted normally — there is no minimum non-tag text requirement.
+- What happens with a hashtag at the very start of the description (e.g., "#travel is great") or the very end (e.g., "great trip #travel")? Both are extracted correctly — no surrounding whitespace is required.
+- What happens when a post is created and immediately deleted? The tag associations are created and then removed in separate transactions; tag post counts increment then decrement, ending at the correct value.
+- What happens when a tag name is exactly 50 characters long? It is accepted — the length bound is inclusive (2-50).
+- What happens with tags containing only underscores (e.g., "#___")? They are accepted — the validation regex allows underscores as valid characters.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: System MUST extract hashtags from post description text automatically when a post is created
-- **FR-002**: System MUST extract hashtags from post description text and reconcile (diff) tag associations when a post is updated — removing stale tags, adding new ones, and preserving unchanged ones
+- **FR-002**: System MUST extract hashtags from post description text and reconcile tag associations when a post is updated — compute set difference on normalized (lowercased) tag names: remove associations for tags no longer present, add associations for newly introduced tags, preserve unchanged associations. If the resulting set is identical, no database writes occur
 - **FR-003**: System MUST store tag names in lowercase to ensure case-insensitive matching (#Travel and #travel resolve to the same tag)
-- **FR-004**: System MUST enforce a maximum of 10 unique tags per post, silently ignoring any tags beyond the limit
-- **FR-005**: System MUST validate that tag names contain only lowercase alphanumeric characters and underscores, with a length between 2 and 50 characters
-- **FR-006**: System MUST enforce tag name format validation at both the application layer and the data storage layer
+- **FR-004**: System MUST enforce a maximum of 10 unique tags per post, keeping only the first 10 tags in document order (left-to-right appearance in the description text) and silently ignoring any tags beyond that limit — the user receives no warning about dropped tags
+- **FR-005**: System MUST validate that tag names contain only lowercase alphanumeric characters and underscores, with a length between 2 and 50 characters (inclusive — a tag of exactly 2 or exactly 50 characters is valid; tags containing only underscores such as "#___" are valid)
+- **FR-006**: System MUST enforce tag name format validation at both the application layer and the data storage layer. Normalization order: (1) lowercase the extracted text, (2) validate length 2-50 chars, (3) reject if validation fails — tags are never truncated
 - **FR-007**: System MUST create new tags on first use and reuse existing tags for subsequent posts
 - **FR-008**: System MUST handle concurrent tag creation safely — two users posting a new tag simultaneously must not create duplicates
-- **FR-009**: System MUST maintain an accurate count of posts per tag, updated in the same operation as tag association changes
+- **FR-009**: System MUST maintain an accurate denormalized count of posts per tag ("tag post count"), updated in the same operation as tag association changes. The tag post count MUST never go below zero (enforced by database constraint: post_count >= 0)
 - **FR-010**: System MUST remove tag associations and decrease post counts when a post is deleted
 - **FR-011**: System MUST clean up orphan tags (zero posts) via a scheduled background process, not during individual post deletion
 - **FR-012**: System MUST provide a paginated feed of posts filtered by a specific tag, ordered by most recent first, using cursor-based pagination
-- **FR-013**: System MUST display the same post information in tag feeds as in the main feed (including like/bookmark status when the user is authenticated)
-- **FR-014**: System MUST provide a trending tags list ranked by the number of new tag associations created within a configurable time window (default 24 hours), with ties broken by total post count
-- **FR-015**: System MUST provide tag search with prefix and substring matching capabilities
-- **FR-016**: System MUST display associated tags on every post across all views (feed, profile, search results, post detail)
+- **FR-013**: System MUST display the same post information in tag feeds as in the main feed — specifically the IFeedPost shape including post metadata, author info, interaction state (is_liked, is_bookmarked when authenticated), and associated tag names
+- **FR-014**: System MUST provide a trending tags list ranked by the number of new tag associations created within a configurable time window (default 24 hours, configured via environment variable), with ties broken by total tag post count. The trending query MUST only scan post_tags rows within the configured window (not the entire table). A maximum of 20 tags are returned. When no tags have activity in the window, an empty list is returned
+- **FR-015**: System MUST provide tag search using trigram similarity matching (pg_trgm GIN index) supporting both prefix and substring queries. A maximum of 20 results are returned, ranked by tag post count descending. An empty or missing search query (q= blank or absent) MUST be rejected with a validation error
+- **FR-016**: System MUST display associated tags on every post across all views (feed, profile, search results, post detail) — this means including tag names in the response shape for all post-returning endpoints. Displaying tags on a post is independent from querying by tag (FR-020)
 - **FR-017**: System MUST ignore hashtag-like patterns inside URLs and email addresses during extraction
 - **FR-018**: System MUST ignore consecutive hash symbols (##) during extraction — only single # followed by valid characters constitutes a tag
-- **FR-019**: System MUST make trending and tag search endpoints available to unauthenticated users, while post-by-tag feeds support optional authentication for personalized interaction state
+- **FR-019**: System MUST make trending and tag search endpoints available to unauthenticated users (no auth token required). Post-by-tag feeds MUST work without authentication — when no auth token is present, interaction state defaults to is_liked=false and is_bookmarked=false; when authenticated, actual interaction state is returned
 - **FR-020**: Tag search and full-text search (spec 009) MUST remain independent systems — searching for "#travel" in the general search endpoint does NOT invoke tag-based matching; users use dedicated tag endpoints for hashtag discovery
+- **FR-021**: Tag search and trending endpoints MUST be rate-limited using a dedicated limiter (30 requests per minute per IP) to prevent abuse. Rate-limited requests return a 429 status with a retry-after header
 
 ### Key Entities
 
@@ -140,9 +146,9 @@ A user viewing any post — in the main feed, their profile posts, the search re
 - **SC-002**: Clicking a hashtag loads a paginated feed of all posts with that tag within 2 seconds
 - **SC-003**: The trending tags list accurately reflects tags with the most activity in the past 24 hours, updating as new posts are created
 - **SC-004**: Tag search returns matching results in under 1 second for queries against a tag catalog of 10,000+ tags
-- **SC-005**: 95% of users can discover new content via hashtags without assistance on their first attempt
+- **SC-005**: Users successfully find and click a hashtag from the trending list or tag search results on their first attempt without reading documentation (measured by: user can navigate from a post tag badge to a tag feed and see related posts)
 - **SC-006**: Tags appear consistently on every post across all views (feed, profile, search, detail) with zero missing or stale tags
-- **SC-007**: Post creation and update performance is not degraded by more than 50ms when tags are being extracted and synchronized
+- **SC-007**: Post creation and update latency increases by no more than 50ms compared to the same operation without tag extraction (measured as p95 of the difference between with-tags and without-tags latency over 100 requests)
 
 ## Clarifications
 
@@ -153,10 +159,13 @@ A user viewing any post — in the main feed, their profile posts, the search re
 ## Assumptions
 
 - Tags are extracted from post description text only — not from comments, image metadata, or other content
-- The trending time window defaults to 24 hours but should be configurable without requiring code changes
-- Tag search results are limited to a reasonable maximum (e.g., 20 results) to maintain fast response times
-- Orphan tag cleanup runs hourly — stale tags with zero posts may be visible in search for up to one hour after the last associated post is deleted
+- The trending time window defaults to 24 hours and is configured via the TAG_TRENDING_WINDOW_HOURS environment variable
+- Tag search results are limited to exactly 20 results per query
+- Trending results are limited to exactly 20 tags per request
+- Orphan tag cleanup runs hourly via scheduled task — stale tags with zero posts may be visible in search for up to one hour after the last associated post is deleted
 - Hashtag extraction uses a word-boundary-aware pattern that ignores hashtags embedded in URLs, email addresses, and HTML fragments
-- Existing authentication and rate limiting infrastructure will be reused; trending and search are public endpoints while post-by-tag supports optional auth
+- Existing authentication and rate limiting infrastructure will be reused; a dedicated rate limiter (30 req/min per IP) applies to tag search and trending endpoints
 - Tag search and full-text search are independent systems — no cross-querying between them
-- The post count on each tag is eventually consistent with the scheduled cleanup — it remains accurate for all operations that happen through the application
+- The tag post count (denormalized counter on the tags table) is the authoritative display value; it is updated atomically with post_tags changes and must never go below zero
+- The post_tags cascade on post deletion is handled by the database foreign key (ON DELETE CASCADE); this is reliable and does not require application-level fallback
+- Adding the tags field to IFeedPost affects all existing post-returning endpoints: feed, index, userPosts, fetchPostById, and search — each must include a tags subquery
