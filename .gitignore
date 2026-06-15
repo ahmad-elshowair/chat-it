@@ -13,5 +13,6 @@ coverage/
 Thumbs.db
 
 
-/.agent/
+/.agents/
 /.opencode/
+/docs/spec-kit-database-upgrade/
