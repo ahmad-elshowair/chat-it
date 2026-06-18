@@ -1,9 +1,15 @@
 # Feature Specification: Shares & Reposts
 
 **Feature Branch**: `011-shares-reposts`  
-**Created**: 2026-06-14  
+**Created**: 2026-06-15  
 **Status**: Draft  
 **Input**: User description: "Allow users to share/repost other users' posts in the post-it social app, optionally adding their own commentary (quote post). Shared posts appear in the sharer's followers' feeds and on the sharer's profile feed."
+
+## Clarifications
+
+### Session 2026-06-15
+- Q: Should the feed queries (feed() and userPosts()) return is_shared: boolean for all posts (including the original post and embedded original posts) to prevent frontend N+1 API calls? → A: Yes, return is_shared (boolean) directly in the post/share objects within the feed query results.
+- Q: What should the response body look like for a successful share creation (POST /api/shares/:post_id)? → A: Return the fully created TShare object: { share_id: string, user_id: string, original_post_id: string, commentary: string | null, created_at: Date }.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -17,13 +23,13 @@ A user views a post authored by another user and chooses to share it. They can p
 
 **Acceptance Scenarios**:
 
-1. **Given** a user views another user's post, **When** they repost it without commentary, **Then** a share record is created and the post's share count increases by exactly 1
-2. **Given** a user reposts with commentary "Must read!", **When** the share is created, **Then** the commentary is stored and associated with the share
+1. **Given** a user views another user's post, **When** they repost it without commentary, **Then** a share record is created, returned in the response, and the post's share count increases by exactly 1
+2. **Given** a user reposts with commentary "Must read!", **When** the share is created, **Then** the commentary is stored, returned in the response share object, and associated with the share
 3. **Given** a user submits commentary of exactly 280 characters, **When** validated, **Then** it is accepted (the length bound is inclusive)
 4. **Given** a user submits commentary of 281 characters, **When** validated, **Then** the request is rejected before any data is written
 5. **Given** a user submits commentary that is empty or whitespace-only, **When** the share is created, **Then** it is treated as a simple repost with no commentary stored
 6. **Given** a user attempts to share their own post, **When** the request is processed, **Then** it is rejected with a conflict error and no share is created
-7. **Given** a user has already shared a post, **When** they attempt to share it again, **Then** no duplicate share is created and the share count does not change (idempotent)
+7. **Given** a user has already shared a post, **When** they attempt to share it again, **Then** no duplicate share is created, the share count does not change (idempotent), and the response indicates `already_shared`
 
 ---
 
@@ -76,7 +82,7 @@ When a user the viewer follows shares a post, that share appears in the viewer's
 2. **Given** a user shares several posts, **When** a visitor views that user's profile feed, **Then** the shares appear alongside that user's original posts
 3. **Given** the feed contains both original posts and shares, **When** the viewer paginates across several pages, **Then** the composite cursor returns each page correctly without skipping or duplicating items, even when items share identical timestamps
 4. **Given** the viewer loads the global discovery feed (not the personal feed), **When** results load, **Then** shares are NOT included — shares appear only in the personal feed and profiles
-5. **Given** the viewer is authenticated, **When** shared posts appear in the feed, **Then** each embedded original post shows accurate liked/bookmarked status for the viewer
+5. **Given** the viewer is authenticated, **When** shared posts appear in the feed, **Then** each embedded original post shows accurate liked/bookmarked/shared status for the viewer
 6. **Given** a share's original post has been deleted, **When** the feed renders, **Then** the orphan share does not appear (it was already removed when the post was deleted)
 
 ---
@@ -115,12 +121,15 @@ When a user the viewer follows shares a post, that share appears in the viewer's
 - **FR-012**: System MUST display the total share count on a post across all post views
 - **FR-013**: System MUST provide a paginated list of users who shared a given post, ordered most-recent-first, using cursor-based pagination
 - **FR-014**: System MUST include shares in the personal home feed and in user profile feeds, interleaved with original posts and ordered by activity time (most recent first)
-- **FR-015**: Each share displayed in the feed MUST show who shared it (sharer identity), when it was shared, any quote commentary, and the original post embedded with its author and the viewer's interaction state (is_liked, is_bookmarked)
+- **FR-015**: Each share displayed in the feed MUST show who shared it (sharer identity), when it was shared, any quote commentary, and the original post embedded with its author and the viewer's interaction state (is_liked, is_bookmarked, is_shared)
 - **FR-016**: System MUST exclude shares from the global discovery feed — shares appear only in personal feeds and profiles
 - **FR-017**: System MUST paginate the unified feed (original posts + shares) using a composite cursor that uniquely identifies each item, so pagination never skips or duplicates items even when items share identical timestamps
 - **FR-018**: Share notifications to the original poster are out of scope for this feature and are deferred to a future notifications feature
 - **FR-019**: Re-sharing a share MUST NOT be supported — users can only share original posts; one level of sharing is allowed (a share always references an original post, never another share)
 - **FR-020**: Share creation MUST be rate-limited and idempotent at the API layer, consistent with other content-creation actions
+- **FR-021**: System MUST return is_shared (boolean) for all posts returned in the feed (feed()) and user profile timeline (userPosts()) queries to prevent frontend N+1 API calls.
+- **FR-022**: On creation of a new share (POST /api/shares/:post_id), the response MUST return the created Share record — share id, sharer, original post, commentary (or none), and creation timestamp
+- **FR-023**: When a share request targets a post the user has already shared, the request MUST be idempotent — it MUST return 200 with an explicit `already_shared` indicator, and MUST NOT create a duplicate share, change the share count, or imply a new record was created
 
 ### Key Entities
 
