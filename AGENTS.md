@@ -90,5 +90,11 @@ tests/
 - 006-system-audit-log: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg 8 (node-postgres), db-migrate, express-validator, express-rate-limit
 - 004-bookmark-posts: Added TypeScript 5.x (strict mode), Node.js + Express 4, pg (node-postgres), db-migrate, express-rate-limit, rate-limit-redis, express-validator
 
+<!-- SPECKIT START -->
+## Active Feature Plan
+
+- **Current spec**: [`specs/011-shares-reposts/plan.md`](specs/011-shares-reposts/plan.md) — Shares & Reposts. Planning artifacts complete (`spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/shares-api.md`, `quickstart.md`). Next: `/speckit.tasks` → `/speckit.analyze` → `/speckit.implement`.
+<!-- SPECKIT END -->
+
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
