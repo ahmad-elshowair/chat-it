@@ -120,13 +120,13 @@ When a user the viewer follows shares a post, that share appears in the viewer's
 - **FR-011**: System MUST allow an authenticated user to check whether they have already shared a given post (boolean result)
 - **FR-012**: System MUST display the total share count on a post across all post views
 - **FR-013**: System MUST provide a paginated list of users who shared a given post, ordered most-recent-first, using cursor-based pagination
-- **FR-014**: System MUST include shares in the personal home feed and in user profile feeds, interleaved with original posts and ordered by activity time (most recent first)
+- **FR-014**: System MUST include shares in the personal home feed and in user profile feeds, interleaved with original posts and ordered by activity time (most recent first), where each item's activity time is its own timestamp — the original post's update time (`updated_at`) for posts and the share's creation time (`created_at`) for shares
 - **FR-015**: Each share displayed in the feed MUST show who shared it (sharer identity), when it was shared, any quote commentary, and the original post embedded with its author and the viewer's interaction state (is_liked, is_bookmarked, is_shared)
 - **FR-016**: System MUST exclude shares from the global discovery feed — shares appear only in personal feeds and profiles
 - **FR-017**: System MUST paginate the unified feed (original posts + shares) using a composite cursor that uniquely identifies each item, so pagination never skips or duplicates items even when items share identical timestamps
 - **FR-018**: Share notifications to the original poster are out of scope for this feature and are deferred to a future notifications feature
 - **FR-019**: Re-sharing a share MUST NOT be supported — users can only share original posts; one level of sharing is allowed (a share always references an original post, never another share)
-- **FR-020**: Share creation MUST be rate-limited and idempotent at the API layer, consistent with other content-creation actions
+- **FR-020**: Share creation MUST reuse the shared content-creation rate limiter (the same limiter applied to post and comment creation; threshold defined in shared configuration) and be idempotent at the API layer
 - **FR-021**: System MUST return is_shared (boolean) for all posts returned in the feed (feed()) and user profile timeline (userPosts()) queries to prevent frontend N+1 API calls.
 - **FR-022**: On creation of a new share (POST /api/shares/:post_id), the response MUST return the created Share record — share id, sharer, original post, commentary (or none), and creation timestamp
 - **FR-023**: When a share request targets a post the user has already shared, the request MUST be idempotent — it MUST return 200 with an explicit `already_shared` indicator, and MUST NOT create a duplicate share, change the share count, or imply a new record was created
@@ -159,3 +159,5 @@ When a user the viewer follows shares a post, that share appears in the viewer's
 - The share count is a denormalized value maintained automatically by database rules so it cannot drift during cascade deletions or concurrent operations; application code does not manually adjust it. This intentionally differs from how like and bookmark counts are maintained, which lack such automation and are updated in application code.
 - The composite pagination cursor is opaque to the client.
 - Shares reference posts only, so the one-level re-share limit is structural.
+- Share create and delete operations run inside explicit transactions (`BEGIN/COMMIT/ROLLBACK`) with connections released in `finally` blocks, per Constitution Article IV. Because the count-maintenance triggers fire within the enclosing transaction, the denormalized counter is updated in the same transaction as the share change — satisfying Article IV's same-transaction counter rule even though the model does not update the counter manually.
+- Implementation adheres to the project constitution (Articles I–IX), including raw parameterized SQL via `pg` (Article I), migration-first delivery (Article II), TypeScript strict mode (Article III), and a test for every share model method (Article VI).
