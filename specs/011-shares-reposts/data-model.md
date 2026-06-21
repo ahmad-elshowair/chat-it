@@ -4,6 +4,13 @@
 
 Full schema DDL lives in the migration (`server/migrations/sqls/<timestamp>-shares-up.sql`, reference SQL in the design doc). This document describes the entities, fields, constraints, triggers, indexes, and relationships.
 
+## Terminology (canonical)
+
+- **Share record** — the prose term for a row in the `shares` table.
+- **`TShare`** — the TypeScript type (`server/src/types/share.ts`) used in code and API responses.
+- **`commentary`** — the column / type field name; **`share_commentary`** is the alias used in the feed projection (to distinguish the share's commentary from the original post's own fields).
+- **Sharer** — the user who shared (`shares.user_id`); **author** — the original post's creator (`posts.user_id`).
+
 ---
 
 ## Entities
@@ -39,7 +46,7 @@ Records that a user shared another user's post at a point in time, with optional
 
 All trigger functions are `LANGUAGE plpgsql`. Created in `up.sql`, dropped in reverse order in `down.sql`.
 
-### `trg_check_self_share` — BEFORE INSERT OR UPDATE (per row)
+### `trg_check_self_share` — BEFORE INSERT (per row)
 
 Function `check_self_share()`:
 ```sql
@@ -49,6 +56,7 @@ END IF;
 ```
 - Enforces FR-005 at the data layer (unbypassable). A `CHECK` cannot do this (subquery required).
 - Controller maps `SQLSTATE 23514` → HTTP `409`.
+- Fires on `INSERT` only — shares are immutable (no update endpoint/path), so no `UPDATE` case is needed.
 
 ### `trg_maintain_share_count_on_insert` — AFTER INSERT (per row)
 

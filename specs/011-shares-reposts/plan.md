@@ -70,7 +70,7 @@ server/
 └── src/
     ├── types/share.ts                    # NEW — TShare
     ├── interfaces/IPost.ts               # MODIFY — extend IFeedPost (type, share_*, activity_at, is_shared, number_of_shares)
-    ├── models/share.ts                   # NEW — share/unshare/getSharesByPostId/getSharesByUserId/isShared
+    ├── models/share.ts                   # NEW — share/unshare/getSharesByPostId/isShared
     ├── models/post.ts                    # MODIFY — feed() + userPosts() UNION ALL + composite cursor + is_shared
     ├── controllers/shares.controller.ts  # NEW — maps SQLSTATE 23514 → 409
     ├── controllers/factory.ts            # MODIFY — instantiate + export share_model

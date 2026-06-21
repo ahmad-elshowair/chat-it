@@ -25,7 +25,7 @@ Resolves all design decisions for Spec 011. The feature spec was thorough, so no
 
 ## 2. Self-share prevention: BEFORE INSERT trigger vs CHECK vs app-only
 
-**Decision**: `BEFORE INSERT OR UPDATE` trigger that joins `posts` and raises `SQLSTATE 23514` when `shares.user_id = posts.user_id` of the original post.
+**Decision**: `BEFORE INSERT` trigger that joins `posts` and raises `SQLSTATE 23514` when `shares.user_id = posts.user_id` of the original post. (Shares are immutable — no UPDATE path — so INSERT-only is sufficient.)
 
 **Rationale**:
 - A `CHECK` constraint **cannot** express this — it would need a subquery against `posts` to read the author, which `CHECK` forbids.

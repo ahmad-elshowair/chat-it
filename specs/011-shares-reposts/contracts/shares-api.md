@@ -74,7 +74,7 @@ Paginated list of users who shared a post, most-recent-first.
   "pagination": { "next_cursor": "...", "previous_cursor": "...", "has_more": true }
 }
 ```
-- Ordered by `shares.created_at DESC`. Uses `idx_shares_post_created`. No `COUNT(*)` (Principle VIII).
+- Ordered by `shares.created_at DESC, share_id DESC` (tie-break on `share_id` for equal timestamps, mirroring the feed cursor). Uses `idx_shares_post_created`. No `COUNT(*)` (Principle VIII).
 
 ---
 
