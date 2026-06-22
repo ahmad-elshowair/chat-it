@@ -25,10 +25,10 @@
 
 **Purpose**: Create the migration files and shared type/interface definitions that all user stories depend on.
 
-- [ ] T001 Create migration skeleton: run `cd server && npx db-migrate create shares --sql-file` to generate `server/migrations/<timestamp>-shares.js` and `server/migrations/sqls/<timestamp>-shares-{up,down}.sql`
-- [ ] T002 Write `server/migrations/sqls/<timestamp>-shares-up.sql` — ALTER TABLE posts ADD number_of_shares (NOT NULL DEFAULT 0, CHECK >= 0), CREATE TABLE shares (PK, FKs, UNIQUE), composite indexes `idx_shares_post_created` and `idx_shares_user_created`, triggers `check_self_share` + `maintain_share_count_on_insert` + `maintain_share_count_on_delete` per data-model.md
-- [ ] T003 Write `server/migrations/sqls/<timestamp>-shares-down.sql` — drop triggers/functions, indexes, table, constraint, and column in reverse order per data-model.md
-- [ ] T004 Run migration and verify schema: `npx db-migrate up`, then verify with `psql -d post_it -c "\d shares"`, `psql -d post_it -c "\d posts"`, trigger listing, and index listing per quickstart.md §2–§3
+- [x] T001 Create migration skeleton: run `cd server && npx db-migrate create shares --sql-file` to generate `server/migrations/<timestamp>-shares.js` and `server/migrations/sqls/<timestamp>-shares-{up,down}.sql`
+- [x] T002 Write `server/migrations/sqls/<timestamp>-shares-up.sql` — ALTER TABLE posts ADD number_of_shares (NOT NULL DEFAULT 0, CHECK >= 0), CREATE TABLE shares (PK, FKs, UNIQUE), composite indexes `idx_shares_post_created` and `idx_shares_user_created`, triggers `check_self_share` + `maintain_share_count_on_insert` + `maintain_share_count_on_delete` per data-model.md
+- [x] T003 Write `server/migrations/sqls/<timestamp>-shares-down.sql` — drop triggers/functions, indexes, table, constraint, and column in reverse order per data-model.md
+- [x] T004 Run migration and verify schema: `npx db-migrate up`, then verify with `psql -d post_it -c "\d shares"`, `psql -d post_it -c "\d posts"`, trigger listing, and index listing per quickstart.md §2–§3
 
 ---
 
