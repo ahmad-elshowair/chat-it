@@ -233,5 +233,5 @@ Task T012: "Mount shares routes in server/src/routes/index.ts"
 - Controller maps SQLSTATE 23514 → HTTP 409 for self-share trigger errors
 - `ON CONFLICT DO NOTHING` + rowCount drives share/unshare responses (no pre-check SELECT → no TOCTOU race)
 - Commentary normalization: empty/whitespace → null (handled by validation middleware before model)
-- Commit after each task or logical group
+- **Commit discipline (process)**: after completing each phase (Phases 1–7), draft a short, detailed Conventional Commit message for that phase's changes, present it, and **wait for explicit approval** before running `git add` + `git commit`. Do not auto-commit between phases. Suggested scopes: `feat(db)` (migration), `feat(shares)` (model/controller/routes), `feat(feed)` (post.ts UNION), `test(shares)` (tests), `chore(shares)` (verification/benchmarks).
 - Stop at any checkpoint to validate story independently
