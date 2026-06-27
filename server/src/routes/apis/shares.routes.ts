@@ -40,6 +40,7 @@ shareRoute.post(
 shareRoute.delete(
   '/:post_id',
   authorize_user,
+  contentCreationLimiter,
   validateShare,
   validationMiddleware,
   sharesController.unsharePost,

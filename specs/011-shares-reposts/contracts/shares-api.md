@@ -39,7 +39,7 @@ Creates a share (simple repost or quote post). Idempotent.
 
 Removes the authenticated user's share of a post. Idempotent.
 
-**Auth**: required · **Middleware**: `authorize_user`, `validateShare`, `validationMiddleware`
+**Auth**: required · **Middleware**: `authorize_user`, `contentCreationLimiter`, `validateShare`, `validationMiddleware`
 
 **Path**: `:post_id` (UUID)
 
