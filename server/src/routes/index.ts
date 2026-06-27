@@ -14,6 +14,7 @@ import posts from './apis/posts.routes.js';
 import reports from './apis/reports.routes.js';
 import roles from './apis/roles.routes.js';
 import search from './apis/search.routes.js';
+import shares from './apis/shares.routes.js';
 import tags from './apis/tags.routes.js';
 import uploadRouter from './apis/upload.routes.js';
 import users from './apis/users.routes.js';
@@ -40,6 +41,7 @@ routes.use('/follows', follows);
 routes.use('/reports', reports);
 routes.use('/roles', roles);
 routes.use('/search', search);
+routes.use('/shares', shares);
 routes.use('/tags', tags);
 routes.use('/upload', uploadRouter);
 

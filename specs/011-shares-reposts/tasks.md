@@ -38,14 +38,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 [P] Create `server/src/types/share.ts` — export `TShare` type with fields: `share_id`, `user_id`, `original_post_id`, `commentary` (string | null), `created_at` (Date)
-- [ ] T006 [P] Extend `server/src/interfaces/IPost.ts` — add to `IFeedPost`: `type` ('post' | 'share'), `activity_id` (string), `activity_at` (Date), `shared_by_user_id` (string | null), `shared_by_user_name` (string | null), `share_commentary` (string | null), `number_of_shares` (number), `is_shared` (boolean)
-- [ ] T007 [P] Create `server/src/middlewares/validations/shares.ts` — export `validateShare` (param `post_id` UUID) and `validateShareCreation` (optional body `commentary` ≤ 280 chars, trim + whitespace normalization to null) using express-validator, following the pattern in `server/src/middlewares/validations/bookmarks.ts`
-- [ ] T008 Create `server/src/models/share.ts` — `ShareModel` class with methods: `share(userId, postId, commentary)` using `INSERT ... ON CONFLICT DO NOTHING RETURNING *` + rowCount-driven response (DO NOT manually update `number_of_shares` — triggers own it), `unshare(userId, postId)` using `DELETE ... WHERE` + rowCount check, `getSharesByPostId(postId, limit, cursor, direction)` with cursor pagination using `idx_shares_post_created` (ordered `created_at DESC, share_id DESC` tie-break, following the existing `getLikesByPostId` pattern), `isShared(userId, postId)` returning boolean. All methods use `pool.connect()`, `BEGIN/COMMIT/ROLLBACK`, `finally { connection.release() }`, parameterized SQL per Articles I/IV/VIII
-- [ ] T009 Create `server/src/controllers/shares.controller.ts` — export `sharePost` (maps SQLSTATE 23514 from self-share trigger → 409, rowCount 0 → `{ action: 'already_shared' }`, rowCount 1 → TShare), `unsharePost` (rowCount 0 → idempotent 200, rowCount 1 → `{ action: 'unshared' }`), `getPostSharers` (paginated via `getCursorPaginationOptions` + `createPaginationResult`), `checkShareStatus` (returns `{ is_shared: boolean }`). Follow JSDoc conventions per AGENTS.md
-- [ ] T010 Create `server/src/routes/apis/shares.routes.ts` — mount `authorize_user`, `contentCreationLimiter`, `idempotency`, `validateShare`/`validateShareCreation`, `validationMiddleware`, `paginationValidator` on the 4 endpoints per contracts/shares-api.md: `POST /:post_id`, `DELETE /:post_id`, `GET /post/:post_id`, `GET /is-shared/:post_id`
-- [ ] T011 Register share_model in `server/src/controllers/factory.ts` — import `ShareModel`, instantiate `share_model`, add to exports (alphabetical order)
-- [ ] T012 Mount shares routes in `server/src/routes/index.ts` — `import shares from './apis/shares.routes.js'` and `routes.use('/shares', shares)` (alphabetical position)
+- [x] T005 [P] Create `server/src/types/share.ts` — export `TShare` type with fields: `share_id`, `user_id`, `original_post_id`, `commentary` (string | null), `created_at` (Date)
+- [x] T006 [P] Extend `server/src/interfaces/IPost.ts` — add to `IFeedPost`: `type` ('post' | 'share'), `activity_id` (string), `activity_at` (Date), `shared_by_user_id` (string | null), `shared_by_user_name` (string | null), `share_commentary` (string | null), `number_of_shares` (number), `is_shared` (boolean)
+- [x] T007 [P] Create `server/src/middlewares/validations/shares.ts` — export `validateShare` (param `post_id` UUID) and `validateShareCreation` (optional body `commentary` ≤ 280 chars, trim + whitespace normalization to null) using express-validator, following the pattern in `server/src/middlewares/validations/bookmarks.ts`
+- [x] T008 Create `server/src/models/share.ts` — `ShareModel` class with methods: `share(userId, postId, commentary)` using `INSERT ... ON CONFLICT DO NOTHING RETURNING *` + rowCount-driven response (DO NOT manually update `number_of_shares` — triggers own it), `unshare(userId, postId)` using `DELETE ... WHERE` + rowCount check, `getSharesByPostId(postId, limit, cursor, direction)` with cursor pagination using `idx_shares_post_created` (ordered `created_at DESC, share_id DESC` tie-break, following the existing `getLikesByPostId` pattern), `isShared(userId, postId)` returning boolean. All methods use `pool.connect()`, `BEGIN/COMMIT/ROLLBACK`, `finally { connection.release() }`, parameterized SQL per Articles I/IV/VIII
+- [x] T009 Create `server/src/controllers/shares.controller.ts` — export `sharePost` (maps SQLSTATE 23514 from self-share trigger → 422, rowCount 0 → `{ action: 'already_shared' }`, rowCount 1 → TShare), `unsharePost` (rowCount 0 → idempotent 200, rowCount 1 → `{ action: 'unshared' }`), `getPostSharers` (paginated via `getCursorPaginationOptions` + `createPaginationResult`), `checkShareStatus` (returns `{ is_shared: boolean }`). Follow JSDoc conventions per AGENTS.md
+- [x] T010 Create `server/src/routes/apis/shares.routes.ts` — mount `authorize_user`, `contentCreationLimiter`, `idempotency`, `validateShare`/`validateShareCreation`, `validationMiddleware`, `paginationValidator` on the 4 endpoints per contracts/shares-api.md: `POST /:post_id`, `DELETE /:post_id`, `GET /post/:post_id`, `GET /is-shared/:post_id`
+- [x] T011 Register share_model in `server/src/controllers/factory.ts` — import `ShareModel`, instantiate `share_model`, add to exports (alphabetical order)
+- [x] T012 Mount shares routes in `server/src/routes/index.ts` — `import shares from './apis/shares.routes.js'` and `routes.use('/shares', shares)` (alphabetical position)
 
 **Checkpoint**: Foundation ready — share CRUD endpoints work, triggers maintain counters, all 4 API endpoints respond correctly. User story implementation can now begin.
 
@@ -55,7 +55,7 @@
 
 **Goal**: A user can share another user's post (simple repost or quote post with ≤280-char commentary). The share is recorded, the counter increments, self-shares are blocked, and duplicates are idempotent.
 
-**Independent Test**: Share another user's post with and without commentary → verify share record returned, `number_of_shares` incremented. Attempt self-share → 409. Attempt duplicate → `already_shared`.
+**Independent Test**: Share another user's post with and without commentary → verify share record returned, `number_of_shares` incremented. Attempt self-share → 422. Attempt duplicate → `already_shared`.
 
 ### Tests for User Story 1
 
@@ -230,7 +230,7 @@ Task T012: "Mount shares routes in server/src/routes/index.ts"
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
 - The model layer MUST NOT manually update `posts.number_of_shares` — triggers own the counter (see research.md §1). Doing so causes double-counting.
-- Controller maps SQLSTATE 23514 → HTTP 409 for self-share trigger errors
+- Controller maps SQLSTATE 23514 → HTTP 422 for self-share trigger errors (reuses centralized classifyPgError; AppError carries the clear message)
 - `ON CONFLICT DO NOTHING` + rowCount drives share/unshare responses (no pre-check SELECT → no TOCTOU race)
 - Commentary normalization: empty/whitespace → null (handled by validation middleware before model)
 - **Commit discipline (process)**: after completing each phase (Phases 1–7), draft a short, detailed Conventional Commit message for that phase's changes, present it, and **wait for explicit approval** before running `git add` + `git commit`. Do not auto-commit between phases. Suggested scopes: `feat(db)` (migration), `feat(shares)` (model/controller/routes), `feat(feed)` (post.ts UNION), `test(shares)` (tests), `chore(shares)` (verification/benchmarks).
