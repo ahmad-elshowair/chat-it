@@ -55,7 +55,7 @@ IF EXISTS (SELECT 1 FROM posts WHERE post_id = NEW.original_post_id AND user_id 
 END IF;
 ```
 - Enforces FR-005 at the data layer (unbypassable). A `CHECK` cannot do this (subquery required).
-- Controller maps `SQLSTATE 23514` → HTTP `409`.
+- Controller maps `SQLSTATE 23514` → HTTP `422` (reuses the codebase's centralized `classifyPgError`; the controller wraps it as an `AppError` to keep the clear "Users cannot share their own posts" message).
 - Fires on `INSERT` only — shares are immutable (no update endpoint/path), so no `UPDATE` case is needed.
 
 ### `trg_maintain_share_count_on_insert` — AFTER INSERT (per row)

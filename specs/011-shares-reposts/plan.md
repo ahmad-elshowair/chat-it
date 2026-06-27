@@ -72,7 +72,7 @@ server/
     ├── interfaces/IPost.ts               # MODIFY — extend IFeedPost (type, share_*, activity_at, is_shared, number_of_shares)
     ├── models/share.ts                   # NEW — share/unshare/getSharesByPostId/isShared
     ├── models/post.ts                    # MODIFY — feed() + userPosts() UNION ALL + composite cursor + is_shared
-    ├── controllers/shares.controller.ts  # NEW — maps SQLSTATE 23514 → 409
+    ├── controllers/shares.controller.ts  # NEW — maps SQLSTATE 23514 → 422 (classifyPgError)
     ├── controllers/factory.ts            # MODIFY — instantiate + export share_model
     ├── routes/apis/shares.routes.ts      # NEW — mount auth/idempotency/rate-limit/validation
     ├── routes/index.ts                   # MODIFY — routes.use('/shares', shares)

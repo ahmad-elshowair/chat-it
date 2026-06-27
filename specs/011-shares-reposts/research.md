@@ -37,7 +37,7 @@ Resolves all design decisions for Spec 011. The feature spec was thorough, so no
 - *App-only guard* — rejected: bypassable; violates FR-005.
 - *Stored procedure for share()* — rejected: over-engineered; trigger + parameterized INSERT is simpler (Art. VIII).
 
-The controller maps `SQLSTATE 23514` → HTTP `409` (conflict). `23505` (unique violation) cannot surface because `INSERT ... ON CONFLICT DO NOTHING` swallows it.
+The controller maps `SQLSTATE 23514` → HTTP `422` (unprocessable entity — business-rule violation, via the codebase's centralized `classifyPgError`). `23505` (unique violation) cannot surface because `INSERT ... ON CONFLICT DO NOTHING` swallows it.
 
 ---
 

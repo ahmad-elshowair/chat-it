@@ -77,7 +77,7 @@ curl -X POST http://localhost:<port>/api/shares/<post_id> \
 
 # Idempotent duplicate → 200 { data: { action: "already_shared" } }
 
-# Self-share → 409
+# Self-share → 422 (unprocessable entity — business-rule violation)
 
 # Unshare
 curl -X DELETE http://localhost:<port>/api/shares/<post_id> -H "Authorization: Bearer <token>"

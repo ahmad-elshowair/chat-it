@@ -26,7 +26,7 @@ Creates a share (simple repost or quote post). Idempotent.
 |---|---|---|
 | New share created (rowCount 1) | `200` | `TShare` — `{ share_id, user_id, original_post_id, commentary: string \| null, created_at }` (FR-022) |
 | Already shared (rowCount 0) | `200` | `{ action: "already_shared" }` — no duplicate, no count change (FR-023) |
-| Self-share (trigger `23514`) | `409` | error envelope — "Users cannot share their own posts" |
+| Self-share (trigger `23514`) | `422` | error envelope — "Users cannot share their own posts" |
 | Post not found | `404` | error envelope |
 | Commentary > 280 / invalid | `400` | validation error envelope |
 | Unauthenticated | `401` | error envelope |
