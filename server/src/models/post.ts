@@ -82,7 +82,7 @@ class PostModel {
       const sql = `
         SELECT
           p.post_id, p.description, p.updated_at, p.image, p.number_of_likes,
-          p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name,
+          p.number_of_comments, p.number_of_shares, u.user_id, u.user_name, u.picture, u.first_name,
           u.last_name${extraSelects},
           (SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags
         FROM posts p
@@ -144,6 +144,7 @@ class PostModel {
       p.image,
       p.number_of_likes,
       p.number_of_comments,
+      p.number_of_shares,
       u.user_id,
       u.user_name,
       p.updated_at,

@@ -59,12 +59,12 @@
 
 ### Tests for User Story 1
 
-- [ ] T013 [P] [US1] Write model tests for `ShareModel.share()` in the project test suite: test simple repost (rowCount 1, TShare returned), quote post with commentary, commentary normalization (whitespace → null), idempotent duplicate (rowCount 0), self-share trigger rejection (SQLSTATE 23514), non-existent post (FK violation)
-- [ ] T014 [P] [US1] Write controller tests for `sharePost` endpoint: test 200 with TShare on new share, 200 with `already_shared` on duplicate, 409 on self-share, 400 on commentary > 280 chars, 401 unauthenticated, 404 post not found
+- [~] T013 [P] [US1] Write model tests for `ShareModel.share()` in the project test suite: test simple repost (rowCount 1, TShare returned), quote post with commentary, commentary normalization (whitespace → null), idempotent duplicate (rowCount 0), self-share trigger rejection (SQLSTATE 23514), non-existent post (FK violation)
+- [~] T014 [P] [US1] Write controller tests for `sharePost` endpoint: test 200 with TShare on new share, 200 with `already_shared` on duplicate, 409 on self-share, 400 on commentary > 280 chars, 401 unauthenticated, 404 post not found
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Verify trigger behavior manually per quickstart.md §3: self-share blocked (ERROR 23514), counter increments on INSERT, counter decrements on DELETE, cascade on user/post deletion adjusts counter
+- [x] T015 [US1] Verify trigger behavior manually per quickstart.md §3: self-share blocked (ERROR 23514), counter increments on INSERT, counter decrements on DELETE, cascade on user/post deletion adjusts counter
 
 **Checkpoint**: User Story 1 is fully functional — share creation with all edge cases (self-share, duplicate, commentary validation) works independently.
 
@@ -78,13 +78,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T016 [P] [US2] Write model tests for `ShareModel.getSharesByPostId()`: test paginated results (most-recent-first), cursor-based next/previous, empty result for unshared post
-- [ ] T017 [P] [US2] Write model tests for `ShareModel.isShared()`: test returns true when shared, false when not shared
-- [ ] T018 [P] [US2] Write controller tests for `getPostSharers`: test 200 paginated response, `checkShareStatus`: test 200 with `{ is_shared: true/false }`
+- [~] T016 [P] [US2] Write model tests for `ShareModel.getSharesByPostId()`: test paginated results (most-recent-first), cursor-based next/previous, empty result for unshared post
+- [~] T017 [P] [US2] Write model tests for `ShareModel.isShared()`: test returns true when shared, false when not shared
+- [~] T018 [P] [US2] Write controller tests for `getPostSharers`: test 200 paginated response, `checkShareStatus`: test 200 with `{ is_shared: true/false }`
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Verify `number_of_shares` is returned in existing `PostModel.fetchPostById()` response — if not already projected, add `p.number_of_shares` to the SELECT in `server/src/models/post.ts` fetchPostById method. Note: `is_shared` is intentionally NOT added to `fetchPostById` — single-post views use the dedicated `GET /api/shares/is-shared/:post_id` endpoint (clarify Q1 / FR-021 scopes `is_shared` to `feed()`/`userPosts()` only, to prevent N+1; a single-post view is N=1, so a dedicated call is acceptable)
+- [x] T019 [US2] Verify `number_of_shares` is returned in existing `PostModel.fetchPostById()` response — if not already projected, add `p.number_of_shares` to the SELECT in `server/src/models/post.ts` fetchPostById method. Note: `is_shared` is intentionally NOT added to `fetchPostById` — single-post views use the dedicated `GET /api/shares/is-shared/:post_id` endpoint (clarify Q1 / FR-021 scopes `is_shared` to `feed()`/`userPosts()` only, to prevent N+1; a single-post view is N=1, so a dedicated call is acceptable)
 
 **Checkpoint**: User Stories 1 AND 2 are independently functional — users can create shares and see share counts/status/sharers.
 
@@ -98,12 +98,12 @@
 
 ### Tests for User Story 3
 
-- [ ] T020 [P] [US3] Write model tests for `ShareModel.unshare()`: test successful unshare (rowCount 1), idempotent unshare (rowCount 0, no counter change), re-share after unshare with new commentary
-- [ ] T021 [P] [US3] Write controller tests for `unsharePost`: test 200 on successful unshare, 200 idempotent on no-op, 401 unauthenticated
+- [~] T020 [P] [US3] Write model tests for `ShareModel.unshare()`: test successful unshare (rowCount 1), idempotent unshare (rowCount 0, no counter change), re-share after unshare with new commentary
+- [~] T021 [P] [US3] Write controller tests for `unsharePost`: test 200 on successful unshare, 200 idempotent on no-op, 401 unauthenticated
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] Verify counter behavior on unshare: manual test per quickstart.md — share → check count → unshare → check count → unshare again (no-op, no negative)
+- [x] T022 [US3] Verify counter behavior on unshare: manual test per quickstart.md — share → check count → unshare → check count → unshare again (no-op, no negative)
 
 **Checkpoint**: User Stories 1, 2, AND 3 all work independently.
 
@@ -235,3 +235,4 @@ Task T012: "Mount shares routes in server/src/routes/index.ts"
 - Commentary normalization: empty/whitespace → null (handled by validation middleware before model)
 - **Commit discipline (process)**: after completing each phase (Phases 1–7), draft a short, detailed Conventional Commit message for that phase's changes, present it, and **wait for explicit approval** before running `git add` + `git commit`. Do not auto-commit between phases. Suggested scopes: `feat(db)` (migration), `feat(shares)` (model/controller/routes), `feat(feed)` (post.ts UNION), `test(shares)` (tests), `chore(shares)` (verification/benchmarks).
 - Stop at any checkpoint to validate story independently
+- **Testing DEFERRED**: tasks T013, T014, T016, T017, T018, T020, T021 (marked `[~]`) are NOT implemented in spec 011 — they belong to a future dedicated testing spec. The project has no test framework today (constitution: testing deferred). US1/US2/US3 functionality is verified via the Phase 1 trigger-behavior checks (T015/T022, rolled-back psql), the T019 `number_of_shares` projection, and the build gates (tsc/eslint/prettier).
