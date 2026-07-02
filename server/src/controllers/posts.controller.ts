@@ -163,15 +163,13 @@ const userPosts = async (req: ICustomRequest, res: Response, next: NextFunction)
     const userId = req.user?.id;
     const paginationOptions = getCursorPaginationOptions(req);
 
-    const { posts } = await post_model.userPosts(
+    const result = await post_model.userPosts(
       user_id,
       paginationOptions.limit,
       paginationOptions.cursor,
       paginationOptions.direction,
       userId,
     );
-
-    const result = createPaginationResult(posts, paginationOptions, 'post_id');
 
     return sendResponse.success<IPaginatedResult<IFeedPost>>(res, result);
   } catch (error) {
@@ -194,14 +192,12 @@ const feed = async (req: ICustomRequest, res: Response, next: NextFunction) => {
 
     const paginationOptions = getCursorPaginationOptions(req);
 
-    const { posts } = await post_model.feed(
+    const result = await post_model.feed(
       user_id,
       paginationOptions.limit,
       paginationOptions.cursor,
       paginationOptions.direction,
     );
-
-    const result = createPaginationResult(posts, paginationOptions, 'post_id');
     return sendResponse.success<IPaginatedResult<IFeedPost>>(res, result);
   } catch (error) {
     console.error('[postController] feed error:', error);

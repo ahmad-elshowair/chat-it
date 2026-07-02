@@ -117,9 +117,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T023 [US4] Modify `server/src/models/post.ts` `feed()` method — replace the single-query approach with the UNION ALL of two branches (posts + shares), each pre-filtered to the follow graph and pre-limited to `$limit`. Project `type`, `activity_id`, `activity_at`, `shared_by_user_id`, `shared_by_user_name`, `share_commentary`, `number_of_shares`, `is_shared` (EXISTS subquery). Outer ORDER BY `activity_at DESC, activity_id DESC` with final LIMIT. Implement composite cursor decode/encode (`base64("${activity_at}|${activity_id}")`). Apply cursor filter inside each branch per research.md §5
-- [ ] T024 [US4] Modify `server/src/models/post.ts` `userPosts()` method — apply the same UNION ALL pattern as `feed()`, but replace the follow-graph WHERE with `p.user_id = $profile_user_id` (post branch) and `s.user_id = $profile_user_id` (share branch). Same composite cursor, same projection
-- [ ] T025 [US4] Verify `server/src/models/post.ts` `index()` method does NOT include shares — confirm FR-016 (global discovery excludes shares). No code change needed if `index()` queries only the `posts` table
+- [x] T023 [US4] Modify `server/src/models/post.ts` `feed()` method — replace the single-query approach with the UNION ALL of two branches (posts + shares), each pre-filtered to the follow graph and pre-limited to `$limit`. Project `type`, `activity_id`, `activity_at`, `shared_by_user_id`, `shared_by_user_name`, `share_commentary`, `number_of_shares`, `is_shared` (EXISTS subquery). Outer ORDER BY `activity_at DESC, activity_id DESC` with final LIMIT. Implement composite cursor decode/encode (`base64("${activity_at}|${activity_id}")`). Apply cursor filter inside each branch per research.md §5
+- [x] T024 [US4] Modify `server/src/models/post.ts` `userPosts()` method — apply the same UNION ALL pattern as `feed()`, but replace the follow-graph WHERE with `p.user_id = $profile_user_id` (post branch) and `s.user_id = $profile_user_id` (share branch). Same composite cursor, same projection
+- [x] T025 [US4] Verify `server/src/models/post.ts` `index()` method does NOT include shares — confirm FR-016 (global discovery excludes shares). No code change needed if `index()` queries only the `posts` table
 
 ### Tests for User Story 4
 
