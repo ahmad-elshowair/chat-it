@@ -135,14 +135,14 @@
 
 **Purpose**: Final verification, lint, and documentation.
 
-- [ ] T029 Run full lint + format check: `cd server && pnpm run lint && pnpm run prettier:check`
-- [ ] T030 Run full test suite: `cd server && pnpm test` — all existing + new tests must pass
-- [ ] T031 Verify index usage via EXPLAIN ANALYZE per quickstart.md §7: confirm `idx_shares_post_created` and `idx_shares_user_created` are used (Index Scan, not Seq Scan)
-- [ ] T032 Run quickstart.md §5 smoke tests: curl all 4 endpoints (share, unshare, who-shared, is-shared) and verify response shapes match contracts/shares-api.md
-- [ ] T033 Verify feed smoke test per quickstart.md §6: confirm feed items have `type: 'post' | 'share'`, `is_shared` is present, pagination across mixed items works
-- [ ] T034 [P] Benchmark unified-feed latency vs posts-only baseline (SC-007): measure p95 of `feed()` (with the shares `UNION ALL`) against the pre-change posts-only query over ≥100 requests; confirm the delta is ≤ 50ms. Record methodology + result (e.g., a timing script hitting `GET /api/feed`, or direct `PostModel.feed()` timings). If exceeded, profile with `EXPLAIN ANALYZE` and revisit pushed-down LIMIT / index usage
-- [ ] T035 [P] Concurrency test for the share counter (SC-005 / FR-008): fire 100 parallel `POST /api/shares/:post_id` requests from distinct users against the same post; assert `posts.number_of_shares` equals exactly 100 (verifies the `AFTER INSERT` trigger has no lost updates). Repeat the mirror with parallel `DELETE` to confirm the decrement path is also lossless and never goes negative
-- [ ] T036 Verify migration rollback per quickstart.md §8: run `cd server && npx db-migrate down` and confirm triggers/functions/indexes/table/column are removed cleanly (no orphans in `pg_trigger` / `pg_proc` / `pg_class`); then `npx db-migrate up` to restore and re-run T004 schema checks
+- [x] T029 Run full lint + format check: `cd server && pnpm run lint && pnpm run prettier:check`
+- [~] T030 Run full test suite: `cd server && pnpm test` — all existing + new tests must pass
+- [x] T031 Verify index usage via EXPLAIN ANALYZE per quickstart.md §7: confirm `idx_shares_post_created` and `idx_shares_user_created` are used (Index Scan, not Seq Scan)
+- [~] T032 Run quickstart.md §5 smoke tests: curl all 4 endpoints (share, unshare, who-shared, is-shared) and verify response shapes match contracts/shares-api.md
+- [~] T033 Verify feed smoke test per quickstart.md §6: confirm feed items have `type: 'post' | 'share'`, `is_shared` is present, pagination across mixed items works
+- [~] T034 [P] Benchmark unified-feed latency vs posts-only baseline (SC-007): measure p95 of `feed()` (with the shares `UNION ALL`) against the pre-change posts-only query over ≥100 requests; confirm the delta is ≤ 50ms. Record methodology + result (e.g., a timing script hitting `GET /api/feed`, or direct `PostModel.feed()` timings). If exceeded, profile with `EXPLAIN ANALYZE` and revisit pushed-down LIMIT / index usage
+- [~] T035 [P] Concurrency test for the share counter (SC-005 / FR-008): fire 100 parallel `POST /api/shares/:post_id` requests from distinct users against the same post; assert `posts.number_of_shares` equals exactly 100 (verifies the `AFTER INSERT` trigger has no lost updates). Repeat the mirror with parallel `DELETE` to confirm the decrement path is also lossless and never goes negative
+- [x] T036 Verify migration rollback per quickstart.md §8: run `cd server && npx db-migrate down` and confirm triggers/functions/indexes/table/column are removed cleanly (no orphans in `pg_trigger` / `pg_proc` / `pg_class`); then `npx db-migrate up` to restore and re-run T004 schema checks
 
 ---
 
@@ -236,3 +236,4 @@ Task T012: "Mount shares routes in server/src/routes/index.ts"
 - **Commit discipline (process)**: after completing each phase (Phases 1–7), draft a short, detailed Conventional Commit message for that phase's changes, present it, and **wait for explicit approval** before running `git add` + `git commit`. Do not auto-commit between phases. Suggested scopes: `feat(db)` (migration), `feat(shares)` (model/controller/routes), `feat(feed)` (post.ts UNION), `test(shares)` (tests), `chore(shares)` (verification/benchmarks).
 - Stop at any checkpoint to validate story independently
 - **Testing DEFERRED**: tasks T013, T014, T016, T017, T018, T020, T021 (marked `[~]`) are NOT implemented in spec 011 — they belong to a future dedicated testing spec. The project has no test framework today (constitution: testing deferred). US1/US2/US3 functionality is verified via the Phase 1 trigger-behavior checks (T015/T022, rolled-back psql), the T019 `number_of_shares` projection, and the build gates (tsc/eslint/prettier).
+- **Manual verification DEFERRED (T030, T032–T035)**: these need a running server + valid auth + seed data (and T034/T035 need a load driver). They are marked `[~]` and should be run manually once the stack is up: T032/T033 = curl the 4 endpoints + feed; T034 = feed p95 ≤ +50ms vs posts-only baseline (SC-007); T035 = 100 parallel shares → exact count 100 (SC-005). T029 (lint/prettier), T031 (EXPLAIN ANALYZE → `Index Scan using idx_shares_post_created`), and T036 (down→up round-trip clean) ARE verified.
