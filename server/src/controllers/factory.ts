@@ -8,6 +8,8 @@ import PostModel from '../models/post.js';
 import RefreshTokenModel from '../models/refreshToken.js';
 import ReportModel from '../models/report.js';
 import SearchModel from '../models/search.js';
+import ShareModel from '../models/share.js';
+import TagModel from '../models/tag.js';
 import UserModel from '../models/user.js';
 
 const post_model = new PostModel();
@@ -21,6 +23,8 @@ const bookmark_model = new BookmarkModel();
 const audit_model = new AuditModel();
 const report_model = new ReportModel();
 const search_model = new SearchModel();
+const share_model = new ShareModel();
+const tag_model = new TagModel();
 
 export {
   auth_model,
@@ -33,5 +37,7 @@ export {
   refresh_token_model,
   report_model,
   search_model,
+  share_model,
+  tag_model,
   user_model,
 };

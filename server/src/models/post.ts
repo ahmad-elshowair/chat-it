@@ -1,8 +1,56 @@
 import { QueryResult } from 'pg';
 import pool from '../database/pool.js';
+import { IPaginatedResult } from '../interfaces/IPagination.js';
 import { IFeedPost } from '../interfaces/IPost.js';
 import { Post } from '../types/post.js';
 import { AppError } from '../utilities/appError.js';
+import { extractHashtags } from '../utilities/extractHashtags.js';
+import TagModel from './tag.js';
+
+const tag_model = new TagModel();
+
+// ───── UNIFIED FEED CURSOR HELPERS ──────────────────────────────
+// Composite cursor = base64("${activity_at_iso8601}|${activity_id}"), where
+// activity_id is post_id for original posts and share_id for shares. The
+// activity_id is a unique tie-breaker so pagination never skips/duplicates
+// rows that share identical timestamps.
+
+const encodeActivityCursor = (activityAt: Date, activityId: string): string =>
+  Buffer.from(`${activityAt.toISOString()}|${activityId}`).toString('base64');
+
+const decodeActivityCursor = (cursor: string): { at: string; id: string } | null => {
+  try {
+    const decoded = Buffer.from(cursor, 'base64').toString('utf8');
+    const sep = decoded.lastIndexOf('|');
+    if (sep <= 0) {
+      return null;
+    }
+    return { at: decoded.slice(0, sep), id: decoded.slice(sep + 1) };
+  } catch {
+    return null;
+  }
+};
+
+const buildFeedPage = (rows: IFeedPost[], pageSize: number): IPaginatedResult<IFeedPost> => {
+  const hasMore = rows.length > pageSize;
+  const items = hasMore ? rows.slice(0, pageSize) : rows;
+  const first = items[0];
+  const last = items[items.length - 1];
+  return {
+    data: items,
+    pagination: {
+      hasMore,
+      nextCursor:
+        hasMore && last?.activity_at && last?.activity_id
+          ? encodeActivityCursor(last.activity_at, last.activity_id)
+          : undefined,
+      previousCursor:
+        first?.activity_at && first?.activity_id
+          ? encodeActivityCursor(first.activity_at, first.activity_id)
+          : undefined,
+    },
+  };
+};
 
 class PostModel {
   /**
@@ -38,6 +86,11 @@ class PostModel {
         post.description,
         post.image,
       ]);
+      await tag_model.syncPostTags(
+        insertPost.rows[0].post_id!,
+        extractHashtags(post.description),
+        connection,
+      );
       await connection.query('COMMIT');
       return insertPost.rows[0];
     } catch (error) {
@@ -73,8 +126,9 @@ class PostModel {
       const sql = `
         SELECT
           p.post_id, p.description, p.updated_at, p.image, p.number_of_likes,
-          p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name,
-          u.last_name${extraSelects}
+          p.number_of_comments, p.number_of_shares, u.user_id, u.user_name, u.picture, u.first_name,
+          u.last_name${extraSelects},
+          (SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags
         FROM posts p
         JOIN users u ON p.user_id = u.user_id
         ${likeJoin}
@@ -95,7 +149,7 @@ class PostModel {
   }
 
   /**
-   * GET ALL POSTS
+   * GET ALL POSTS (global discovery — excludes shares per FR-016)
    * @returns posts
    */
   async index(
@@ -127,34 +181,35 @@ class PostModel {
       }
 
       let sql = `
-		SELECT 
-			p.post_id,
-      p.description,
-      p.updated_at,
-      p.image,
-      p.number_of_likes,
-      p.number_of_comments,
-      u.user_id,
-      u.user_name,
-      p.updated_at,
-      u.picture,
-      u.first_name,
-      u.last_name${extraSelects}
-		FROM 
-			posts p
-		JOIN 
-			users u 
-		ON 
-			p.user_id = u.user_id
-    ${likeJoin}
-    ${bookmarkJoin}
-	`;
+        SELECT
+          p.post_id,
+          p.description,
+          p.updated_at,
+          p.image,
+          p.number_of_likes,
+          p.number_of_comments,
+          p.number_of_shares,
+          u.user_id,
+          u.user_name,
+          u.picture,
+          u.first_name,
+          u.last_name${extraSelects},
+          (SELECT COALESCE(json_agg(t.name), '[]'::json) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id) AS tags
+        FROM
+          posts p
+        JOIN
+          users u
+        ON
+          p.user_id = u.user_id
+        ${likeJoin}
+        ${bookmarkJoin}
+      `;
 
       if (cursor) {
         if (direction === 'next') {
-          sql += ` AND p.updated_at < (SELECT updated_at FROM posts WHERE post_id = $${paramIdx})`;
+          sql += ` WHERE p.updated_at < (SELECT updated_at FROM posts WHERE post_id = $${paramIdx})`;
         } else {
-          sql += ` AND p.updated_at > (SELECT updated_at FROM posts WHERE post_id = $${paramIdx})`;
+          sql += ` WHERE p.updated_at > (SELECT updated_at FROM posts WHERE post_id = $${paramIdx})`;
         }
         params.push(cursor);
         paramIdx++;
@@ -201,6 +256,7 @@ class PostModel {
       if (updatePost.rowCount === 0) {
         throw new AppError('Post not found', 404);
       }
+      await tag_model.syncPostTags(id, extractHashtags(post.description), connection);
       await connection.query('COMMIT');
       return updatePost.rows[0];
     } catch (error) {
@@ -225,9 +281,19 @@ class PostModel {
         throw new AppError('Post not found', 404);
       }
 
+      const tagIdsResult = await connection.query(
+        `SELECT tag_id FROM post_tags WHERE post_id = $1`,
+        [id],
+      );
+      const affectedTagIds = tagIdsResult.rows.map((r) => r.tag_id);
+
       const deleteResult = await connection.query('DELETE FROM posts WHERE post_id = $1', [id]);
       if (deleteResult.rowCount === 0) {
         throw new AppError('Post not found', 404);
+      }
+
+      for (const tagId of affectedTagIds) {
+        await tag_model.decrementPostCount(tagId, connection);
       }
       await connection.query('COMMIT');
       return { message: `POST: ${id} HAS BEEN DELETED !` };
@@ -238,13 +304,17 @@ class PostModel {
       connection.release();
     }
   }
+
   /**
-   * GET ALL POSTS BY USER ID
-   * @param user_id user id
-   * @param limit limit
-   * @param cursor cursor
-   * @param direction direction
-   * @returns posts
+   * GET A USER'S POSTS + SHARES (profile timeline). Unified via UNION ALL with a
+   * composite cursor. Viewer interaction state (is_liked/is_bookmarked/is_shared)
+   * is projected via EXISTS to avoid N+1 calls (FR-021).
+   * @param user_id profile owner
+   * @param limit page size (already +1 for has_more)
+   * @param cursor composite cursor (opaque)
+   * @param direction next | previous
+   * @param userId viewer (for interaction state)
+   * @returns paginated unified timeline
    */
   async userPosts(
     user_id: string,
@@ -252,81 +322,88 @@ class PostModel {
     cursor?: string,
     direction: 'next' | 'previous' = 'next',
     userId?: string,
-  ) {
+  ): Promise<IPaginatedResult<IFeedPost>> {
     const connection = await pool.connect();
     try {
       await connection.query('BEGIN');
-      const params: (string | number)[] = [user_id];
-      let paramIdx = 2;
 
-      let likeJoin = '';
-      let bookmarkJoin = '';
-      let extraSelects = '';
+      const viewerId = userId ?? user_id;
+      const pageSize = Math.max(0, limit - 1);
+      const decoded = cursor ? decodeActivityCursor(cursor) : null;
+      const cursorAt: Date | null = decoded ? new Date(decoded.at) : null;
+      const cursorId: string | null = decoded ? decoded.id : null;
+      const next = direction === 'next';
+      const order = next ? 'DESC' : 'ASC';
 
-      if (userId) {
-        params.push(userId);
-        likeJoin = `LEFT JOIN likes l ON l.post_id = p.post_id AND l.user_id = $${paramIdx}`;
-        bookmarkJoin = `LEFT JOIN bookmarks b ON b.post_id = p.post_id AND b.user_id = $${paramIdx}`;
-        extraSelects = `,
-          CASE WHEN l.user_id IS NOT NULL THEN true ELSE false END AS is_liked,
-          CASE WHEN b.user_id IS NOT NULL THEN true ELSE false END AS is_bookmarked`;
-        paramIdx++;
-      }
+      const postCmp = next
+        ? '(p.updated_at < $3 OR (p.updated_at = $3 AND p.post_id::text < $4))'
+        : '(p.updated_at > $3 OR (p.updated_at = $3 AND p.post_id::text > $4))';
+      const shareCmp = next
+        ? '(s.created_at < $3 OR (s.created_at = $3 AND s.share_id::text < $4))'
+        : '(s.created_at > $3 OR (s.created_at = $3 AND s.share_id::text > $4))';
 
-      let sql = `
-        SELECT 
-          p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name, u.last_name${extraSelects}
-        FROM
-          posts AS p
-        JOIN 
-          users AS u	
-        ON
-          u.user_id= p.user_id
-        ${likeJoin}
-        ${bookmarkJoin}
-        WHERE 
-          p.user_id = $1
-	    `;
+      const sql = `
+        (
+          SELECT
+            'post'::text AS type,
+            p.post_id::text AS activity_id,
+            p.updated_at AS activity_at,
+            p.post_id, p.description, p.image,
+            p.number_of_likes, p.number_of_comments, p.number_of_shares,
+            p.user_id, u.user_name, u.picture, u.first_name, u.last_name,
+            NULL::uuid AS shared_by_user_id,
+            NULL::text AS shared_by_user_name,
+            NULL::varchar AS share_commentary,
+            EXISTS (SELECT 1 FROM likes l WHERE l.post_id = p.post_id AND l.user_id = $2) AS is_liked,
+            EXISTS (SELECT 1 FROM bookmarks b WHERE b.post_id = p.post_id AND b.user_id = $2) AS is_bookmarked,
+            EXISTS (SELECT 1 FROM shares sh WHERE sh.original_post_id = p.post_id AND sh.user_id = $2) AS is_shared,
+            COALESCE((SELECT json_agg(t.name) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id), '[]'::json) AS tags
+          FROM posts p
+          JOIN users u ON u.user_id = p.user_id
+          WHERE p.user_id = $1 AND ($3 IS NULL OR ${postCmp})
+          ORDER BY p.updated_at ${order}, p.post_id ${order}
+          LIMIT $5
+        )
+        UNION ALL
+        (
+          SELECT
+            'share'::text AS type,
+            s.share_id::text AS activity_id,
+            s.created_at AS activity_at,
+            p.post_id, p.description, p.image,
+            p.number_of_likes, p.number_of_comments, p.number_of_shares,
+            p.user_id, pu.user_name, pu.picture, pu.first_name, pu.last_name,
+            s.user_id AS shared_by_user_id,
+            su.user_name::text AS shared_by_user_name,
+            s.commentary AS share_commentary,
+            EXISTS (SELECT 1 FROM likes l WHERE l.post_id = p.post_id AND l.user_id = $2) AS is_liked,
+            EXISTS (SELECT 1 FROM bookmarks b WHERE b.post_id = p.post_id AND b.user_id = $2) AS is_bookmarked,
+            EXISTS (SELECT 1 FROM shares sh WHERE sh.original_post_id = p.post_id AND sh.user_id = $2) AS is_shared,
+            COALESCE((SELECT json_agg(t.name) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id), '[]'::json) AS tags
+          FROM shares s
+          JOIN posts p ON p.post_id = s.original_post_id
+          JOIN users pu ON pu.user_id = p.user_id
+          JOIN users su ON su.user_id = s.user_id
+          WHERE s.user_id = $1 AND ($3 IS NULL OR ${shareCmp})
+          ORDER BY s.created_at ${order}, s.share_id ${order}
+          LIMIT $5
+        )
+        ORDER BY activity_at ${order}, activity_id ${order}
+        LIMIT $5
+      `;
 
-      if (cursor) {
-        try {
-          const postCheck = await connection.query(
-            `SELECT updated_at FROM posts WHERE post_id = $1`,
-            [cursor],
-          );
-
-          if (postCheck.rows.length > 0) {
-            const timestamp = postCheck.rows[0].updated_at;
-            params.push(timestamp);
-            if (direction === 'next') {
-              sql += ` AND p.updated_at < $${paramIdx}`;
-            } else {
-              sql += ` AND p.updated_at > $${paramIdx}`;
-            }
-            paramIdx++;
-          } else {
-            console.warn(`Post with ID ${cursor} not found for pagination`);
-          }
-        } catch (error) {
-          console.error('Error checking post for cursor:', error);
-        }
-      }
-
-      sql +=
-        direction === 'next'
-          ? ' ORDER BY p.updated_at DESC, p.post_id DESC '
-          : ' ORDER BY p.updated_at ASC, p.post_id ASC ';
-
-      sql += ` LIMIT $${paramIdx}`;
-
-      params.push(limit);
-
-      const result: QueryResult<IFeedPost> = await connection.query(sql, params);
-
-      const posts = direction === 'previous' ? result.rows.reverse() : result.rows;
+      const result: QueryResult<IFeedPost> = await connection.query(sql, [
+        user_id,
+        viewerId,
+        cursorAt,
+        cursorId,
+        limit,
+      ]);
 
       await connection.query('COMMIT');
-      return { posts };
+
+      const rows = next ? result.rows : result.rows.reverse();
+      return buildFeedPage(rows, pageSize);
     } catch (error) {
       await connection.query('ROLLBACK');
       throw new Error(`userPosts model: ${(error as Error).message}`, { cause: error });
@@ -336,93 +413,108 @@ class PostModel {
   }
 
   /**
-   * GET ALL POSTS OF A USER AND HIS FOLLOWINGS
-   * @param user_id user id
-   * @param limit limit
-   * @param cursor cursor
-   * @param direction direction
-   * @returns posts
+   * GET POSTS + SHARES OF THE USER AND THEIR FOLLOWINGS (home feed). Unified via
+   * UNION ALL with a composite cursor; each branch pre-filters to the follow
+   * graph and pre-limits to keep the outer sort cheap. Viewer interaction state
+   * is projected via EXISTS (FR-021). Global discovery (index()) excludes shares
+   * (FR-016).
+   * @param user_id viewer
+   * @param limit page size (already +1 for has_more)
+   * @param cursor composite cursor (opaque)
+   * @param direction next | previous
+   * @returns paginated unified feed
    */
   async feed(
     user_id: string,
     limit: number = 10,
     cursor?: string,
     direction: 'next' | 'previous' = 'next',
-  ): Promise<{ posts: IFeedPost[] }> {
+  ): Promise<IPaginatedResult<IFeedPost>> {
     const connection = await pool.connect();
     try {
       await connection.query('BEGIN');
-      const params: (string | number)[] = [user_id];
-      let sql = `
-				SELECT 
-					p.post_id, p.description, p.updated_at, p.image, p.number_of_likes, p.number_of_comments, u.user_id, u.user_name, u.picture, u.first_name, u.last_name,
-					CASE WHEN l.user_id IS NOT NULL THEN true ELSE false END AS is_liked,
-					CASE WHEN b.user_id IS NOT NULL THEN true ELSE false END AS is_bookmarked
-				FROM 
-					posts p
-				JOIN 
-					users u 
-				ON 
-					p.user_id = u.user_id
-				LEFT JOIN
-					likes l
-				ON
-					l.post_id = p.post_id AND l.user_id = $1
-				LEFT JOIN
-					bookmarks b
-				ON
-					b.post_id = p.post_id AND b.user_id = $1
-				WHERE 
-					u.user_id = $1
-   			OR 
-					u.user_id 
-				IN (
-					SELECT 
-						user_id_followed
-					FROM 
-						follows
-					WHERE 
-						user_id_following = $1
-					)
-			`;
-      if (cursor) {
-        try {
-          const postCheck = await connection.query(
-            `SELECT updated_at FROM posts WHERE post_id = $1`,
-            [cursor],
-          );
 
-          if (postCheck.rows.length > 0) {
-            const timestamp = postCheck.rows[0].updated_at;
-            if (direction === 'next') {
-              sql += ` AND p.updated_at < $2`;
-            } else {
-              sql += ` AND p.updated_at > $2`;
-            }
-            params.push(timestamp);
-          } else {
-            console.warn(`Post with ID ${cursor} not found for pagination`);
-          }
-        } catch (error) {
-          console.error('Error checking post for cursor:', error);
-        }
-      }
+      const pageSize = Math.max(0, limit - 1);
+      const decoded = cursor ? decodeActivityCursor(cursor) : null;
+      const cursorAt: Date | null = decoded ? new Date(decoded.at) : null;
+      const cursorId: string | null = decoded ? decoded.id : null;
+      const next = direction === 'next';
+      const order = next ? 'DESC' : 'ASC';
 
-      sql +=
-        direction === 'next'
-          ? ' ORDER BY p.updated_at DESC, p.post_id DESC '
-          : ' ORDER BY p.updated_at ASC, p.post_id ASC ';
+      const postCmp = next
+        ? '(p.updated_at < $2 OR (p.updated_at = $2 AND p.post_id::text < $3))'
+        : '(p.updated_at > $2 OR (p.updated_at = $2 AND p.post_id::text > $3))';
+      const shareCmp = next
+        ? '(s.created_at < $2 OR (s.created_at = $2 AND s.share_id::text < $3))'
+        : '(s.created_at > $2 OR (s.created_at = $2 AND s.share_id::text > $3))';
 
-      sql += ` LIMIT $${params.length + 1}`;
+      const sql = `
+        (
+          SELECT
+            'post'::text AS type,
+            p.post_id::text AS activity_id,
+            p.updated_at AS activity_at,
+            p.post_id, p.description, p.image,
+            p.number_of_likes, p.number_of_comments, p.number_of_shares,
+            p.user_id, u.user_name, u.picture, u.first_name, u.last_name,
+            NULL::uuid AS shared_by_user_id,
+            NULL::text AS shared_by_user_name,
+            NULL::varchar AS share_commentary,
+            EXISTS (SELECT 1 FROM likes l WHERE l.post_id = p.post_id AND l.user_id = $1) AS is_liked,
+            EXISTS (SELECT 1 FROM bookmarks b WHERE b.post_id = p.post_id AND b.user_id = $1) AS is_bookmarked,
+            EXISTS (SELECT 1 FROM shares sh WHERE sh.original_post_id = p.post_id AND sh.user_id = $1) AS is_shared,
+            COALESCE((SELECT json_agg(t.name) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id), '[]'::json) AS tags
+          FROM posts p
+          JOIN users u ON u.user_id = p.user_id
+          WHERE
+            (p.user_id = $1
+              OR p.user_id IN (SELECT user_id_followed FROM follows WHERE user_id_following = $1))
+            AND ($2 IS NULL OR ${postCmp})
+          ORDER BY p.updated_at ${order}, p.post_id ${order}
+          LIMIT $4
+        )
+        UNION ALL
+        (
+          SELECT
+            'share'::text AS type,
+            s.share_id::text AS activity_id,
+            s.created_at AS activity_at,
+            p.post_id, p.description, p.image,
+            p.number_of_likes, p.number_of_comments, p.number_of_shares,
+            p.user_id, pu.user_name, pu.picture, pu.first_name, pu.last_name,
+            s.user_id AS shared_by_user_id,
+            su.user_name::text AS shared_by_user_name,
+            s.commentary AS share_commentary,
+            EXISTS (SELECT 1 FROM likes l WHERE l.post_id = p.post_id AND l.user_id = $1) AS is_liked,
+            EXISTS (SELECT 1 FROM bookmarks b WHERE b.post_id = p.post_id AND b.user_id = $1) AS is_bookmarked,
+            EXISTS (SELECT 1 FROM shares sh WHERE sh.original_post_id = p.post_id AND sh.user_id = $1) AS is_shared,
+            COALESCE((SELECT json_agg(t.name) FROM post_tags pt JOIN tags t ON t.tag_id = pt.tag_id WHERE pt.post_id = p.post_id), '[]'::json) AS tags
+          FROM shares s
+          JOIN posts p ON p.post_id = s.original_post_id
+          JOIN users pu ON pu.user_id = p.user_id
+          JOIN users su ON su.user_id = s.user_id
+          WHERE
+            (s.user_id = $1
+              OR s.user_id IN (SELECT user_id_followed FROM follows WHERE user_id_following = $1))
+            AND ($2 IS NULL OR ${shareCmp})
+          ORDER BY s.created_at ${order}, s.share_id ${order}
+          LIMIT $4
+        )
+        ORDER BY activity_at ${order}, activity_id ${order}
+        LIMIT $4
+      `;
 
-      params.push(limit);
-
-      const result = await connection.query(sql, params);
-
-      const posts = direction === 'previous' ? result.rows.reverse() : result.rows;
+      const result: QueryResult<IFeedPost> = await connection.query(sql, [
+        user_id,
+        cursorAt,
+        cursorId,
+        limit,
+      ]);
 
       await connection.query('COMMIT');
-      return { posts };
+
+      const rows = next ? result.rows : result.rows.reverse();
+      return buildFeedPage(rows, pageSize);
     } catch (error) {
       await connection.query('ROLLBACK');
       throw new Error(`feed model: ${(error as Error).message}`, { cause: error });

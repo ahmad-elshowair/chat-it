@@ -180,3 +180,22 @@ export const contentCreationLimiter = rateLimit({
     );
   },
 });
+
+// ───── TAG SEARCH LIMITER ──────────────────────────────
+
+/**
+ * Limit tag search and trending requests (30 req/min per IP).
+ */
+export const tagSearchLimiter = rateLimit({
+  windowMs: config.rate_limit_tag_search_window_ms,
+  max: config.rate_limit_tag_search_max,
+  standardHeaders: true,
+  legacyHeaders: false,
+  passOnStoreError: true,
+  store: new RedisStore({
+    // @ts-expect-error - ioredis and rate-limit-redis type mismatch
+    sendCommand: safeSendCommand,
+    prefix: 'rl:tag-search:',
+  }),
+  handler: limitHandler,
+});
